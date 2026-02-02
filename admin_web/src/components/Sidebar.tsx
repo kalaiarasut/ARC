@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
@@ -11,7 +12,7 @@ const DRAWER_WIDTH = 260;
 
 // Primary blue color
 const PRIMARY_BLUE = '#2563eb';
-const PRIMARY_BLUE_DARK = '#1d4ed8';
+
 const PRIMARY_BLUE_LIGHT = '#3b82f6';
 
 interface NavItemProps {
@@ -70,6 +71,7 @@ export const Sidebar: React.FC = () => {
 
     const navItems = [
         { icon: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Dashboard', path: '/dashboard' },
+        { icon: <MapOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Map View', path: '/map' },
         { icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Reports', path: '/reports' },
         { icon: <BarChartOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Analytics', path: '/analytics' },
         { icon: <GroupOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Users', path: '/users' },
