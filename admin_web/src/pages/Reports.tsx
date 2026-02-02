@@ -61,6 +61,7 @@ const HAZARD_TYPES: HazardType[] = ['High Waves', 'Tsunami', 'Storm', 'Flood', '
 const URGENCY_LEVELS: UrgencyLevel[] = ['Low', 'Medium', 'High'];
 const STATUSES: ReportStatus[] = ['pending', 'verified', 'resolved'];
 
+
 export function Reports() {
   const [reports, setReports] = useState<HazardReport[]>([]);
   const [loading, setLoading] = useState(true);

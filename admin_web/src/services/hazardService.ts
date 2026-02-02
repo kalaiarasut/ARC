@@ -217,7 +217,7 @@ export const hazardService = {
     if (!isSupabaseConfigured()) {
       return {
         // minimal channel-like shape used by callers
-        unsubscribe: () => {},
+        unsubscribe: () => { },
       } as any;
     }
 

@@ -212,6 +212,7 @@ const IconWrapper = styled(Box)({
     },
 });
 
+
 export const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login, signup } = useAuth();
@@ -277,6 +278,7 @@ export const Login: React.FC = () => {
         setError(null);
         setSuccessMessage(null);
     };
+
 
     return (
         <LoginContainer>
@@ -432,6 +434,7 @@ export const Login: React.FC = () => {
                             </Box>
                         </Box>
                     </form>
+
 
                 </GlassCard>
 

@@ -310,6 +310,7 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
           remove: true,
           edit: {
             selectedPathOptions: {
+
               opacity: 0.8,
             }
           }
