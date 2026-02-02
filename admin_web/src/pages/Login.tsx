@@ -257,6 +257,12 @@ export const Login: React.FC = () => {
             return;
         }
 
+        // Admin validation
+        if (email !== 'admin123' || password !== 'admin123') {
+            alert('Invalid credentials. Please use admin123 as username and password.');
+            return;
+        }
+
         console.log('Login attempt:', { email, password });
 
         // Login user and store in context
@@ -334,9 +340,9 @@ export const Login: React.FC = () => {
                         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                             <StyledTextField
                                 fullWidth
-                                placeholder="Email or Username"
+                                placeholder="Username"
                                 variant="outlined"
-                                type="email"
+                                type="text"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 onFocus={handleInputFocus}
@@ -365,17 +371,17 @@ export const Login: React.FC = () => {
                                 size="large"
                                 sx={{ marginBottom: '24px' }}
                             >
-                                Enter the Safe Zone
+                                Login
                             </OceanButton>
                         </Box>
                     </form>
 
-                    <Box sx={{ textAlign: 'center' }}>
+                    {/*<Box sx={{ textAlign: 'center' }}>
                         <ReportLink onClick={handleReportHazard}>
                             <ReportProblemIcon />
                             Report Coastal Hazard
                         </ReportLink>
-                    </Box>
+                    </Box>*/}
                 </GlassCard>
 
                 <Typography
