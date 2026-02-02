@@ -4,10 +4,6 @@ import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import { UserProfile } from './UserProfile';
-import { Box, Breadcrumbs, Link, Typography, IconButton } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 
 interface HeaderProps {
     title: string;
@@ -18,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ title, category }) => {
     return (
         <Box
             sx={{
+                display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 mb: 4,
@@ -25,11 +22,11 @@ export const Header: React.FC<HeaderProps> = ({ title, category }) => {
                 borderBottom: '1px solid #E2E8F0'
             }}
         >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+            <Box>
                 {/* Breadcrumbs */}
+                <Breadcrumbs
                     separator={<NavigateNextIcon sx={{ fontSize: 16, color: '#94A3B8' }} />}
                     sx={{ mb: 1.5 }}
-                    sx={{ mb: 1 }}
                 >
                     <Link
                         underline="hover"
@@ -48,15 +45,6 @@ export const Header: React.FC<HeaderProps> = ({ title, category }) => {
                         Home
                     </Link>
                     <Typography sx={{ fontSize: '0.875rem', color: '#1976d2', fontWeight: 600 }}>
-                            fontSize: '0.8125rem',
-                            '&:hover': { color: '#0F172A' },
-                        }}
-                        href="/"
-                    >
-                        <HomeIcon sx={{ fontSize: 16 }} />
-                        Home
-                    </Link>
-                    <Typography sx={{ fontSize: '0.8125rem', color: '#0F172A', fontWeight: 500 }}>
                         {category}
                     </Typography>
                 </Breadcrumbs>
@@ -68,7 +56,6 @@ export const Header: React.FC<HeaderProps> = ({ title, category }) => {
                         fontWeight: 700,
                         color: '#0F172A',
                         fontSize: '1.875rem',
-                        fontSize: '1.75rem',
                         letterSpacing: '-0.02em',
                     }}
                 >
@@ -98,15 +85,6 @@ export const Header: React.FC<HeaderProps> = ({ title, category }) => {
                 {/* User Profile */}
                 <UserProfile />
             </Box>
-            {/* Notification Icon */}
-            <IconButton
-                sx={{
-                    color: '#64748B',
-                    '&:hover': { backgroundColor: '#F1F5F9' },
-                }}
-            >
-                <NotificationsNoneOutlinedIcon />
-            </IconButton>
         </Box>
     );
 };
