@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import '../theme/app_colors.dart';
@@ -28,17 +28,19 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  final AudioRecorder _audioRecorder = AudioRecorder();
   
   String _selectedHazard = '';
   Position? _currentPosition;
-  DateTime _timestamp = DateTime.now();
+  DateTime _now = DateTime.now();
+  Timer? _clockTimer;
   final List<XFile> _selectedMedia = [];
+  bool _isRecordingAudio = false;
   bool _isHighRisk = false;
   int _peopleAtRisk = 0;
   String _urgencyLevel = 'Medium';
   bool _isSubmitting = false;
   final ReportService _reportService = ReportService();
-  bool _eventTimeEdited = false;
 
   static const int _maxAttachments = 5;
 
@@ -54,12 +56,31 @@ class _ReportScreenState extends State<ReportScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+    });
   }
 
   @override
   void dispose() {
+    _stopAudioRecordingIfNeeded();
+    _clockTimer?.cancel();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _stopAudioRecordingIfNeeded() async {
+    if (!_isRecordingAudio) return;
+    try {
+      await _audioRecorder.stop();
+    } catch (_) {
+      // Ignore
+    } finally {
+      if (mounted) {
+        setState(() => _isRecordingAudio = false);
+      }
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -161,19 +182,36 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<bool> _requestMediaPermission(ImageSource source) async {
+    // Kept for backwards compatibility with existing call sites.
+    // Prefer the specific helpers below for images/videos.
     if (source == ImageSource.camera) {
       final camera = await Permission.camera.request();
       return camera.isGranted;
     }
 
-    // Gallery permission varies by OS/version; permission_handler normalizes this.
+    if (Platform.isIOS) {
+      final photos = await Permission.photos.request();
+      return photos.isGranted || photos.isLimited;
+    }
+
+    // Android: request photos permission (Android 13+ maps to READ_MEDIA_IMAGES).
     final photos = await Permission.photos.request();
-    if (photos.isGranted) return true;
+    if (photos.isGranted || photos.isLimited) return true;
 
     // Fallback for older Android devices.
     final storage = await Permission.storage.request();
     return storage.isGranted;
   }
+
+  Future<bool> _requestVideoCameraPermissions() async {
+    final camera = await Permission.camera.request();
+    if (!camera.isGranted) return false;
+
+    // Many devices require microphone permission to record video with audio.
+    final mic = await Permission.microphone.request();
+    return mic.isGranted;
+  }
+
 
   Future<void> _pickFromCamera() async {
     final granted = await _requestMediaPermission(ImageSource.camera);
@@ -201,34 +239,6 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  Future<void> _pickFromGallery() async {
-    final granted = await _requestMediaPermission(ImageSource.gallery);
-    if (!mounted) return;
-    if (!granted) return;
-
-    try {
-      final remaining = _maxAttachments - _selectedMedia.length;
-      if (remaining <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
-        );
-        return;
-      }
-
-      final picked = await _picker.pickMultiImage();
-      if (picked.isEmpty) return;
-
-      setState(() {
-        _selectedMedia.addAll(picked.take(remaining));
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking images: $e')),
-        );
-      }
-    }
-  }
 
   void _removeMediaAt(int index) {
     setState(() => _selectedMedia.removeAt(index));
@@ -260,7 +270,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _pickVideoFromCamera() async {
-    final granted = await _requestMediaPermission(ImageSource.camera);
+    final granted = await _requestVideoCameraPermissions();
     if (!mounted) return;
     if (!granted) return;
 
@@ -285,84 +295,70 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  Future<void> _pickVideoFromGallery() async {
-    final granted = await _requestMediaPermission(ImageSource.gallery);
-    if (!mounted) return;
-    if (!granted) return;
-
-    try {
-      if (_selectedMedia.length >= _maxAttachments) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
-        );
-        return;
-      }
-
-      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-      if (video != null) {
-        setState(() => _selectedMedia.add(video));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking video: $e')),
-        );
-      }
+  Future<void> _toggleAudioRecording() async {
+    if (_selectedMedia.length >= _maxAttachments) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+      );
+      return;
     }
-  }
 
-  Future<void> _pickAudioFile() async {
-    try {
-      if (_selectedMedia.length >= _maxAttachments) {
+    if (_isRecordingAudio) {
+      try {
+        final filePath = await _audioRecorder.stop();
+        if (!mounted) return;
+        setState(() => _isRecordingAudio = false);
+        if (filePath == null || filePath.isEmpty) return;
+        final name = path.basename(filePath);
+        setState(() {
+          _selectedMedia.add(XFile(filePath, name: name, mimeType: 'audio/m4a'));
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isRecordingAudio = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+          SnackBar(content: Text('Error stopping audio: $e')),
         );
-        return;
       }
+      return;
+    }
 
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['mp3', 'wav', 'm4a', 'aac'],
+    final mic = await Permission.microphone.request();
+    if (!mounted) return;
+    if (!mic.isGranted) return;
+
+    try {
+      final canRecord = await _audioRecorder.hasPermission();
+      if (!canRecord) return;
+
+      final dir = await getTemporaryDirectory();
+      final filePath = path.join(
+        dir.path,
+        'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',
       );
 
-      final file = result?.files.single;
-      final filePath = file?.path;
-      if (filePath == null) return;
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 64000,
+          sampleRate: 22050,
+        ),
+        path: filePath,
+      );
 
-      final name = file?.name ?? path.basename(filePath);
-      setState(() {
-        _selectedMedia.add(XFile(filePath, name: name));
-      });
+      if (!mounted) return;
+      setState(() => _isRecordingAudio = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recording audio… tap again to stop.')),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking audio: $e')),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _isRecordingAudio = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error starting audio: $e')),
+      );
     }
-  }
-
-  Future<void> _pickEventTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _timestamp,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-
-    if (date == null || !mounted) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_timestamp),
-    );
-
-    if (time == null || !mounted) return;
-
-    setState(() {
-      _timestamp = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-      _eventTimeEdited = true;
-    });
   }
 
   Future<void> _submitReport() async {
@@ -398,18 +394,7 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Validate file sizes BEFORE upload (10MB limit)
-      for (final file in _selectedMedia) {
-        final size = await file.length();
-        if (size > 10 * 1024 * 1024) {
-          throw Exception('File ${file.name} exceeds 10MB limit');
-        }
-      }
-
-      // Default to submit time unless user explicitly edited event time.
-      if (!_eventTimeEdited) {
-        _timestamp = DateTime.now();
-      }
+      final eventTime = DateTime.now();
 
       // Check connectivity
       final isOnline = await _checkRealConnectivity();
@@ -447,7 +432,7 @@ class _ReportScreenState extends State<ReportScreen> {
           urgencyLevel: _isHighRisk ? _urgencyLevel : null,
           mediaUrls: null,
           uploadComplete: false,
-          eventTime: _timestamp,
+          eventTime: eventTime,
         );
 
         await OfflineReportQueueService.enqueue(report: report, media: _selectedMedia);
@@ -507,7 +492,7 @@ class _ReportScreenState extends State<ReportScreen> {
         urgencyLevel: _isHighRisk ? _urgencyLevel : null,
         mediaUrls: null,
         uploadComplete: _selectedMedia.isEmpty, // true if no media
-        eventTime: _timestamp,
+        eventTime: DateTime.now(),
       );
 
       final reportId = await _reportService.insertReport(report);
@@ -518,10 +503,8 @@ class _ReportScreenState extends State<ReportScreen> {
         try {
           for (var index = 0; index < _selectedMedia.length; index++) {
             final file = _selectedMedia[index];
-            // Compress image if needed
-            final processedFile = await _processMediaFile(file);
             final url = await _reportService.uploadMedia(
-              processedFile,
+              file,
               reportId,
               userId,
               index: index,
@@ -587,49 +570,6 @@ class _ReportScreenState extends State<ReportScreen> {
       return response.statusCode >= 200 && response.statusCode < 400;
     } catch (_) {
       return false;
-    }
-  }
-
-  // Smart media processing: compress images >500KB
-  Future<XFile> _processMediaFile(XFile file) async {
-    // Only compress images
-    if (!(file.mimeType?.startsWith('image/') ?? false)) {
-      return file;
-    }
-
-    // Check file size
-    final size = await file.length();
-    
-    // Skip compression if already small (<500KB)
-    if (size <= 500 * 1024) {
-      return file;
-    }
-
-    // Compress image
-    try {
-      final dir = await getTemporaryDirectory();
-      final targetPath = path.join(
-        dir.path,
-        '${DateTime.now().millisecondsSinceEpoch}_compressed${path.extension(file.path)}',
-      );
-
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        file.path,
-        targetPath,
-        quality: 70,
-        minWidth: 1024,
-        minHeight: 1024,
-      );
-
-      if (compressedFile != null) {
-        return XFile(compressedFile.path);
-      }
-      
-      // If compression fails, return original
-      return file;
-    } catch (e) {
-      // On error, return original file
-      return file;
     }
   }
 
@@ -743,7 +683,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: _buildInfoCard(
                     Icons.access_time,
                     'Time',
-                    '${_timestamp.hour}:${_timestamp.minute.toString().padLeft(2, '0')}',
+                    '${_now.hour}:${_now.minute.toString().padLeft(2, '0')}',
                   ),
                 ),
               ],
@@ -756,12 +696,6 @@ class _ReportScreenState extends State<ReportScreen> {
                   onPressed: _getCurrentLocation,
                   icon: const Icon(Icons.my_location, size: 18),
                   label: const Text('Retry GPS'),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: _pickEventTime,
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text('Edit Time'),
                 ),
               ],
             ),
@@ -786,32 +720,11 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMediaButton(
-                    Icons.photo_library,
-                    'Gallery',
-                    _pickFromGallery,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMediaButton(
                     Icons.videocam,
-                    'Video',
+                    'Record',
                     _pickVideoFromCamera,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMediaButton(
-                    Icons.video_library,
-                    'Video',
-                    _pickVideoFromGallery,
-                  ),
-                ),
               ],
             ),
 
@@ -820,9 +733,9 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Expanded(
                   child: _buildMediaButton(
-                    Icons.mic,
-                    'Audio',
-                    _pickAudioFile,
+                    _isRecordingAudio ? Icons.stop : Icons.mic,
+                    _isRecordingAudio ? 'Stop Audio' : 'Record Audio',
+                    _toggleAudioRecording,
                   ),
                 ),
               ],

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
+import '../services/auth_service.dart';
 import 'success_screen.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -16,6 +19,9 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final AuthService _authService = AuthService();
+  bool _isSubmitting = false;
+  bool _isResending = false;
 
   @override
   void dispose() {
@@ -140,6 +146,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         text: "Continue",
                         backgroundColor: AppColors.primaryBlue, // Deep Sea Blue
                         onPressed: () async {
+                          if (_isSubmitting) return;
                           final otp = _otpController.text.trim();
                           
                           if (otp.length != 6) {
@@ -148,12 +155,51 @@ class _OtpScreenState extends State<OtpScreen> {
                             );
                             return;
                           }
+
+                          setState(() => _isSubmitting = true);
+
+                          try {
+                            final response = await _authService.verifyOTP(
+                              phoneNumber: widget.mobileNumber,
+                              otp: otp,
+                            );
+
+                            if (response.session == null || response.user == null) {
+                              throw const AuthException('OTP verified but no session was created.');
+                            }
+
+                            // Persist phone locally for features like hazard reporting.
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setString('user_phone', widget.mobileNumber);
+
+                            if (!context.mounted) return;
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SuccessScreen()),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+
+                            if (e is AuthApiException) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'OTP verification failed.\n'
+                                    '${e.message}\n\n'
+                                    'Check Supabase: Authentication → Providers → Phone (enabled) and SMS provider configured (Twilio).',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Sign-in failed: $e')),
+                            );
+                          } finally {
+                            if (mounted) setState(() => _isSubmitting = false);
+                          }
                           
-                          // Navigate to Success Screen
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const SuccessScreen()),
-                          );
                         },
                       ),
                     ),
@@ -171,11 +217,25 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('OTP resent successfully')),
-                            );
-                          },
+                          onTap: _isResending
+                              ? null
+                              : () async {
+                                  setState(() => _isResending = true);
+                                  try {
+                                    await _authService.sendOTP(widget.mobileNumber);
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('OTP resent successfully')),
+                                    );
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to resend OTP: $e')),
+                                    );
+                                  } finally {
+                                    if (mounted) setState(() => _isResending = false);
+                                  }
+                                },
                           child: const Text(
                             "Resend (00:30)", // Added hypothetical timer for visual match
                             style: TextStyle(

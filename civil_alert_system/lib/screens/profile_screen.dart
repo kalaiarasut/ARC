@@ -186,11 +186,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final job = box.get(key);
                       if (job is! Map) return const SizedBox.shrink();
 
-                      final report = job['report'] is Map ? Map<String, dynamic>.from(job['report']) : <String, dynamic>{};
+                      Map<String, dynamic> asStringKeyedMap(dynamic value) {
+                        if (value is Map) {
+                          return value.map(
+                            (k, v) => MapEntry(k.toString(), v),
+                          );
+                        }
+                        return <String, dynamic>{};
+                      }
+
+                      final jobMap = asStringKeyedMap(job);
+                      final report = asStringKeyedMap(jobMap['report']);
+
                       final hazardType = report['hazardType']?.toString() ?? 'Unknown';
                       final description = report['description']?.toString() ?? '';
-                      final attempts = job['attempts'] as int? ?? 0;
-                      final lastError = job['lastError']?.toString();
+                      final attempts = (jobMap['attempts'] as num?)?.toInt() ?? 0;
+                      final lastError = jobMap['lastError']?.toString();
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),

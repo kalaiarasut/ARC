@@ -77,9 +77,14 @@ class ReportSyncService {
 
           final reportId = await _reportService.insertReport(report);
 
-          final mediaItems = mediaList is List
-              ? List<Map<String, dynamic>>.from(mediaList)
-              : <Map<String, dynamic>>[];
+          final mediaItems = <Map<String, dynamic>>[];
+          if (mediaList is List) {
+            for (final item in mediaList) {
+              if (item is Map) {
+                mediaItems.add(Map<String, dynamic>.from(item));
+              }
+            }
+          }
 
           final uploadedUrls = <String>[];
           for (var index = 0; index < mediaItems.length; index++) {

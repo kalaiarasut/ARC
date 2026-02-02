@@ -15,6 +15,13 @@ class OfflineReportQueueService {
 
   static Box<dynamic> _box() => Hive.box(boxName);
 
+  static Map<String, dynamic> _asStringKeyedMap(dynamic value) {
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(k.toString(), v));
+    }
+    return <String, dynamic>{};
+  }
+
   /// Returns number of pending jobs.
   static int pendingCount() => _box().length;
 
@@ -29,9 +36,17 @@ class OfflineReportQueueService {
     final jobKey = report.clientId;
 
     final existing = _box().get(jobKey);
-    final List<Map<String, dynamic>> existingMedia = existing is Map
-        ? List<Map<String, dynamic>>.from((existing['media'] as List?) ?? const [])
-        : <Map<String, dynamic>>[];
+    final existingMedia = <Map<String, dynamic>>[];
+    if (existing is Map) {
+      final rawMedia = existing['media'];
+      if (rawMedia is List) {
+        for (final item in rawMedia) {
+          if (item is Map) {
+            existingMedia.add(Map<String, dynamic>.from(item));
+          }
+        }
+      }
+    }
 
     final copiedMedia = await _copyMediaToPersistentStorage(report.clientId, media);
 
@@ -65,7 +80,7 @@ class OfflineReportQueueService {
     for (final key in _box().keys) {
       final value = _box().get(key);
       if (value is Map) {
-        jobs.add(Map<String, dynamic>.from(value));
+        jobs.add(_asStringKeyedMap(value));
       }
     }
     return jobs;
@@ -79,7 +94,7 @@ class OfflineReportQueueService {
     final value = _box().get(clientId);
     if (value is! Map) return;
 
-    final updated = Map<String, dynamic>.from(value);
+    final updated = _asStringKeyedMap(value);
     updated['attempts'] = (updated['attempts'] as int? ?? 0) + 1;
     updated['lastError'] = lastError;
     updated['updatedAt'] = DateTime.now().toIso8601String();

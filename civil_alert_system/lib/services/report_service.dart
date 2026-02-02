@@ -1,10 +1,78 @@
-import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:video_compress/video_compress.dart';
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
 
 class ReportService {
   final SupabaseClient _supabase = SupabaseConfig.client;
+
+  bool _isImage(XFile file) {
+    final mt = file.mimeType;
+    if (mt != null && mt.startsWith('image/')) return true;
+    final lower = file.name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic');
+  }
+
+  bool _isVideo(XFile file) {
+    final mt = file.mimeType;
+    if (mt != null && mt.startsWith('video/')) return true;
+    final lower = file.name.toLowerCase();
+    return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.mkv');
+  }
+
+  Future<XFile> _processMediaForUpload(XFile file) async {
+    try {
+      if (_isImage(file)) {
+        final size = await file.length();
+        if (size <= 500 * 1024) return file;
+
+        final dir = await getTemporaryDirectory();
+        final targetPath = p.join(
+          dir.path,
+          '${DateTime.now().millisecondsSinceEpoch}_compressed${p.extension(file.path)}',
+        );
+
+        final compressed = await FlutterImageCompress.compressAndGetFile(
+          file.path,
+          targetPath,
+          quality: 70,
+          minWidth: 1024,
+          minHeight: 1024,
+        );
+
+        return compressed != null ? XFile(compressed.path) : file;
+      }
+
+      if (_isVideo(file)) {
+        final size = await file.length();
+        // Avoid re-encoding very small clips.
+        if (size <= 3 * 1024 * 1024) return file;
+
+        final info = await VideoCompress.compressVideo(
+          file.path,
+          quality: VideoQuality.MediumQuality,
+          deleteOrigin: false,
+          includeAudio: true,
+        );
+
+        final out = info?.file;
+        if (out == null) return file;
+        return XFile(out.path);
+      }
+
+      // Audio: recorded as AAC at low bitrate (already compressed).
+      return file;
+    } catch (_) {
+      return file;
+    }
+  }
 
   String _contentTypeFallback(XFile file) {
     final mt = file.mimeType;
@@ -58,19 +126,27 @@ class ReportService {
   }) async {
     // Deterministic path helps retries be idempotent.
     final safeIndex = index ?? 0;
-    final fileName = 'media_${safeIndex}_${file.name}';
+    final originalName = file.name;
+    final fileName = 'media_${safeIndex}_$originalName';
     final filePath = '$userId/$reportId/$fileName';
 
     try {
+      final processed = await _processMediaForUpload(file);
+
+      final finalSize = await processed.length();
+      if (finalSize > 10 * 1024 * 1024) {
+        throw Exception('File $originalName exceeds 10MB limit after compression');
+      }
+
       // Read file bytes
-      final bytes = await file.readAsBytes();
+      final bytes = await processed.readAsBytes();
 
       // Upload to Supabase Storage
       await _supabase.storage.from('hazard-media').uploadBinary(
             filePath,
             bytes,
             fileOptions: FileOptions(
-              contentType: _contentTypeFallback(file),
+              contentType: _contentTypeFallback(processed),
               upsert: true,
             ),
           );
