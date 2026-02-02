@@ -205,7 +205,7 @@ export function Dashboard() {
 
         {/* Key Metrics */}
         <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Total Reports"
               value={stats.totalReports}
@@ -214,7 +214,7 @@ export function Dashboard() {
               icon={<AssessmentIcon />}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Pending Review"
               value={stats.pendingReports}
@@ -223,7 +223,7 @@ export function Dashboard() {
               icon={<PendingIcon />}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="High Risk Alerts"
               value={stats.highRiskReports}
@@ -232,7 +232,7 @@ export function Dashboard() {
               icon={<WarningIcon />}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Reports Today"
               value={stats.reportsToday}
@@ -246,7 +246,7 @@ export function Dashboard() {
         {/* Breakdown Cards */}
         <Grid container spacing={3} mb={4}>
           {/* By Hazard Type */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box
               sx={{
                 p: 3,
@@ -303,7 +303,7 @@ export function Dashboard() {
           </Grid>
 
           {/* By Status */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box
               sx={{
                 p: 3,
@@ -359,7 +359,7 @@ export function Dashboard() {
           </Grid>
 
           {/* By Urgency */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box
               sx={{
                 p: 3,
@@ -437,7 +437,7 @@ export function Dashboard() {
           </Box>
           <Grid container spacing={2}>
             {recentReports.map((report) => (
-              <Grid item xs={12} key={report.id}>
+              <Grid key={report.id} size={{ xs: 12 }}>
                 <ReportCard report={report} />
               </Grid>
             ))}

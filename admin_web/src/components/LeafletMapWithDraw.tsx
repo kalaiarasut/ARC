@@ -126,7 +126,7 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
     /**
      * Fetch existing monitoring zones from Supabase
      */
-    const fetchAndRenderZones = async (map: LeafletMapInstance) => {
+    const fetchAndRenderZones = async (_map: LeafletMapInstance) => {
       try {
         const { data, error } = await supabase
           .from('monitoring_zones')
@@ -310,7 +310,7 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
           remove: true,
           edit: {
             selectedPathOptions: {
-              maintainColor: true,
+
               opacity: 0.8,
             }
           }
@@ -427,6 +427,14 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
         if (!isMounted) return;
 
         if (!conn.success) {
+          // Supabase not configured (missing env vars) is not a network/connection issue.
+          if (!conn.configured) {
+            setMapError('Offline Mode: Supabase not configured (zones will not persist).');
+            setIsOfflineMode(true);
+            setIsLoading(false);
+            return;
+          }
+
           const isTableMissing = conn.message.includes('monitoring_zones" not found');
           if (isTableMissing) {
             setMapError('Database table missing. Offline Mode.');
@@ -567,11 +575,11 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
               }}
             >
               <Alert
-                severity="warning"
+                severity={mapError.startsWith('Offline Mode:') ? 'info' : 'warning'}
                 onClose={() => setMapError(null)}
                 sx={{ border: 'none' }}
               >
-                <AlertTitle>System Alert</AlertTitle>
+                <AlertTitle>{isOfflineMode ? 'Offline Mode' : 'System Alert'}</AlertTitle>
                 {mapError}
               </Alert>
             </Paper>

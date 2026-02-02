@@ -1,8 +1,97 @@
 import { supabase } from '../config/supabase';
+import { isSupabaseConfigured } from '../core/supabase_config';
 import type { HazardReport, FilterOptions, DashboardStats } from '../types/hazard';
 
+export interface PagedResult<T> {
+  data: T[];
+  total: number;
+}
+
 export const hazardService = {
+  async getReportsWithCount(
+    filters?: Partial<FilterOptions>,
+    page = 0,
+    limit = 50,
+    options?: { fetchAll?: boolean; maxRows?: number }
+  ): Promise<PagedResult<HazardReport>> {
+    if (!isSupabaseConfigured()) {
+      return { data: [], total: 0 };
+    }
+
+    const fetchAll = options?.fetchAll ?? false;
+    const maxRows = options?.maxRows ?? 5000;
+
+    let query = supabase
+      .from('hazard_reports')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    if (filters?.hazardTypes && filters.hazardTypes.length > 0) {
+      query = query.in('hazard_type', filters.hazardTypes);
+    }
+
+    if (filters?.statuses && filters.statuses.length > 0) {
+      query = query.in('status', filters.statuses);
+    }
+
+    if (filters?.urgencyLevels && filters.urgencyLevels.length > 0) {
+      query = query.in('urgency_level', filters.urgencyLevels);
+    }
+
+    if (filters?.isHighRisk !== null && filters?.isHighRisk !== undefined) {
+      query = query.eq('is_high_risk', filters.isHighRisk);
+    }
+
+    // Media filtering: handle true/false explicitly.
+    // Note: empty arrays in Postgres are not NULL, so `hasMedia=false` should include NULL or empty.
+    if (filters?.hasMedia !== null && filters?.hasMedia !== undefined) {
+      if (filters.hasMedia) {
+        query = query.not('media_urls', 'is', null);
+      } else {
+        // "media_urls.eq.{}" matches empty arrays; combined with NULL
+        query = query.or('media_urls.is.null,media_urls.eq.{}');
+      }
+    }
+
+    if (filters?.dateFrom) {
+      query = query.gte('created_at', filters.dateFrom);
+    }
+
+    if (filters?.dateTo) {
+      query = query.lte('created_at', filters.dateTo);
+    }
+
+    if (filters?.searchQuery) {
+      const q = filters.searchQuery;
+      query = query.or(
+        `description.ilike.%${q}%,user_name.ilike.%${q}%,hazard_type.ilike.%${q}%`
+      );
+    }
+
+    if (fetchAll) {
+      query = query.range(0, Math.max(0, maxRows - 1));
+    } else {
+      query = query.range(page * limit, (page + 1) * limit - 1);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching reports:', error);
+      throw error;
+    }
+
+    return {
+      data: data || [],
+      total: count || 0,
+    };
+  },
+
   async getReports(filters?: Partial<FilterOptions>, page = 0, limit = 50): Promise<HazardReport[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
     let query = supabase
       .from('hazard_reports')
       .select('*')
@@ -52,6 +141,10 @@ export const hazardService = {
   },
 
   async getReportById(id: string): Promise<HazardReport | null> {
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('hazard_reports')
       .select('*')
@@ -67,9 +160,14 @@ export const hazardService = {
   },
 
   async getDashboardStats(): Promise<DashboardStats> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
     const { data: allReports, error } = await supabase
       .from('hazard_reports')
-      .select('*');
+      .select('*')
+      .returns<HazardReport[]>();
 
     if (error || !allReports) {
       throw error || new Error('No data');
@@ -116,6 +214,13 @@ export const hazardService = {
   },
 
   subscribeToReports(callback: (report: HazardReport) => void) {
+    if (!isSupabaseConfigured()) {
+      return {
+        // minimal channel-like shape used by callers
+        unsubscribe: () => { },
+      } as any;
+    }
+
     return supabase
       .channel('hazard_reports_changes')
       .on(

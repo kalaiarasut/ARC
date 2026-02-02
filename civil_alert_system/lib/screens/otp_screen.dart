@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
+import '../services/auth_service.dart';
 import 'success_screen.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -16,6 +20,9 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final AuthService _authService = AuthService();
+  bool _isSubmitting = false;
+  bool _isResending = false;
 
   @override
   void dispose() {
@@ -101,8 +108,8 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     const SizedBox(height: 24),
                     
-                    const Text(
-                      "Enter OTP",
+                    Text(
+                      context.l10n.enterOtp,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -111,7 +118,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Sent to ${widget.mobileNumber}",
+                      context.l10n.sentToNumber(widget.mobileNumber),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14,
@@ -137,23 +144,63 @@ class _OtpScreenState extends State<OtpScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: PrimaryButton(
-                        text: "Continue",
+                        text: context.l10n.continueLabel,
                         backgroundColor: AppColors.primaryBlue, // Deep Sea Blue
                         onPressed: () async {
+                          if (_isSubmitting) return;
                           final otp = _otpController.text.trim();
                           
                           if (otp.length != 6) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter 6-digit OTP')),
+                              SnackBar(content: Text(context.l10n.pleaseEnter6DigitOtp)),
                             );
                             return;
                           }
+
+                          setState(() => _isSubmitting = true);
+
+                          try {
+                            final response = await _authService.verifyOTP(
+                              phoneNumber: widget.mobileNumber,
+                              otp: otp,
+                            );
+
+                            if (response.session == null || response.user == null) {
+                              throw const AuthException('OTP verified but no session was created.');
+                            }
+
+                            // Persist phone locally for features like hazard reporting.
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setString('user_phone', widget.mobileNumber);
+
+                            if (!context.mounted) return;
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SuccessScreen()),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+
+                            if (e is AuthApiException) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${context.l10n.otpVerificationFailed}\n'
+                                    '${e.message}\n\n'
+                                    '${context.l10n.checkSupabasePhoneConfig}',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(context.l10n.signInFailedWithError(e.toString()))),
+                            );
+                          } finally {
+                            if (mounted) setState(() => _isSubmitting = false);
+                          }
                           
-                          // Navigate to Success Screen
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const SuccessScreen()),
-                          );
                         },
                       ),
                     ),
@@ -163,21 +210,35 @@ class _OtpScreenState extends State<OtpScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          "Didn't receive OTP? ",
+                        Text(
+                          context.l10n.didntReceiveOtp,
                           style: TextStyle(
                             fontSize: 12,
                             color: Color(0xFF8E8E93)
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('OTP resent successfully')),
-                            );
-                          },
-                          child: const Text(
-                            "Resend (00:30)", // Added hypothetical timer for visual match
+                          onTap: _isResending
+                              ? null
+                              : () async {
+                                  setState(() => _isResending = true);
+                                  try {
+                                    await _authService.sendOTP(widget.mobileNumber);
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(context.l10n.otpResentSuccessfully)),
+                                    );
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(context.l10n.failedToResendOtpWithError(e.toString()))),
+                                    );
+                                  } finally {
+                                    if (mounted) setState(() => _isResending = false);
+                                  }
+                                },
+                          child: Text(
+                            context.l10n.resendWithTimer, // Added hypothetical timer for visual match
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.secondaryCyan, // Cyan

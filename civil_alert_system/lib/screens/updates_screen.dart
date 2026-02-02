@@ -6,6 +6,8 @@ import '../models/official_advisory.dart';
 import '../services/advisory_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
+import '../widgets/app_state_view.dart';
 
 final advisoryServiceProvider = Provider<AdvisoryService>((ref) => AdvisoryService());
 final advisoriesProvider = FutureProvider<List<OfficialAdvisory>>((ref) async {
@@ -39,9 +41,9 @@ class UpdatesScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Updates',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.updates,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         actions: [
           ValueListenableBuilder(
@@ -60,7 +62,7 @@ class UpdatesScreen extends ConsumerWidget {
                       border: Border.all(color: AppColors.warning.withOpacity(0.35)),
                     ),
                     child: Text(
-                      '$count pending',
+                      context.l10n.pendingCount(count),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -75,8 +77,8 @@ class UpdatesScreen extends ConsumerWidget {
         child: advisories.when(
           data: (items) {
             if (items.isEmpty) {
-              return const Center(
-                child: Text('No updates yet', style: TextStyle(color: AppColors.textSecondary)),
+              return Center(
+                child: Text(context.l10n.noUpdatesYet, style: const TextStyle(color: AppColors.textSecondary)),
               );
             }
 
@@ -150,7 +152,18 @@ class UpdatesScreen extends ConsumerWidget {
             );
           },
           error: (e, _) => Center(
-            child: Text('Failed to load updates: $e', style: const TextStyle(color: AppColors.textSecondary)),
+            child: AppStateView(
+              icon: Icons.wifi_off,
+              title: context.l10n.failedToLoadUpdates,
+              message: e.toString().toLowerCase().contains('socket') || e.toString().toLowerCase().contains('failed host')
+                  ? context.l10n.youreOffline
+                  : e.toString(),
+              actionLabel: context.l10n.retry,
+              onAction: () async {
+                ref.invalidate(advisoriesProvider);
+                await ref.read(advisoriesProvider.future);
+              },
+            ),
           ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
         ),

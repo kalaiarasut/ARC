@@ -1,0 +1,206 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Civil Alert System",
+
+  "profile": "Profile",
+
+  "profileAndReports": "Reports",
+  "edit": "Edit",
+  "user": "User",
+  "phoneNotSet": "Phone not set",
+  "syncNow": "Sync now",
+  "nothingToSync": "Nothing to sync",
+  "syncDone": "Sync done: {succeeded} succeeded, {failed} failed",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "Offline Reports",
+  "noPendingReports": "No pending reports",
+  "attemptsLabel": "Attempts: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "Retry",
+  "remove": "Remove",
+  "myReports": "My Reports",
+  "noUploadedReportsYet": "No uploaded reports yet",
+  "failedToLoadReports": "Failed to load reports",
+  "youreOffline": "You're offline",
+  "connectToInternetToLoadMyReports": "Connect to the internet to load My Reports.",
+
+  "settings": "Settings",
+  "helpFaq": "Help / FAQ",
+  "aboutTransparency": "About & transparency",
+  "language": "Language",
+  "privacyControls": "Language & privacy controls",
+  "privacy": "Privacy",
+
+  "chooseLanguage": "Choose Language",
+  "save": "Save",
+  "continueLabel": "Continue",
+  "languageComingSoon": "This language is coming soon.",
+
+  "updates": "Updates",
+  "pendingCount": "{count} pending",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "No updates yet",
+  "failedToLoadUpdates": "Failed to load updates",
+
+  "helpTitle": "Help / FAQ",
+  "aboutTitle": "About & transparency",
+  "privacyTitle": "Privacy controls",
+
+  "privacyReducePrecisionTitle": "Reduce map location precision",
+  "privacyReducePrecisionSubtitle": "If enabled, your report markers are shown with reduced location precision on the map.",
+
+  "faqQ1": "How do I report a hazard?",
+  "faqA1": "Open Report, describe what you see, and submit. If you're offline, it will be queued and uploaded when you're back online.",
+  "faqQ2": "Why can't I upload from gallery?",
+  "faqA2": "To keep reports trustworthy, the app only allows live capture (camera/recording) so old media can't be uploaded.",
+  "faqQ3": "How is my location used?",
+  "faqA3": "Your location helps responders understand where hazards are happening. For public viewing, locations may be shown with reduced precision."
+
+  ,"loginTitle": "Log in / Sign up",
+  "signUpWithMobile": "Sign up with your registered mobile number",
+  "otpIntro": "We will send you an OTP to verify your number",
+  "mobileNumberLabel": "Mobile number *",
+  "sendingLabel": "Sending...",
+  "sendOtp": "Send OTP",
+  "failedToSendOtp": "Failed to send OTP.",
+  "checkSupabasePhoneConfig": "Check Supabase: Authentication → Providers → Phone (enabled) and SMS provider configured (Twilio).",
+
+  "enterOtp": "Enter OTP",
+  "sentToNumber": "Sent to {mobileNumber}",
+  "pleaseEnter6DigitOtp": "Please enter 6-digit OTP",
+  "otpVerificationFailed": "OTP verification failed.",
+  "signInFailedWithError": "Sign-in failed: {error}",
+  "didntReceiveOtp": "Didn't receive OTP? ",
+  "otpResentSuccessfully": "OTP resent successfully",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
+  "resendWithTimer": "Resend (00:30)",
+  "savingLabel": "Saving...",
+
+  "signedInSuccessfully": "You've signed in\nsuccessfully",
+  "directingToDashboard": "Please wait while we direct you to the dashboard...",
+
+  "whatsYourName": "What's your name?",
+  "personalizeExperience": "Help us personalize your experience",
+  "enterYourName": "Enter your name",
+  "pleaseEnterValidName": "Please enter a valid name (at least 2 characters)",
+
+  "onboarding1Title": "Your Trusted Collaborator\nin Times of Disaster",
+  "onboarding1Description": "Get real-time alerts and contribute to safety by reporting ocean hazards as they happen.",
+  "onboarding2Title": "Empowering Safety,\nOne Step at a Time",
+  "onboarding2Description": "Join a network of vigilant eyes on the sea, sharing real-time hazard information to save lives.",
+  "onboarding3Title": "Preparedness at\nYour Fingertips",
+  "onboarding3Description": "Report ocean hazards, receive crucial alerts, and stay informed before it's too late.",
+  "skip": "Skip",
+
+  "splashTitle": "Civil Alert",
+  "splashSubtitle": "Focused Hazard Detection",
+
+  "hiWelcome": "Hi, Welcome 👋",
+  "togetherForOceanSafety": "Together for\nOcean Safety,\nStronger Together",
+  "seeUpdates": "See Updates",
+  "unusualActivity": "Unusual Activity 🔥",
+  "seeAll": "See All",
+  "filterNow": "Now",
+  "filterLastWeek": "Last week",
+  "filterLastMonth": "Last month",
+
+  "locationServicesOffTitle": "Location Services Off",
+  "enableLocationServicesForReporting": "Please enable location services (GPS) to report hazards. Your location helps authorities respond quickly.",
+  "enableLocationServicesForCurrentLocation": "Location services are off. Enable GPS to show your current location.",
+  "permissionRequiredTitle": "Permission Required",
+  "locationPermissionDeniedAllowInSettings": "Location permission denied. Please allow access in settings.",
+  "locationPermissionDeniedAllowForCurrentLocation": "Location permission denied. Allow access to show your current location.",
+  "locationPermissionBlockedEnableInSettings": "Location permission is blocked. Enable it in app settings.",
+  "locationPermissionPermanentlyDeniedForReporting": "Location permission is permanently denied. Please enable it in app settings to report hazards.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "Location permission is permanently denied. Please enable it in app settings to show your current location.",
+  "cancel": "Cancel",
+  "notNow": "Not Now",
+  "openSettings": "Open Settings",
+  "errorGettingLocationWithError": "Error getting location: {error}",
+  "gettingLocation": "Getting location...",
+  "gettingYourLocation": "Getting your location...",
+
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
+  "recordingAudioTapToStop": "Recording audio… tap again to stop.",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
+  "pleaseSelectHazardType": "Please select a hazard type",
+  "pleaseDescribeSituation": "Please describe the situation",
+  "waitingForLocation": "Waiting for location...",
+  "pleaseEnterPeopleAtRisk": "Please enter an estimate of people at risk",
+  "noInternetReportQueued": "No internet connection. Report will be queued.",
+
+  "profileNeededTitle": "Profile Needed",
+  "profileNeededBody": "Please add your phone number before submitting a report.",
+  "addNow": "Add Now",
+
+  "reportSavedMediaUploadFailedRetry": "Report saved! Media upload failed, will retry later.",
+  "reportSubmittedSuccessfully": "Report submitted successfully! 🎉",
+  "errorWithError": "Error: {error}",
+
+  "retryGps": "Retry GPS",
+  "reportHazard": "Report Hazard",
+  "whatAreYouSeeing": "What are you seeing? 👁️",
+  "reportHelpsKeepSafe": "Your report helps keep everyone safe",
+  "hazardTypeRequired": "Hazard Type *",
+  "descriptionRequired": "Description *",
+  "describeWhatYouSeeHint": "Describe what you're seeing...",
+  "location": "Location",
+  "time": "Time",
+  "addMediaOptional": "Add Media (Optional)",
+  "camera": "Camera",
+  "record": "Record",
+  "recordAudio": "Record Audio",
+  "stopAudio": "Stop Audio",
+  "highRiskSituation": "High Risk Situation",
+  "peopleAtRiskEstimate": "People at risk (estimate)",
+  "urgencyLow": "Low",
+  "urgencyMedium": "Medium",
+  "urgencyHigh": "High",
+  "submitReport": "Submit Report",
+
+  "close": "Close",
+  "moreDetails": "More Details"
+
+  ,"hazardHighWaves": "High Waves",
+  "hazardTsunami": "Tsunami",
+  "hazardStorm": "Storm",
+  "hazardFlood": "Flood",
+  "hazardOther": "Other",
+
+  "homeTab": "Home",
+  "mapTab": "Map",
+  "updatesTab": "Updates",
+  "profileTab": "Reports",
+  "liveNews": "Live News",
+  "sampleHazardHeadline": "High Waves in Pacific Coast",
+  "sampleDate": "Sun, 11 June 2024",
+  "sampleTimeAgo": "3 min ago"
+
+  ,"@sentToNumber": {"placeholders": {"mobileNumber": {}}}
+  ,"@signInFailedWithError": {"placeholders": {"error": {}}}
+  ,"@failedToResendOtpWithError": {"placeholders": {"error": {}}}
+  ,"@errorGettingLocationWithError": {"placeholders": {"error": {}}}
+  ,"@maximumAttachmentsAllowed": {"placeholders": {"max": {}}}
+  ,"@errorPickingImageWithError": {"placeholders": {"error": {}}}
+  ,"@errorPickingVideoWithError": {"placeholders": {"error": {}}}
+  ,"@errorStoppingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorStartingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorWithError": {"placeholders": {"error": {}}}
+}

@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import '../providers/language_provider.dart';
+import '../l10n/l10n.dart';
 import 'login_screen.dart';
 
 class LanguageScreen extends ConsumerStatefulWidget {
-  const LanguageScreen({super.key});
+  final bool fromSettings;
+
+  const LanguageScreen({super.key, this.fromSettings = false});
 
   @override
   ConsumerState<LanguageScreen> createState() => _LanguageScreenState();
@@ -86,7 +89,20 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
     ),
   ];
   
-  String _selectedLanguage = "English";
+  static const Set<String> _supportedCodes = {'en', 'ta'};
+
+  String _selectedCode = 'en';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize selection from persisted provider.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final code = ref.read(languageCodeProvider);
+      if (!mounted) return;
+      setState(() => _selectedCode = code);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +111,19 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        toolbarHeight: 0, // Hide standard toolbar
+        toolbarHeight: widget.fromSettings ? kToolbarHeight : 0,
+        leading: widget.fromSettings
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        title: widget.fromSettings
+            ? Text(
+                context.l10n.language,
+                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+              )
+            : null,
       ),
       body: SafeArea(
         child: Column(
@@ -105,8 +133,8 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Choose Language",
+                  Text(
+                    context.l10n.chooseLanguage,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -114,8 +142,8 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    "भाषा चुनें",
+                  Text(
+                    widget.fromSettings ? '' : 'भाषा चुनें',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -138,15 +166,22 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                 itemCount: _languages.length,
                 itemBuilder: (context, index) {
                   final item = _languages[index];
-                  final isSelected = item.name == _selectedLanguage;
+                  final isSelected = item.code == _selectedCode;
+                  final isSupported = _supportedCodes.contains(item.code);
                   
                   return GestureDetector(
                     onTap: () {
-                      setState(() => _selectedLanguage = item.name);
+                      if (!isSupported) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(context.l10n.languageComingSoon)),
+                        );
+                        return;
+                      }
+                      setState(() => _selectedCode = item.code);
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: item.color,
+                        color: isSupported ? item.color : item.color.withOpacity(0.35),
                         borderRadius: BorderRadius.circular(12),
                         border: isSelected 
                             ? Border.all(color: AppColors.primaryBlue, width: 3) 
@@ -172,7 +207,7 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                               style: TextStyle(
                                 fontSize: 60, // Big character
                                 fontWeight: FontWeight.bold,
-                                color: _getCharacterColor(item.color),
+                                color: _getCharacterColor(isSupported ? item.color : item.color.withOpacity(0.35)),
                               ),
                             ),
                           ),
@@ -197,14 +232,27 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               child: PrimaryButton(
-                text: "Continue",
+                text: widget.fromSettings
+                    ? context.l10n.save
+                    : context.l10n.continueLabel,
                 onPressed: () async {
-                  await ref.read(languageProvider.notifier).setLanguage(_selectedLanguage);
+                  if (!_supportedCodes.contains(_selectedCode)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.l10n.languageComingSoon)),
+                    );
+                    return;
+                  }
+
+                  await ref.read(languageCodeProvider.notifier).setLanguageCode(_selectedCode);
                   if (!context.mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
+                  if (widget.fromSettings) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  }
                 },
               ),
             ),

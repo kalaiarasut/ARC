@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import 'home_screen.dart';
 
 class UserDetailsScreen extends StatefulWidget {
-  const UserDetailsScreen({super.key});
+  final bool isOnboarding;
+
+  const UserDetailsScreen({super.key, required this.isOnboarding});
 
   @override
   State<UserDetailsScreen> createState() => _UserDetailsScreenState();
@@ -14,6 +17,21 @@ class UserDetailsScreen extends StatefulWidget {
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillName();
+  }
+
+  Future<void> _prefillName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name');
+    if (!mounted) return;
+    if (name != null && name.trim().isNotEmpty) {
+      _nameController.text = name.trim();
+    }
+  }
 
   @override
   void dispose() {
@@ -26,7 +44,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     
     if (name.isEmpty || name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid name (at least 2 characters)')),
+        SnackBar(content: Text(context.l10n.pleaseEnterValidName)),
       );
       return;
     }
@@ -36,20 +54,88 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     // Save to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', name);
-    await prefs.setBool('onboarding_complete', true); // Mark onboarding as done
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (widget.isOnboarding) {
+      await prefs.setBool('onboarding_complete', true); // Mark onboarding as done
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false, // Clear all previous routes
       );
+      return;
     }
+
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.isOnboarding) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F9FB),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            context.l10n.whatsYourName,
+            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.personalizeExperience,
+                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  hintText: context.l10n.enterYourName,
+                  prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: PrimaryButton(
+                  text: _isLoading ? context.l10n.savingLabel : context.l10n.save,
+                  backgroundColor: AppColors.primaryBlue,
+                  onPressed: _isLoading ? () {} : _saveName,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E), // Dark background
       body: Stack(
@@ -99,8 +185,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     ),
                     const SizedBox(height: 24),
                     
-                    const Text(
-                      "What's your name?",
+                    Text(
+                      context.l10n.whatsYourName,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -108,8 +194,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      "Help us personalize your experience",
+                    Text(
+                      context.l10n.personalizeExperience,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
@@ -123,7 +209,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        hintText: "Enter your name",
+                        hintText: context.l10n.enterYourName,
                         prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
                         filled: true,
                         fillColor: const Color(0xFFF7F9FB),
@@ -148,7 +234,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: PrimaryButton(
-                        text: _isLoading ? "Saving..." : "Continue",
+                        text: _isLoading
+                            ? context.l10n.savingLabel
+                            : context.l10n.continueLabel,
                         backgroundColor: AppColors.primaryBlue,
                         onPressed: _isLoading ? () {} : _saveName,
                       ),

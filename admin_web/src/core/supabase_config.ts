@@ -15,9 +15,34 @@ import { createClient } from '@supabase/supabase-js';
  * VITE_SUPABASE_ANON_KEY=your-anon-key-here
  */
 
-// Read credentials from environment variables (VITE_ prefix for Vite)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || '';
+// Read credentials from environment variables.
+// Vite only exposes variables that match `envPrefix` in vite.config.ts.
+// We support a few common key names to reduce configuration foot-guns.
+const readEnv = (...keys: string[]): string => {
+  const env = (import.meta as any)?.env as Record<string, unknown> | undefined;
+  for (const key of keys) {
+    const value = env?.[key];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return '';
+};
+
+const SUPABASE_URL = readEnv(
+  'VITE_SUPABASE_URL',
+  'VITE_PUBLIC_SUPABASE_URL',
+  'SUPABASE_URL'
+);
+
+const SUPABASE_ANON_KEY = readEnv(
+  'VITE_SUPABASE_ANON_KEY',
+  'VITE_PUBLIC_SUPABASE_ANON_KEY',
+  'VITE_SUPABASE_KEY',
+  'SUPABASE_ANON_KEY',
+  'SUPABASE_KEY'
+);
 
 /**
  * Configuration status tracking
@@ -40,19 +65,19 @@ export const getConfigStatus = (): SupabaseConfigStatus => {
 
   // Check URL
   if (!SUPABASE_URL) {
-    errors.push('Missing VITE_SUPABASE_URL');
+    errors.push('Missing Supabase URL (expected VITE_SUPABASE_URL)');
     isValid = false;
   } else if (!SUPABASE_URL.includes('supabase.co')) {
-    errors.push('Invalid VITE_SUPABASE_URL - must be Supabase project URL');
+    errors.push('Invalid Supabase URL - must be Supabase project URL');
     isValid = false;
   }
 
   // Check key
   if (!SUPABASE_ANON_KEY) {
-    errors.push('Missing VITE_SUPABASE_ANON_KEY');
+    errors.push('Missing Supabase anon key (expected VITE_SUPABASE_ANON_KEY)');
     isValid = false;
   } else if (SUPABASE_ANON_KEY.length < 20) {
-    errors.push('Invalid VITE_SUPABASE_ANON_KEY - key seems too short');
+    errors.push('Invalid Supabase anon key - key seems too short');
     isValid = false;
   }
 
@@ -110,7 +135,7 @@ export const supabase = createClient(
   SUPABASE_ANON_KEY || 'placeholder-key',
   {
     auth: {
-      persistSession: false,
+      persistSession: true,
     },
   }
 );

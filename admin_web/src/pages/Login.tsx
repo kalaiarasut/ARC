@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Link, Container, Alert, Collapse } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import WavesIcon from '@mui/icons-material/Waves';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { useAuth } from '../contexts/AuthContext';
 
 // Animated wave keyframes
@@ -213,25 +212,6 @@ const IconWrapper = styled(Box)({
     },
 });
 
-const ReportLink = styled(Link)({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: 'rgba(255, 255, 255, 0.9)',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: 500,
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    '&:hover': {
-        color: '#ffffff',
-        transform: 'translateX(4px)',
-        textDecoration: 'underline',
-    },
-    '& svg': {
-        fontSize: '18px',
-    },
-});
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -299,10 +279,6 @@ export const Login: React.FC = () => {
         setSuccessMessage(null);
     };
 
-    const handleReportHazard = () => {
-        console.log('Report coastal hazard clicked');
-        navigate('/reports');
-    };
 
     return (
         <LoginContainer>
@@ -459,12 +435,7 @@ export const Login: React.FC = () => {
                         </Box>
                     </form>
 
-                    {/*<Box sx={{ textAlign: 'center' }}>
-                        <ReportLink onClick={handleReportHazard}>
-                            <ReportProblemIcon />
-                            Report Coastal Hazard
-                        </ReportLink>
-                    </Box>*/}
+
                 </GlassCard>
 
                 <Typography

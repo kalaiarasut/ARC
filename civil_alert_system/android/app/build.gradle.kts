@@ -13,6 +13,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -39,6 +40,18 @@ android {
     }
 }
 
+dependencies {
+    // Required by flutter_local_notifications (and other libs) for Java 8+ APIs on older Android.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
 flutter {
     source = "../.."
+}
+
+// Optional Firebase wiring: only apply the Google Services plugin when
+// android/app/google-services.json exists. This lets you merge the code now
+// and add Firebase later without breaking Android builds.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

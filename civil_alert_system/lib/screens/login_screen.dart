@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../services/auth_service.dart';
 import 'otp_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,6 +16,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _mobileController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _isSending = false;
 
   @override
   void dispose() {
@@ -25,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Log in / Sign up"),
+        title: Text(context.l10n.loginTitle),
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -36,8 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Sign up with your registered mobile number",
+              Text(
+                context.l10n.signUpWithMobile,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -46,8 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                "We will send you an OTP to verify your number",
+              Text(
+                context.l10n.otpIntro,
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -55,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
               
-              const Text(
-                "Mobile number *",
+              Text(
+                context.l10n.mobileNumberLabel,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -76,20 +81,42 @@ class _LoginScreenState extends State<LoginScreen> {
               
               
               PrimaryButton(
-                text: "Send OTP",
-                onPressed: _mobileController.text.length >= 10 
-                    ? () {
-                        final phoneNumber = _mobileController.text.trim();
-                        
-                        // Navigate directly to OTP screen (no backend call)
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => OtpScreen(mobileNumber: "+91$phoneNumber"),
-                          ),
-                        );
+                text: _isSending ? context.l10n.sendingLabel : context.l10n.sendOtp,
+                onPressed: (_mobileController.text.length >= 10 && !_isSending)
+                    ? () async {
+                        final raw = _mobileController.text.trim();
+                        final phone = "+91$raw";
+
+                        setState(() => _isSending = true);
+                        try {
+                          await _authService.sendOTP(phone);
+                          if (!context.mounted) return;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => OtpScreen(mobileNumber: phone)),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+
+                          final message = (e is AuthApiException)
+                              ? e.message
+                              : e.toString();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${context.l10n.failedToSendOtp}\n'
+                                '$message\n\n'
+                                '${context.l10n.checkSupabasePhoneConfig}',
+                              ),
+                            ),
+                          );
+                        } finally {
+                          if (mounted) setState(() => _isSending = false);
+                        }
                       }
-                    : () {}, // Empty function when disabled
+                    : () {},
                 backgroundColor: _mobileController.text.length >= 10 
                     ? AppColors.primaryBlue 
                     : AppColors.greyOutline,

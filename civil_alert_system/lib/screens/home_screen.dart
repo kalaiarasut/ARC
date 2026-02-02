@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'report_screen.dart';
 import 'map_screen.dart';
 import '../services/offline_report_queue_service.dart';
 import 'profile_screen.dart';
 import 'updates_screen.dart';
+import 'settings_screen.dart';
+import '../models/official_advisory.dart';
+import '../services/advisory_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,12 +21,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  String _userName = "User";
+  String _userName = '';
+  OfficialAdvisory? _latestAdvisory;
+  List<OfficialAdvisory> _liveAdvisories = const [];
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _loadLatestAdvisory();
+    _loadLiveAdvisories();
   }
 
   Future<void> _loadUserName() async {
@@ -31,6 +39,34 @@ class _HomeScreenState extends State<HomeScreen> {
     if (name != null && mounted) {
       setState(() => _userName = name);
     }
+  }
+
+  Future<void> _loadLatestAdvisory() async {
+    try {
+      final items = await AdvisoryService().getLatest(limit: 1);
+      if (!mounted) return;
+      setState(() => _latestAdvisory = items.isNotEmpty ? items.first : null);
+    } catch (_) {
+      // Ignore offline / network errors.
+    }
+  }
+
+  Future<void> _loadLiveAdvisories() async {
+    try {
+      final items = await AdvisoryService().getLatest(limit: 10);
+      if (!mounted) return;
+      setState(() => _liveAdvisories = items);
+    } catch (_) {
+      // Ignore offline / network errors.
+    }
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    return '${diff.inDays} days ago';
   }
 
   @override
@@ -56,15 +92,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Hi, Welcome 👋",
+                        Text(
+                          context.l10n.hiWelcome,
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
                         ),
                         Text(
-                          _userName,
+                          _userName.isEmpty ? context.l10n.user : _userName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -79,20 +117,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (context, box, _) {
                       final count = box.length;
                       if (count == 0) return const SizedBox.shrink();
-                      return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.warning.withOpacity(0.35)),
-                        ),
-                        child: Text(
-                          '$count pending',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                      return Flexible(
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+                          ),
+                          child: Text(
+                            context.l10n.pendingCount(count),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
                       );
@@ -101,6 +143,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildHeaderIcon(Icons.search),
                   const SizedBox(width: 8),
                   _buildHeaderIcon(Icons.notifications_outlined, hasBadge: true),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      );
+                    },
+                    child: _buildHeaderIcon(Icons.settings_outlined),
+                  ),
                 ],
               ),
               
@@ -125,8 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Together for\nOcean Safety,\nStronger Together",
+                          Text(
+                            context.l10n.togetherForOceanSafety,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -153,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                               ),
-                              child: const Text("See Updates"),
+                              child: Text(context.l10n.seeUpdates),
                             ),
                           ),
                         ],
@@ -178,19 +230,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Unusual Activity 🔥", // Changed from Disaster Info to feel closer to "Report Hazard" theme
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      context.l10n.unusualActivity, // Changed from Disaster Info to feel closer to "Report Hazard" theme
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text(
-                      "See All",
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Text(
+                      context.l10n.seeAll,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -201,11 +257,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip("Now", true),
+                    _buildFilterChip(context.l10n.filterNow, true),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Last week", false),
+                    _buildFilterChip(context.l10n.filterLastWeek, false),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Last month", false),
+                    _buildFilterChip(context.l10n.filterLastMonth, false),
                   ],
                 ),
               ),
@@ -271,12 +327,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.map, color: Colors.white, size: 14),
-                                    SizedBox(width: 4),
+                                  children: [
+                                    const Icon(Icons.map, color: Colors.white, size: 14),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'View Map',
-                                      style: TextStyle(
+                                      context.l10n.mapTab,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -298,8 +354,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    "High Waves in Pacific Coast",
+                                  Text(
+                                    _latestAdvisory?.title ?? context.l10n.noUpdatesYet,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -308,14 +366,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
-                                    children: const [
-                                      Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                                      SizedBox(width: 4),
-                                      Text("Sun, 11 June 2024", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                      SizedBox(width: 12),
-                                      Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                                      SizedBox(width: 4),
-                                      Text("3 min ago", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                    children: [
+                                      const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _latestAdvisory != null
+                                            ? '${_latestAdvisory!.publishedAt.toLocal()}'.split(' ').first
+                                            : '--',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _latestAdvisory != null ? _timeAgo(_latestAdvisory!.publishedAt) : '--',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -343,35 +409,120 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   const Text(
-                    "Live News",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      context.l10n.liveNews,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "See All",
-                      style: TextStyle(color: AppColors.textSecondary),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                      );
+                    },
+                    child: Text(
+                      context.l10n.seeAll,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ],
               ),
 
-              SizedBox(
-                height: 120,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildNewsCard('https://images.unsplash.com/photo-1498354136128-58f7901945a9', '14K'),
-                    _buildNewsCard('https://images.unsplash.com/photo-1558486012-81714731dca9', '18K'),
-                    _buildNewsCard('https://images.unsplash.com/photo-1518837695005-2083093ee35b', '21K'),
-                  ],
+              if (_liveAdvisories.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    context.l10n.noUpdatesYet,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 140,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _liveAdvisories.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final a = _liveAdvisories[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                          );
+                        },
+                        child: Container(
+                          width: 220,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  a.severity.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                a.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (a.region != null && a.region!.trim().isNotEmpty)
+                                Text(
+                                  a.region!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              const Spacer(),
+                              Text(
+                                _timeAgo(a.publishedAt),
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -401,11 +552,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home_filled, "Home", 0),
-              _buildNavItem(Icons.map_outlined, "Map", 1),
+              Expanded(child: _buildNavItem(Icons.home_filled, context.l10n.homeTab, 0)),
+              Expanded(child: _buildNavItem(Icons.map_outlined, context.l10n.mapTab, 1)),
               const SizedBox(width: 48), // Space for FAB
-              _buildNavItem(Icons.article_outlined, "Updates", 2),
-              _buildNavItem(Icons.person_outline, "Profile", 3),
+              Expanded(child: _buildNavItem(Icons.article_outlined, context.l10n.updatesTab, 2)),
+              Expanded(child: _buildNavItem(Icons.person_outline, context.l10n.profileTab, 3)),
             ],
           ),
         ),
@@ -467,45 +618,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNewsCard(String imageUrl, String views) {
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.remove_red_eye, color: Colors.white, size: 12),
-                  const SizedBox(width: 4),
-                  Text(
-                    views,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
     return InkWell(
@@ -541,6 +653,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: TextStyle(
               fontSize: 10,
                color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,

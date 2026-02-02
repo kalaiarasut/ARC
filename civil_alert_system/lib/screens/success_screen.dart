@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import 'user_details_screen.dart';
@@ -58,8 +59,8 @@ class SuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 
-                const Text(
-                  "You've signed in\nsuccessfully",
+                Text(
+                  context.l10n.signedInSuccessfully,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
@@ -70,8 +71,8 @@ class SuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                const Text(
-                  "Please wait while we direct you to the dashboard...",
+                Text(
+                  context.l10n.directingToDashboard,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -84,12 +85,12 @@ class SuccessScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    text: "Continue",
+                    text: context.l10n.continueLabel,
                     backgroundColor: AppColors.primaryBlue, // Deep Sea Blue
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (_) => const UserDetailsScreen()),
+                        MaterialPageRoute(builder: (_) => const UserDetailsScreen(isOnboarding: true)),
                         (route) => false,
                       );
                     },

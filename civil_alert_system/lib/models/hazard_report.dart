@@ -140,6 +140,30 @@ class HazardReport {
     );
   }
 
+  /// Create from privacy-safe RPC response.
+  ///
+  /// This is used for public viewing of VERIFIED reports where RLS prevents
+  /// direct SELECT from `hazard_reports`.
+  factory HazardReport.fromPublicJson(Map<String, dynamic> json) {
+    return HazardReport(
+      id: json['id']?.toString(),
+      userId: 'public',
+      userPhone: '',
+      userName: null,
+      hazardType: (json['hazard_type'] as String?) ?? 'Unknown',
+      description: (json['description'] as String?) ?? '',
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      isHighRisk: json['is_high_risk'] as bool? ?? false,
+      urgencyLevel: json['urgency_level'] as String?,
+      mediaUrls: json['media_urls'] != null ? List<String>.from(json['media_urls'] as List) : null,
+      uploadComplete: true,
+      status: (json['status'] as String?) ?? 'verified',
+      eventTime: DateTime.parse(json['event_time'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
   // Copy with modifications
   HazardReport copyWith({
     String? id,
