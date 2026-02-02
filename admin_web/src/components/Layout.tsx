@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 import React, { useState } from 'react';
 import { Box, CssBaseline, ThemeProvider, IconButton, Drawer } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-=======
-import React from 'react';
-import { Box, CssBaseline, ThemeProvider } from '@mui/material';
->>>>>>> origin/map
 import { theme } from '../theme';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 
@@ -14,7 +9,6 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-<<<<<<< HEAD
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = () => {
@@ -54,18 +48,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <Sidebar />
                 </Box>
 
-=======
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
-                <Sidebar />
->>>>>>> origin/map
                 <Box
                     component="main"
                     sx={{
                         flexGrow: 1,
-<<<<<<< HEAD
                         width: { xs: '100%', md: `calc(100vw - ${DRAWER_WIDTH}px)` },
                         height: '100vh',
                         overflow: 'auto',
@@ -92,14 +78,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         >
                             <MenuIcon />
                         </IconButton>
-=======
-                        marginLeft: `${DRAWER_WIDTH}px`,
-                        minHeight: '100vh',
-                        backgroundColor: '#FFFFFF',
-                    }}
-                >
-                    <Box sx={{ p: 4 }}>
->>>>>>> origin/map
                         {children}
                     </Box>
                 </Box>

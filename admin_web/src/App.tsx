@@ -2,8 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Reports } from './pages/Reports';
-<<<<<<< HEAD
 import { Login } from './pages/Login';
+import { MapView } from './pages/MapView';
 import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
@@ -18,27 +18,11 @@ function App() {
           {/* Protected routes with Layout */}
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/reports" element={<Layout><Reports /></Layout>} />
+          <Route path="/map" element={<Layout><MapView /></Layout>} />
           <Route path="*" element={<Login />} />
         </Routes>
       </Router>
     </AuthProvider>
-=======
-import { MapView } from './pages/MapView';
-
-function App() {
-  return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} /> {/* Default to Dashboard - Real-time map-based alert system */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/map" element={<MapView />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="*" element={<Dashboard />} />
-        </Routes>
-      </Layout>
-    </Router>
->>>>>>> origin/map
   );
 }
 
