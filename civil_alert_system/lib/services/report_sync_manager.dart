@@ -11,7 +11,7 @@ class ReportSyncManager {
   ReportSyncManager._();
 
   final ReportSyncService _syncService = ReportSyncService();
-  StreamSubscription<List<ConnectivityResult>>? _sub;
+  StreamSubscription<dynamic>? _sub;
 
   bool _started = false;
 
@@ -22,8 +22,17 @@ class ReportSyncManager {
     // Attempt a sync on startup.
     unawaited(_syncService.syncPendingReports().then((_) {}));
 
-    _sub = Connectivity().onConnectivityChanged.listen((result) {
-      if (result.contains(ConnectivityResult.none)) return;
+    final Stream<dynamic> connectivityStream = Connectivity().onConnectivityChanged as Stream<dynamic>;
+    _sub = connectivityStream.listen((result) {
+      // connectivity_plus has changed stream payload across versions.
+      // Support both: ConnectivityResult and List<ConnectivityResult>.
+      final bool isOffline = switch (result) {
+        ConnectivityResult r => r == ConnectivityResult.none,
+        List<ConnectivityResult> rs => rs.contains(ConnectivityResult.none),
+        _ => true,
+      };
+
+      if (isOffline) return;
       unawaited(_syncService.syncPendingReports().then((_) {}));
     });
   }

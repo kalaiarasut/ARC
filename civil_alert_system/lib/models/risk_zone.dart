@@ -32,7 +32,9 @@ class RiskZone {
       intensity: json['intensity'] as String,
       reportCount: json['report_count'] as int,
       intensityScore: (json['intensity_score'] as num).toDouble(),
-      calculatedAt: DateTime.parse(json['calculated_at'] as String),
+      calculatedAt: json['calculated_at'] != null
+          ? DateTime.parse(json['calculated_at'] as String)
+          : DateTime.now(),
       isCached: isCached,
     );
   }

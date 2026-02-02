@@ -20,9 +20,9 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserver {
   final MapController _mapController = MapController();
   LatLng? _userLocation;
+  double? _userAccuracyMeters;
   bool _isLoadingLocation = true;
   bool _showFilters = false;
-  bool _hasShownRiskZonePrompt = false;
   bool _isFetchingLocation = false;
   bool _hasPromptedForGps = false;
   bool _hasPromptedForPermissionSettings = false;
@@ -151,7 +151,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
   Future<void> _getUserLocation({bool promptForGpsIfOff = true}) async {
     if (_isFetchingLocation) return;
-    _isFetchingLocation = true;
+    if (mounted) {
+      setState(() => _isFetchingLocation = true);
+    } else {
+      _isFetchingLocation = true;
+    }
 
     try {
       // Step 1: Check if location services (GPS) are enabled
@@ -217,6 +221,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       final lastKnown = await Geolocator.getLastKnownPosition();
       if (lastKnown != null && mounted && _userLocation == null) {
         setState(() {
+          _userAccuracyMeters = lastKnown.accuracy;
           _userLocation = LatLng(lastKnown.latitude, lastKnown.longitude);
           ref.read(userLocationProvider.notifier).update(_userLocation);
           _isLoadingLocation = false;
@@ -230,6 +235,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       );
 
       setState(() {
+        _userAccuracyMeters = position.accuracy;
         _userLocation = LatLng(position.latitude, position.longitude);
         ref.read(userLocationProvider.notifier).update(_userLocation);
         _isLoadingLocation = false;
@@ -256,7 +262,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         }
       }
     } finally {
-      _isFetchingLocation = false;
+      if (mounted) {
+        setState(() => _isFetchingLocation = false);
+      } else {
+        _isFetchingLocation = false;
+      }
       if (mounted && _isLoadingLocation) {
         setState(() => _isLoadingLocation = false);
       }
@@ -288,51 +298,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
-  Future<void> _showRiskZonePrompt() async {
-    if (_hasShownRiskZonePrompt) return;
-    _hasShownRiskZonePrompt = true;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: AppColors.warning),
-            SizedBox(width: 12),
-            Text('Enable Risk Zones?'),
-          ],
-        ),
-        content: const Text(
-          'Risk zones show areas with clustered hazard reports. '
-          'This helps visualize danger hotspots on the map.\n\n'
-          'You can toggle this anytime from the filter menu.',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Enable'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true && mounted) {
-      ref.read(mapFiltersProvider.notifier).update(
-        ref.read(mapFiltersProvider).copyWith(showRiskZones: true));
-      _updateMapData();
-    }
-  }
+  // Risk zone prompting intentionally deferred until admin/dashboard work is ready.
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +407,20 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
               // User location marker
               if (_userLocation != null)
+                CircleLayer(
+                  circles: [
+                    if (_userAccuracyMeters != null)
+                      CircleMarker(
+                        point: _userLocation!,
+                        // Clamp to avoid massive circles on bad GPS.
+                        radius: (_userAccuracyMeters!.clamp(10, 1000)).toDouble(),
+                        useRadiusInMeter: true,
+                        color: AppColors.primaryBlue.withOpacity(0.12),
+                        borderColor: AppColors.primaryBlue.withOpacity(0.25),
+                        borderStrokeWidth: 1.5,
+                      ),
+                  ],
+                ),
                 MarkerLayer(
                   markers: [
                     Marker(
@@ -653,10 +633,19 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
             bottom: mapState.selectedMarker != null ? 280 : 100,
             right: 16,
             child: FloatingActionButton(
-              onPressed: _refreshUserLocationAndCenter,
-              backgroundColor: Colors.white,
+              onPressed: _isFetchingLocation ? null : _refreshUserLocationAndCenter,
+              backgroundColor: _isFetchingLocation ? Colors.grey[200] : Colors.white,
               elevation: 4,
-              child: const Icon(Icons.my_location, color: AppColors.primaryBlue),
+              child: _isFetchingLocation
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.primaryBlue,
+                      ),
+                    )
+                  : const Icon(Icons.my_location, color: AppColors.primaryBlue),
             ),
           ),
 

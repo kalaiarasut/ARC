@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'package:latlong2/latlong.dart';
 import '../core/location_privacy.dart';
 import 'map_marker_data.dart';
 
@@ -182,7 +183,9 @@ class HazardReport {
 
   /// Convert to map marker with reduced precision for privacy
   MapMarkerData toMapMarker({bool isOwnReport = false}) {
-    final reducedLocation = LocationPrivacy.reducePrecision(latitude, longitude);
+    final LatLng reducedLocation = isOwnReport
+        ? LatLng(latitude, longitude)
+        : LocationPrivacy.reducePrecision(latitude, longitude);
     return MapMarkerData(
       id: id ?? clientId,
       location: reducedLocation,

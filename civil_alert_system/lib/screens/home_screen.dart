@@ -6,6 +6,7 @@ import 'report_screen.dart';
 import 'map_screen.dart';
 import '../services/offline_report_queue_service.dart';
 import 'profile_screen.dart';
+import 'updates_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final String _selectedFilter = "Now";
   String _userName = "User";
 
   @override
@@ -139,7 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 36,
                             child: ElevatedButton(
                               onPressed: () {
-                                // Navigate to Donate or Info
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                                  );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryBlue,
@@ -517,6 +520,11 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UpdatesScreen()),
           );
         } else {
           setState(() => _selectedIndex = index);

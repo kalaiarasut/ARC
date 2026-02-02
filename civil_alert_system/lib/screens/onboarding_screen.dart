@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../theme/app_colors.dart';
-import '../widgets/primary_button.dart';
 import 'language_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {

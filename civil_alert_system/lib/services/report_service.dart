@@ -108,6 +108,23 @@ class ReportService {
         .toList();
   }
 
+  /// Fetch the authenticated user's own reports (for Profile page)
+  Future<List<HazardReport>> getMyReports({
+    required String userId,
+    int limit = 50,
+  }) async {
+    final response = await _supabase
+        .from('hazard_reports')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((json) => HazardReport.fromJson(json))
+        .toList();
+  }
+
   /// Get reports near a location (using PostGIS)
   Future<List<HazardReport>> getReportsNearLocation({
     required double latitude,

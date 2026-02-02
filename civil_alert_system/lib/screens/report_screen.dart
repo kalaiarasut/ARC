@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +32,7 @@ class _ReportScreenState extends State<ReportScreen> {
   String _selectedHazard = '';
   Position? _currentPosition;
   DateTime _timestamp = DateTime.now();
-  List<XFile> _selectedMedia = [];
+  final List<XFile> _selectedMedia = [];
   bool _isHighRisk = false;
   int _peopleAtRisk = 0;
   String _urgencyLevel = 'Medium';
@@ -176,6 +177,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _pickFromCamera() async {
     final granted = await _requestMediaPermission(ImageSource.camera);
+    if (!mounted) return;
     if (!granted) return;
 
     try {
@@ -201,6 +203,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _pickFromGallery() async {
     final granted = await _requestMediaPermission(ImageSource.gallery);
+    if (!mounted) return;
     if (!granted) return;
 
     try {
@@ -231,6 +234,114 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _selectedMedia.removeAt(index));
   }
 
+  bool _isImage(XFile file) {
+    final mt = file.mimeType;
+    if (mt != null && mt.startsWith('image/')) return true;
+    final lower = file.name.toLowerCase();
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic');
+  }
+
+  bool _isVideo(XFile file) {
+    final mt = file.mimeType;
+    if (mt != null && mt.startsWith('video/')) return true;
+    final lower = file.name.toLowerCase();
+    return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.mkv');
+  }
+
+  bool _isAudio(XFile file) {
+    final mt = file.mimeType;
+    if (mt != null && mt.startsWith('audio/')) return true;
+    final lower = file.name.toLowerCase();
+    return lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.aac');
+  }
+
+  Future<void> _pickVideoFromCamera() async {
+    final granted = await _requestMediaPermission(ImageSource.camera);
+    if (!mounted) return;
+    if (!granted) return;
+
+    try {
+      if (_selectedMedia.length >= _maxAttachments) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+        );
+        return;
+      }
+
+      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      if (video != null) {
+        setState(() => _selectedMedia.add(video));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking video: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickVideoFromGallery() async {
+    final granted = await _requestMediaPermission(ImageSource.gallery);
+    if (!mounted) return;
+    if (!granted) return;
+
+    try {
+      if (_selectedMedia.length >= _maxAttachments) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+        );
+        return;
+      }
+
+      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (video != null) {
+        setState(() => _selectedMedia.add(video));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking video: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickAudioFile() async {
+    try {
+      if (_selectedMedia.length >= _maxAttachments) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+        );
+        return;
+      }
+
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['mp3', 'wav', 'm4a', 'aac'],
+      );
+
+      final file = result?.files.single;
+      final filePath = file?.path;
+      if (filePath == null) return;
+
+      final name = file?.name ?? path.basename(filePath);
+      setState(() {
+        _selectedMedia.add(XFile(filePath, name: name));
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking audio: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _pickEventTime() async {
     final date = await showDatePicker(
       context: context,
@@ -246,7 +357,7 @@ class _ReportScreenState extends State<ReportScreen> {
       initialTime: TimeOfDay.fromDateTime(_timestamp),
     );
 
-    if (time == null) return;
+    if (time == null || !mounted) return;
 
     setState(() {
       _timestamp = DateTime(date.year, date.month, date.day, time.hour, time.minute);
@@ -367,7 +478,10 @@ class _ReportScreenState extends State<ReportScreen> {
               ],
             ),
           );
-          if (go == true && mounted) {
+
+          if (!mounted) throw Exception('Missing phone number');
+
+          if (go == true) {
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const UserDetailsScreen()),
@@ -680,6 +794,40 @@ class _ReportScreenState extends State<ReportScreen> {
               ],
             ),
 
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMediaButton(
+                    Icons.videocam,
+                    'Video',
+                    _pickVideoFromCamera,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMediaButton(
+                    Icons.video_library,
+                    'Video',
+                    _pickVideoFromGallery,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMediaButton(
+                    Icons.mic,
+                    'Audio',
+                    _pickAudioFile,
+                  ),
+                ),
+              ],
+            ),
+
             if (_selectedMedia.isNotEmpty) ...[
               const SizedBox(height: 12),
               SizedBox(
@@ -688,18 +836,50 @@ class _ReportScreenState extends State<ReportScreen> {
                   scrollDirection: Axis.horizontal,
                   itemCount: _selectedMedia.length,
                   itemBuilder: (context, index) {
+                    final item = _selectedMedia[index];
+                    final isImg = _isImage(item);
+                    final isVid = _isVideo(item);
+                    final isAud = _isAudio(item);
+
+                    final icon = isVid
+                        ? Icons.videocam
+                        : (isAud ? Icons.audiotrack : Icons.insert_drive_file);
+
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: Stack(
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(_selectedMedia[index].path),
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                            ),
+                            child: isImg
+                                ? Image.file(
+                                    File(item.path),
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: const Color(0xFFEFF3F6),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(icon, color: AppColors.primaryBlue),
+                                        const SizedBox(height: 4),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                                          child: Text(
+                                            item.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                           ),
                           Positioned(
                             top: 4,

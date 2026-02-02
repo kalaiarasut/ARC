@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/supabase_config.dart';
+import '../models/hazard_report.dart';
 import '../services/offline_report_queue_service.dart';
 import '../services/report_sync_service.dart';
+import '../services/report_service.dart';
 import '../theme/app_colors.dart';
 import 'user_details_screen.dart';
 
@@ -19,6 +22,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _phone;
 
   final ReportSyncService _syncService = ReportSyncService();
+  final ReportService _reportService = ReportService();
+
+  Future<List<HazardReport>>? _myReportsFuture;
 
   @override
   void initState() {
@@ -32,6 +38,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _name = prefs.getString('user_name');
       _phone = prefs.getString('user_phone');
+    });
+
+    _refreshMyReports();
+  }
+
+  void _refreshMyReports() {
+    final userId = SupabaseConfig.client.auth.currentUser?.id;
+    if (userId == null) {
+      setState(() => _myReportsFuture = Future.value(const []));
+      return;
+    }
+
+    setState(() {
+      _myReportsFuture = _reportService.getMyReports(userId: userId);
     });
   }
 
@@ -49,6 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: result.failed == 0 ? AppColors.success : AppColors.warning,
       ),
     );
+
+    _refreshMyReports();
   }
 
   @override
@@ -228,6 +250,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                                 ),
                               ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'My Reports',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 220,
+              child: FutureBuilder<List<HazardReport>>(
+                future: _myReportsFuture,
+                builder: (context, snapshot) {
+                  final data = snapshot.data;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Failed to load reports: ${snapshot.error}',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    );
+                  }
+                  if (data == null || data.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No uploaded reports yet',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: data.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final report = data[index];
+                      final hazardType = report.hazardType;
+                      final status = report.status;
+                      final createdAt = report.createdAt;
+
+                      final statusColor = status == 'verified'
+                          ? AppColors.success
+                          : (status == 'resolved' ? AppColors.secondaryCyan : AppColors.warning);
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(hazardType, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${createdAt.toLocal()}'.split('.').first,
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                status,
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+                              ),
                             ),
                           ],
                         ),

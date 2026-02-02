@@ -200,12 +200,11 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                 text: "Continue",
                 onPressed: () async {
                   await ref.read(languageProvider.notifier).setLanguage(_selectedLanguage);
-                  if (mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  }
+                  if (!context.mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
                 },
               ),
             ),

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import '../core/supabase_config.dart';
-import '../models/hazard_report.dart';
 import '../models/risk_zone.dart';
 import '../models/map_marker_data.dart';
 
@@ -43,18 +43,34 @@ class MapService {
         },
       );
 
-      final reports = (response as List)
-          .map((json) => HazardReport.fromJson(json))
-          .toList();
+      // RPC returns a privacy-safe shape, not a full HazardReport.
+      return (response as List).map((row) {
+        final json = row as Map<String, dynamic>;
+        final id = json['id'] as String;
+        final hazardType = json['hazard_type'] as String;
+        final urgencyLevel = (json['urgency_level'] as String?) ?? 'Low';
+        final latitude = (json['latitude'] as num).toDouble();
+        final longitude = (json['longitude'] as num).toDouble();
+        final isHighRisk = json['is_high_risk'] as bool? ?? false;
 
-      // Convert to map markers with privacy protection
-      return reports.map((report) {
-        final isOwnReport = currentUserId != null && report.userId == currentUserId;
-        return report.toMapMarker(isOwnReport: isOwnReport);
+        // Prefer event_time; fall back to created_at.
+        final tsRaw = (json['event_time'] ?? json['created_at']) as String;
+        final timestamp = DateTime.parse(tsRaw);
+
+        return MapMarkerData(
+          id: id,
+          location: LatLng(latitude, longitude),
+          hazardType: hazardType,
+          urgencyLevel: urgencyLevel,
+          timestamp: timestamp,
+          isHighRisk: isHighRisk,
+          // Own-report highlighting comes from a different RPC (get_user_reports_on_map)
+          // so leave false here.
+          isOwnReport: false,
+        );
       }).toList();
     } catch (e) {
       // Offline or network error - return empty list for graceful degradation
-      print('Error fetching reports in bounds: $e');
       return [];
     }
   }
@@ -82,7 +98,6 @@ class MapService {
           .map((json) => RiskZone.fromJson(json, isCached: true))
           .toList();
     } catch (e) {
-      print('Error fetching cached risk zones: $e');
       return [];
     }
   }
@@ -99,7 +114,6 @@ class MapService {
     if (_lastOnDemandCalculation != null) {
       final timeSinceLastCalc = DateTime.now().difference(_lastOnDemandCalculation!);
       if (timeSinceLastCalc < _onDemandCooldown) {
-        print('Rate limit: Please wait ${_onDemandCooldown.inSeconds}s between calculations');
         return [];
       }
     }
@@ -120,7 +134,6 @@ class MapService {
           .map((json) => RiskZone.fromJson(json, isCached: false))
           .toList();
     } catch (e) {
-      print('Error calculating risk zones on-demand: $e');
       return [];
     }
   }
@@ -140,14 +153,29 @@ class MapService {
         },
       );
 
-      final reports = (response as List)
-          .map((json) => HazardReport.fromJson(json))
-          .toList();
+      // RPC returns a limited, safe shape. Convert directly.
+      return (response as List).map((row) {
+        final json = row as Map<String, dynamic>;
+        final id = json['id'] as String;
+        final hazardType = json['hazard_type'] as String;
+        final urgencyLevel = (json['urgency_level'] as String?) ?? 'Low';
+        final latitude = (json['latitude'] as num).toDouble();
+        final longitude = (json['longitude'] as num).toDouble();
+        final isHighRisk = json['is_high_risk'] as bool? ?? false;
+        final tsRaw = (json['event_time'] ?? json['created_at']) as String;
+        final timestamp = DateTime.parse(tsRaw);
 
-      // All reports from this call are own reports
-      return reports.map((report) => report.toMapMarker(isOwnReport: true)).toList();
+        return MapMarkerData(
+          id: id,
+          location: LatLng(latitude, longitude),
+          hazardType: hazardType,
+          urgencyLevel: urgencyLevel,
+          timestamp: timestamp,
+          isHighRisk: isHighRisk,
+          isOwnReport: true,
+        );
+      }).toList();
     } catch (e) {
-      print('Error fetching user reports: $e');
       return [];
     }
   }
