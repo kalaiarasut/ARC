@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -49,6 +49,8 @@ import {
 } from '@mui/icons-material';
 
 import { landmarkService } from '../services/landmarkService';
+import { hazardService } from '../services/hazardService';
+import { isSupabaseConfigured } from '../core/supabase_config';
 import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus } from '../types/hazard';
 import type { Landmark } from '../types/landmark';
 import { LandmarkManager } from '../components/LandmarkManager';
@@ -59,108 +61,11 @@ const HAZARD_TYPES: HazardType[] = ['High Waves', 'Tsunami', 'Storm', 'Flood', '
 const URGENCY_LEVELS: UrgencyLevel[] = ['Low', 'Medium', 'High'];
 const STATUSES: ReportStatus[] = ['pending', 'verified', 'resolved'];
 
-const STATIC_REPORTS: HazardReport[] = [
-  {
-    id: '1',
-    client_id: 'client_123',
-    user_id: 'user_456',
-    user_phone: '9876543210',
-    user_name: 'John Citizen',
-    hazard_type: 'High Waves',
-    description: 'Observed dangerously high waves exceeding 3 meters near the fishing harbor. Several boats are at risk.',
-    latitude: 13.0827,
-    longitude: 80.2707, // Chennai
-    is_high_risk: true,
-    people_at_risk: 15,
-    urgency_level: 'High',
-    media_urls: [],
-    upload_complete: true,
-    status: 'pending',
-    event_time: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    client_id: 'client_124',
-    user_id: 'user_457',
-    user_phone: '9123456780',
-    user_name: 'Sarah Connor',
-    hazard_type: 'Flood',
-    description: 'Main road blocked due to water logging from heavy rains. Traffic moving very slowly.',
-    latitude: 12.9716,
-    longitude: 77.5946, // Bangalore
-    is_high_risk: false,
-    people_at_risk: null,
-    urgency_level: 'Medium',
-    media_urls: [],
-    upload_complete: true,
-    status: 'verified',
-    event_time: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    client_id: 'client_125',
-    user_id: 'user_458',
-    user_phone: '8888888888',
-    user_name: 'Mike Smith',
-    hazard_type: 'Storm',
-    description: 'Strong winds knocking down trees in the residential area. Power lines might be affected.',
-    latitude: 19.0760,
-    longitude: 72.8777, // Mumbai
-    is_high_risk: true,
-    people_at_risk: 5,
-    urgency_level: 'High',
-    media_urls: [],
-    upload_complete: true,
-    status: 'resolved',
-    event_time: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: '4',
-    client_id: 'client_126',
-    user_id: 'user_459',
-    user_phone: '7777777777',
-    user_name: null,
-    hazard_type: 'Other',
-    description: 'Strange structural noise from the bridge.',
-    latitude: 28.6139,
-    longitude: 77.2090, // Delhi
-    is_high_risk: false,
-    people_at_risk: null,
-    urgency_level: 'Low',
-    media_urls: [],
-    upload_complete: true,
-    status: 'pending',
-    event_time: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: '5',
-    client_id: 'client_127',
-    user_id: 'user_460',
-    user_phone: '9988776655',
-    user_name: 'Fisherman Joe',
-    hazard_type: 'Tsunami',
-    description: 'Receding water levels observed significantly. Potential tsunami warning signs.',
-    latitude: 9.9252,
-    longitude: 78.1198, // Madurai/Coastal ref (approx)
-    is_high_risk: true,
-    people_at_risk: 100,
-    urgency_level: 'High',
-    media_urls: [],
-    upload_complete: true,
-    status: 'verified',
-    event_time: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  }
-];
-
 export function Reports() {
   const [reports, setReports] = useState<HazardReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -187,77 +92,77 @@ export function Reports() {
       setLoading(true);
       setError(null);
 
-      // STATIC DATA MOCK
-      console.log('Loading static reports...');
-
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const data = STATIC_REPORTS;
-
-      // Apply landmark filtering if selected (Logic preserved from original)
-      let filteredData = data;
-      if (filters.landmarkId) {
-        const landmark = landmarks.find(l => l.id === filters.landmarkId);
-        if (landmark) {
-          const radius = filters.landmarkRadius || landmark.radius || 5000;
-          filteredData = data.filter(report =>
-            landmarkService.isWithinLandmark(
-              report.latitude,
-              report.longitude,
-              landmark,
-              radius
-            )
-          );
-        }
-      }
-      // Simple client-side search filter implementation for static data
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        filteredData = filteredData.filter(r =>
-          r.description.toLowerCase().includes(query) ||
-          r.user_name?.toLowerCase().includes(query) ||
-          r.hazard_type.toLowerCase().includes(query)
-        );
+      if (!isSupabaseConfigured()) {
+        setReports([]);
+        setTotalCount(0);
+        setError('Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in admin_web/.env.local and restart the dev server.');
+        return;
       }
 
-      // Filter by Hazard Type
-      if (filters.hazardTypes && filters.hazardTypes.length > 0) {
-        filteredData = filteredData.filter(r => filters.hazardTypes!.includes(r.hazard_type));
+      // If landmark filter is active, we can't do geo filtering in SQL (without PostGIS).
+      // Fetch a larger set from Supabase, apply landmark filter client-side, then paginate client-side.
+      const isLandmarkFilterActive = !!filters.landmarkId;
+
+      const { data, total } = await hazardService.getReportsWithCount(
+        filters,
+        page,
+        rowsPerPage,
+        isLandmarkFilterActive ? { fetchAll: true, maxRows: 5000 } : undefined
+      );
+
+      if (!isLandmarkFilterActive) {
+        setReports(data);
+        setTotalCount(total);
+        return;
       }
 
-      // Filter by Status
-      if (filters.statuses && filters.statuses.length > 0) {
-        filteredData = filteredData.filter(r => filters.statuses!.includes(r.status));
+      const landmark = landmarks.find((l) => l.id === filters.landmarkId);
+      if (!landmark) {
+        setReports([]);
+        setTotalCount(0);
+        return;
       }
 
-      // Filter by Urgency
-      if (filters.urgencyLevels && filters.urgencyLevels.length > 0) {
-        filteredData = filteredData.filter(r => r.urgency_level && filters.urgencyLevels!.includes(r.urgency_level));
-      }
+      const radius = filters.landmarkRadius || landmark.radius || 5000;
+      const landmarkFiltered = data.filter((report) =>
+        landmarkService.isWithinLandmark(report.latitude, report.longitude, landmark, radius)
+      );
 
-      // Filter by Risk
-      if (filters.isHighRisk !== null && filters.isHighRisk !== undefined) {
-        filteredData = filteredData.filter(r => r.is_high_risk === filters.isHighRisk);
-      }
-
-      // Filter by Media
-      if (filters.hasMedia !== null && filters.hasMedia !== undefined) {
-        if (filters.hasMedia) {
-          filteredData = filteredData.filter(r => r.media_urls && r.media_urls.length > 0);
-        } else {
-          filteredData = filteredData.filter(r => !r.media_urls || r.media_urls.length === 0);
-        }
-      }
-
-      setReports(filteredData);
+      setTotalCount(landmarkFiltered.length);
+      const startIndex = page * rowsPerPage;
+      const endIndex = startIndex + rowsPerPage;
+      setReports(landmarkFiltered.slice(startIndex, endIndex));
     } catch (err) {
-      setError('Failed to load reports.');
+      setError('Failed to load reports from Supabase.');
       console.error(err);
+      setReports([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
   };
+
+  // Keep a ref to the latest loadReports implementation so realtime callbacks
+  // always use current filters/pagination without re-subscribing.
+  const loadReportsRef = useRef(loadReports);
+  useEffect(() => {
+    loadReportsRef.current = loadReports;
+  });
+
+  // Realtime updates: refresh on new reports.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    const channel = hazardService.subscribeToReports(() => {
+      loadReportsRef.current();
+    });
+
+    return () => {
+      channel.unsubscribe();
+    };
+    // Subscribe once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     loadReports();
@@ -394,7 +299,7 @@ export function Reports() {
           )}
 
           <Grid container spacing={2} alignItems="center">
-            <Grid xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <TextField
                 fullWidth
                 placeholder="Search by description, location, or user name..."
@@ -420,7 +325,7 @@ export function Reports() {
                 }}
               />
             </Grid>
-            <Grid xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Stack direction="row" spacing={2}>
                 <Button
                   fullWidth
@@ -606,7 +511,7 @@ export function Reports() {
           </TableContainer>
           <TablePagination
             component="div"
-            count={-1}
+            count={totalCount}
             page={page}
             onPageChange={(_, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}
@@ -878,7 +783,7 @@ export function Reports() {
 
                   {/* Location */}
                   <Grid container spacing={2}>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Latitude
                       </Typography>
@@ -886,7 +791,7 @@ export function Reports() {
                         {selectedReport.latitude.toFixed(6)}°N
                       </Typography>
                     </Grid>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Longitude
                       </Typography>
@@ -913,7 +818,7 @@ export function Reports() {
 
                   {/* User Info */}
                   <Grid container spacing={2}>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Reporter Name
                       </Typography>
@@ -921,7 +826,7 @@ export function Reports() {
                         {selectedReport.user_name || 'Anonymous'}
                       </Typography>
                     </Grid>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Phone Number
                       </Typography>
@@ -933,7 +838,7 @@ export function Reports() {
 
                   {/* Timestamps */}
                   <Grid container spacing={2}>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Event Time
                       </Typography>
@@ -941,7 +846,7 @@ export function Reports() {
                         {format(new Date(selectedReport.event_time), 'PPpp')}
                       </Typography>
                     </Grid>
-                    <Grid xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Reported At
                       </Typography>
