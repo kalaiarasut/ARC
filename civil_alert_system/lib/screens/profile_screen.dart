@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
@@ -13,8 +12,6 @@ import '../services/report_sync_service.dart';
 import '../services/report_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
-import 'settings_screen.dart';
-import 'user_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,9 +21,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String? _name;
-  String? _phone;
-
   final ReportSyncService _syncService = ReportSyncService();
   final ReportService _reportService = ReportService();
 
@@ -39,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _initConnectivity();
-    _loadProfile();
+    _refreshMyReports();
   }
 
   Future<void> _initConnectivity() async {
@@ -64,17 +58,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _name = prefs.getString('user_name');
-      _phone = prefs.getString('user_phone');
-    });
-
-    _refreshMyReports();
-  }
-
   void _refreshMyReports() {
     final userId = SupabaseConfig.client.auth.currentUser?.id;
     if (userId == null) {
@@ -94,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _syncNow() async {
-    final result = await _syncService.syncPendingReports();
+    final result = await _syncService.syncPendingReports(force: true);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -113,9 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = (_name == null || _name!.trim().isEmpty) ? context.l10n.user : _name!.trim();
-    final phone = _phone?.trim();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
@@ -129,67 +109,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           context.l10n.profileAndReports,
           style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.primaryBlue,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          (phone == null || phone.isEmpty) ? context.l10n.phoneNotSet : phone,
-                          style: const TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UserDetailsScreen()),
-                      );
-                      await _loadProfile();
-                    },
-                    child: Text(context.l10n.edit),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -251,6 +176,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final description = report['description']?.toString() ?? '';
                       final attempts = (jobMap['attempts'] as num?)?.toInt() ?? 0;
                       final lastError = jobMap['lastError']?.toString();
+                      final lastErrorCode = jobMap['lastErrorCode']?.toString();
+                      final nextAttemptAtRaw = jobMap['nextAttemptAt']?.toString();
+                      final nextAttemptAt = nextAttemptAtRaw == null ? null : DateTime.tryParse(nextAttemptAtRaw);
+
+                      String friendlyReason(String? code) {
+                        switch (code) {
+                          case 'network':
+                            return "Network error";
+                          case 'timeout':
+                            return "Request timed out";
+                          case 'auth':
+                            return "Login required";
+                          case 'permission':
+                            return "Permission denied";
+                          case 'file_missing':
+                            return "Missing media file";
+                          case 'unknown':
+                          default:
+                            return "Upload failed";
+                        }
+                      }
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -285,11 +231,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             if (lastError != null && lastError.trim().isNotEmpty) ...[
                               const SizedBox(height: 8),
+                              if (lastErrorCode != null && lastErrorCode.trim().isNotEmpty)
+                                Text(
+                                  friendlyReason(lastErrorCode),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w700),
+                                ),
                               Text(
                                 lastError,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(color: AppColors.error, fontSize: 12),
+                              ),
+                            ],
+                            if (nextAttemptAt != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Next retry: ${nextAttemptAt.toLocal()}'.split('.').first,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
                             const SizedBox(height: 10),

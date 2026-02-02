@@ -3,7 +3,9 @@
 
   "appTitle": "சிவில் அலர்ட் அமைப்பு",
 
-  "profileAndReports": "சுயவிவரம் & அறிக்கைகள்",
+  "profile": "சுயவிவரம்",
+
+  "profileAndReports": "அறிக்கைகள்",
   "edit": "திருத்து",
   "user": "பயனர்",
   "phoneNotSet": "தொலைபேசி அமைக்கப்படவில்லை",
@@ -185,7 +187,7 @@
   "homeTab": "முகப்பு",
   "mapTab": "வரைபடம்",
   "updatesTab": "புதுப்பிப்புகள்",
-  "profileTab": "சுயவிவரம்",
+  "profileTab": "அறிக்கைகள்",
   "liveNews": "நேரடி செய்திகள்",
   "sampleHazardHeadline": "பசிபிக் கரையில் உயர்ந்த அலைகள்",
   "sampleDate": "ஞா, 11 ஜூன் 2024",

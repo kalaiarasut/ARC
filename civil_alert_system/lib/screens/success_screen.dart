@@ -90,7 +90,7 @@ class SuccessScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (_) => const UserDetailsScreen()),
+                        MaterialPageRoute(builder: (_) => const UserDetailsScreen(isOnboarding: true)),
                         (route) => false,
                       );
                     },

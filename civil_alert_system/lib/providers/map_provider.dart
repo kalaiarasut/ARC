@@ -98,6 +98,60 @@ class MapState {
 class MapNotifier extends Notifier<MapState> {
   final MapService _mapService = MapService();
 
+  bool _isWithinBounds(LatLng point, LatLngBounds bounds) {
+    return point.latitude >= bounds.south &&
+        point.latitude <= bounds.north &&
+        point.longitude >= bounds.west &&
+        point.longitude <= bounds.east;
+  }
+
+  bool _passesFilters(MapMarkerData marker, MapFilters? filters) {
+    if (filters == null) return true;
+
+    if (!filters.selectedHazardTypes.contains(marker.hazardType)) {
+      return false;
+    }
+
+    if (filters.showOnlyHighRisk && !marker.isHighRisk) {
+      return false;
+    }
+
+    final daysDiff = DateTime.now().difference(marker.timestamp).inDays;
+    if (daysDiff > filters.daysBack) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _loadOwnReportsForBounds({
+    required LatLngBounds bounds,
+    required String userId,
+    MapFilters? filters,
+  }) async {
+    try {
+      final own = await _mapService.getUserReportLocations(userId: userId, daysBack: filters?.daysBack ?? 30);
+      final ownInBounds = own
+          .where((m) => _isWithinBounds(m.location, bounds))
+          .where((m) => _passesFilters(m, filters))
+          .toList();
+
+      if (ownInBounds.isEmpty) return;
+
+      // Merge into existing markers, preferring own markers when IDs collide.
+      final merged = <String, MapMarkerData>{
+        for (final m in state.markers) m.id: m,
+      };
+      for (final m in ownInBounds) {
+        merged[m.id] = m;
+      }
+
+      state = state.copyWith(markers: merged.values.toList());
+    } catch (_) {
+      // Ignore failures (offline, RLS, etc.) and keep verified markers.
+    }
+  }
+
   @override
   MapState build() => MapState();
 
@@ -144,6 +198,13 @@ class MapNotifier extends Notifier<MapState> {
             lastUpdated: DateTime.now(),
             isLoading: false,
           );
+
+          // Overlay current user's own report locations (full precision) if available.
+          if (currentUserId != null && currentUserId.isNotEmpty) {
+            // Fire-and-forget: keep UI responsive.
+            // ignore: discarded_futures
+            _loadOwnReportsForBounds(bounds: bounds, userId: currentUserId, filters: filters);
+          }
         },
       );
 

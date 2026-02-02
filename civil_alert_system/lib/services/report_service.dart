@@ -223,4 +223,41 @@ class ReportService {
         .map((json) => HazardReport.fromJson(json))
         .toList();
   }
+
+  /// Fetch a single report that belongs to the authenticated user.
+  ///
+  /// This relies on RLS: "Users can view own reports".
+  Future<HazardReport> getOwnReportById({required String reportId}) async {
+    final response = await _supabase.from('hazard_reports').select().eq('id', reportId).single();
+    return HazardReport.fromJson(Map<String, dynamic>.from(response));
+  }
+
+  /// Fetch a privacy-safe, verified report detail view for public map.
+  ///
+  /// This requires a SECURITY DEFINER RPC (see `supabase/migrations/006_get_verified_report_details.sql`).
+  Future<HazardReport> getVerifiedReportDetailsById({required String reportId}) async {
+    final response = await _supabase.rpc(
+      'get_verified_report_details',
+      params: {
+        'report_uuid': reportId,
+      },
+    );
+
+    // Depending on client/runtime, RPC may return a single row as Map or as List<Map>.
+    Map<String, dynamic>? json;
+    if (response is Map) {
+      json = response.map((k, v) => MapEntry(k.toString(), v));
+    } else if (response is List && response.isNotEmpty) {
+      final first = response.first;
+      if (first is Map) {
+        json = first.map((k, v) => MapEntry(k.toString(), v));
+      }
+    }
+
+    if (json == null) {
+      throw Exception('No verified report details found');
+    }
+
+    return HazardReport.fromPublicJson(json);
+  }
 }

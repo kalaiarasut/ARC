@@ -8,6 +8,9 @@ import 'map_screen.dart';
 import '../services/offline_report_queue_service.dart';
 import 'profile_screen.dart';
 import 'updates_screen.dart';
+import 'settings_screen.dart';
+import '../models/official_advisory.dart';
+import '../services/advisory_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,11 +22,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   String _userName = '';
+  OfficialAdvisory? _latestAdvisory;
+  List<OfficialAdvisory> _liveAdvisories = const [];
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _loadLatestAdvisory();
+    _loadLiveAdvisories();
   }
 
   Future<void> _loadUserName() async {
@@ -32,6 +39,34 @@ class _HomeScreenState extends State<HomeScreen> {
     if (name != null && mounted) {
       setState(() => _userName = name);
     }
+  }
+
+  Future<void> _loadLatestAdvisory() async {
+    try {
+      final items = await AdvisoryService().getLatest(limit: 1);
+      if (!mounted) return;
+      setState(() => _latestAdvisory = items.isNotEmpty ? items.first : null);
+    } catch (_) {
+      // Ignore offline / network errors.
+    }
+  }
+
+  Future<void> _loadLiveAdvisories() async {
+    try {
+      final items = await AdvisoryService().getLatest(limit: 10);
+      if (!mounted) return;
+      setState(() => _liveAdvisories = items);
+    } catch (_) {
+      // Ignore offline / network errors.
+    }
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    return '${diff.inDays} days ago';
   }
 
   @override
@@ -108,6 +143,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildHeaderIcon(Icons.search),
                   const SizedBox(width: 8),
                   _buildHeaderIcon(Icons.notifications_outlined, hasBadge: true),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      );
+                    },
+                    child: _buildHeaderIcon(Icons.settings_outlined),
+                  ),
                 ],
               ),
               
@@ -310,7 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    context.l10n.sampleHazardHeadline,
+                                    _latestAdvisory?.title ?? context.l10n.noUpdatesYet,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -322,11 +369,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
                                       const SizedBox(width: 4),
-                                      Text(context.l10n.sampleDate, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                      Text(
+                                        _latestAdvisory != null
+                                            ? '${_latestAdvisory!.publishedAt.toLocal()}'.split(' ').first
+                                            : '--',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      ),
                                       const SizedBox(width: 12),
                                       const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
                                       const SizedBox(width: 4),
-                                      Text(context.l10n.sampleTimeAgo, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                      Text(
+                                        _latestAdvisory != null ? _timeAgo(_latestAdvisory!.publishedAt) : '--',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -367,7 +422,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                      );
+                    },
                     child: Text(
                       context.l10n.seeAll,
                       style: const TextStyle(color: AppColors.textSecondary),
@@ -376,17 +436,93 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
-              SizedBox(
-                height: 120,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildNewsCard('https://images.unsplash.com/photo-1498354136128-58f7901945a9', '14K'),
-                    _buildNewsCard('https://images.unsplash.com/photo-1558486012-81714731dca9', '18K'),
-                    _buildNewsCard('https://images.unsplash.com/photo-1518837695005-2083093ee35b', '21K'),
-                  ],
+              if (_liveAdvisories.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    context.l10n.noUpdatesYet,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 140,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _liveAdvisories.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final a = _liveAdvisories[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                          );
+                        },
+                        child: Container(
+                          width: 220,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  a.severity.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                a.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (a.region != null && a.region!.trim().isNotEmpty)
+                                Text(
+                                  a.region!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              const Spacer(),
+                              Text(
+                                _timeAgo(a.publishedAt),
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -475,45 +611,6 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               color: isSelected ? Colors.white : AppColors.textSecondary,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNewsCard(String imageUrl, String views) {
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.remove_red_eye, color: Colors.white, size: 12),
-                  const SizedBox(width: 4),
-                  Text(
-                    views,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
             ),
           ),
         ],

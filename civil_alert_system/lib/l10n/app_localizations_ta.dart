@@ -12,7 +12,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get appTitle => 'சிவில் அலர்ட் அமைப்பு';
 
   @override
-  String get profileAndReports => 'சுயவிவரம் & அறிக்கைகள்';
+  String get profile => 'சுயவிவரம்';
+
+  @override
+  String get profileAndReports => 'அறிக்கைகள்';
 
   @override
   String get edit => 'திருத்து';
@@ -502,7 +505,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get updatesTab => 'புதுப்பிப்புகள்';
 
   @override
-  String get profileTab => 'சுயவிவரம்';
+  String get profileTab => 'அறிக்கைகள்';
 
   @override
   String get liveNews => 'நேரடி செய்திகள்';

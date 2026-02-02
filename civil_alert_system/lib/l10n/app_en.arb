@@ -3,7 +3,9 @@
 
   "appTitle": "Civil Alert System",
 
-  "profileAndReports": "Profile & Reports",
+  "profile": "Profile",
+
+  "profileAndReports": "Reports",
   "edit": "Edit",
   "user": "User",
   "phoneNotSet": "Phone not set",
@@ -185,7 +187,7 @@
   "homeTab": "Home",
   "mapTab": "Map",
   "updatesTab": "Updates",
-  "profileTab": "Profile",
+  "profileTab": "Reports",
   "liveNews": "Live News",
   "sampleHazardHeadline": "High Waves in Pacific Coast",
   "sampleDate": "Sun, 11 June 2024",

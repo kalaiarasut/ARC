@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import 'about_transparency_screen.dart';
 import 'help_faq_screen.dart';
 import 'language_screen.dart';
+import 'login_screen.dart';
+import 'profile_module_screen.dart';
 import 'privacy_controls_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
@@ -32,6 +37,18 @@ class SettingsScreen extends StatelessWidget {
           _card(
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.person_outline, color: AppColors.primaryBlue),
+                  title: Text(context.l10n.profile),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileModuleScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.help_outline, color: AppColors.primaryBlue),
                   title: Text(context.l10n.helpFaq),
@@ -76,6 +93,61 @@ class SettingsScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const PrivacyControlsScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          _card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.logout, color: AppColors.error),
+                  title: const Text('Log out', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+                  onTap: () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Log out?'),
+                          content: const Text('You will need to verify your phone again to sign back in.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(context.l10n.cancel),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                              ),
+                              child: const Text('Log out'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (ok != true) return;
+
+                    // Sign out of Supabase
+                    await ref.read(authStateProvider.notifier).signOut();
+
+                    // Optional: keep onboarding complete but ensure Splash routes to login if signed out.
+                    // We still clear any cached phone number in preferences to avoid confusion in UI.
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('user_phone');
+
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (_) => false,
                     );
                   },
                 ),

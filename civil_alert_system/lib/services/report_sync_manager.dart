@@ -20,7 +20,7 @@ class ReportSyncManager {
     _started = true;
 
     // Attempt a sync on startup.
-    unawaited(_syncService.syncPendingReports().then((_) {}));
+    unawaited(_syncService.syncPendingReports(force: false).then((_) {}));
 
     final Stream<dynamic> connectivityStream = Connectivity().onConnectivityChanged as Stream<dynamic>;
     _sub = connectivityStream.listen((result) {
@@ -33,7 +33,7 @@ class ReportSyncManager {
       };
 
       if (isOffline) return;
-      unawaited(_syncService.syncPendingReports().then((_) {}));
+      unawaited(_syncService.syncPendingReports(force: false).then((_) {}));
     });
   }
 

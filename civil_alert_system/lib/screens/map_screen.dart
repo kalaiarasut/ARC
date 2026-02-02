@@ -8,8 +8,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
+import '../core/supabase_config.dart';
 import '../providers/map_provider.dart';
 import '../models/map_marker_data.dart';
+import 'report_details_screen.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -314,7 +316,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     
     ref.read(mapProvider.notifier).updateViewport(
       bounds,
-      currentUserId: null, // TODO: Get from auth provider
+      currentUserId: SupabaseConfig.client.auth.currentUser?.id,
       filters: filters,
     );
   }
@@ -731,28 +733,54 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   Widget _buildMarkerWidget(MapMarkerData marker) {
     return Column(
       children: [
-        Container(
+        SizedBox(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
-            color: Color(marker.urgencyColor),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: marker.isOwnReport ? AppColors.primaryBlue : Colors.white,
-              width: marker.isOwnReport ? 3 : 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Color(marker.urgencyColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: marker.isOwnReport ? AppColors.primaryBlue : Colors.white,
+                    width: marker.isOwnReport ? 3 : 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _getHazardIcon(marker.hazardType),
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
+              if (marker.isOwnReport)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryBlue, width: 2),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.person, size: 10, color: AppColors.primaryBlue),
+                    ),
+                  ),
+                ),
             ],
-          ),
-          child: Icon(
-            _getHazardIcon(marker.hazardType),
-            color: Colors.white,
-            size: 20,
           ),
         ),
         // Pointer triangle
@@ -932,7 +960,15 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       flex: 2,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Navigate to report details or report similar
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ReportDetailsScreen(
+                                reportId: marker.id,
+                                isOwnReport: marker.isOwnReport,
+                              ),
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.info_outline, size: 18),
                         label: Text(context.l10n.moreDetails),

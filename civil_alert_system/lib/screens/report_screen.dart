@@ -17,8 +17,8 @@ import '../models/hazard_report.dart';
 import '../services/report_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../core/supabase_config.dart';
-import 'user_details_screen.dart';
-import 'settings_screen.dart';
+import 'profile_module_screen.dart';
+import 'video_record_screen.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -348,7 +348,11 @@ class _ReportScreenState extends State<ReportScreen> {
         return;
       }
 
-      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      final XFile? video = await Navigator.push<XFile?>(
+        context,
+        MaterialPageRoute(builder: (_) => const VideoRecordScreen()),
+      );
+      if (!mounted) return;
       if (video != null) {
         setState(() => _selectedMedia.add(video));
       }
@@ -535,7 +539,7 @@ class _ReportScreenState extends State<ReportScreen> {
           if (go == true) {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const UserDetailsScreen()),
+              MaterialPageRoute(builder: (_) => const ProfileModuleScreen()),
             );
           }
         }
@@ -654,17 +658,6 @@ class _ReportScreenState extends State<ReportScreen> {
           context.l10n.reportHazard,
           style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

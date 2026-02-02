@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
@@ -34,7 +35,23 @@ class ReportSyncService {
     return !results.contains(ConnectivityResult.none);
   }
 
-  Future<ReportSyncResult> syncPendingReports() async {
+  String _classifyError(Object e) {
+    if (e is SocketException) return 'network';
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('jwt') || msg.contains('auth') || msg.contains('unauthorized') || msg.contains('not authenticated')) {
+      return 'auth';
+    }
+    if (msg.contains('rls') || msg.contains('permission denied') || msg.contains('not allowed')) {
+      return 'permission';
+    }
+    if (msg.contains('no such file') || msg.contains('file not found') || msg.contains('pathnotfound')) {
+      return 'file_missing';
+    }
+    if (msg.contains('timeout')) return 'timeout';
+    return 'unknown';
+  }
+
+  Future<ReportSyncResult> syncPendingReports({required bool force}) async {
     if (_isSyncing) {
       return const ReportSyncResult(attempted: 0, succeeded: 0, failed: 0);
     }
@@ -60,8 +77,18 @@ class ReportSyncService {
         final clientId = job['clientId'] as String?;
         final reportJson = job['report'];
         final mediaList = job['media'];
+        final attempts = (job['attempts'] as num?)?.toInt() ?? 0;
 
         if (clientId == null || reportJson is! Map) continue;
+
+        if (!force) {
+          if (attempts >= OfflineReportQueueService.maxAutoAttempts) {
+            continue;
+          }
+          if (!OfflineReportQueueService.isDue(job)) {
+            continue;
+          }
+        }
 
         attempted++;
         try {
@@ -115,7 +142,11 @@ class ReportSyncService {
           succeeded++;
         } catch (e) {
           failed++;
-          await OfflineReportQueueService.incrementAttempts(clientId, lastError: e.toString());
+          await OfflineReportQueueService.incrementAttempts(
+            clientId,
+            lastError: e.toString(),
+            lastErrorCode: _classifyError(e),
+          );
         }
       }
 

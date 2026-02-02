@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'l10n/app_localizations.dart';
 import 'core/supabase_config.dart';
 import 'providers/language_provider.dart';
+import 'services/android_workmanager_report_sync.dart';
 import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'theme/app_theme.dart';
@@ -23,6 +25,11 @@ void main() async {
 
   // Initialize Supabase
   await SupabaseConfig.initialize();
+
+  // Android-only periodic background sync (WorkManager)
+  if (Platform.isAndroid) {
+    await AndroidWorkmanagerReportSync.initialize(debug: false);
+  }
 
   // Start offline report sync (best-effort, no UI required)
   ReportSyncManager.instance.start();

@@ -104,10 +104,16 @@ abstract class AppLocalizations {
   /// **'Civil Alert System'**
   String get appTitle;
 
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
   /// No description provided for @profileAndReports.
   ///
   /// In en, this message translates to:
-  /// **'Profile & Reports'**
+  /// **'Reports'**
   String get profileAndReports;
 
   /// No description provided for @edit.
@@ -977,7 +983,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTab.
   ///
   /// In en, this message translates to:
-  /// **'Profile'**
+  /// **'Reports'**
   String get profileTab;
 
   /// No description provided for @liveNews.

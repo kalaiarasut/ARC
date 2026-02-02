@@ -12,7 +12,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Civil Alert System';
 
   @override
-  String get profileAndReports => 'Profile & Reports';
+  String get profile => 'Profile';
+
+  @override
+  String get profileAndReports => 'Reports';
 
   @override
   String get edit => 'Edit';
@@ -497,7 +500,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updatesTab => 'Updates';
 
   @override
-  String get profileTab => 'Profile';
+  String get profileTab => 'Reports';
 
   @override
   String get liveNews => 'Live News';

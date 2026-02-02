@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/supabase_config.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -40,13 +42,15 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(milliseconds: 2500), () async {
       final prefs = await SharedPreferences.getInstance();
       final isOnboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+      final isSignedIn = SupabaseConfig.client.auth.currentUser != null;
       
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => isOnboardingComplete 
-                ? const HomeScreen() 
-                : const OnboardingScreen(),
+            builder: (_) {
+              if (!isOnboardingComplete) return const OnboardingScreen();
+              return isSignedIn ? const HomeScreen() : const LoginScreen();
+            },
           ),
         );
       }
