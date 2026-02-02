@@ -38,6 +38,8 @@ class ReportSyncService {
   String _classifyError(Object e) {
     if (e is SocketException) return 'network';
     final msg = e.toString().toLowerCase();
+    if (msg.contains('rate_limited')) return 'rate_limited';
+    if (msg.contains('duplicate_report')) return 'duplicate';
     if (msg.contains('jwt') || msg.contains('auth') || msg.contains('unauthorized') || msg.contains('not authenticated')) {
       return 'auth';
     }

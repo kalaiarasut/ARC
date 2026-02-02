@@ -42,3 +42,10 @@ android {
 flutter {
     source = "../.."
 }
+
+// Optional Firebase wiring: only apply the Google Services plugin when
+// android/app/google-services.json exists. This lets you merge the code now
+// and add Firebase later without breaking Android builds.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

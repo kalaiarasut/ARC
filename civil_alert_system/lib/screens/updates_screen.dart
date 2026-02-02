@@ -7,6 +7,7 @@ import '../services/advisory_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
+import '../widgets/app_state_view.dart';
 
 final advisoryServiceProvider = Provider<AdvisoryService>((ref) => AdvisoryService());
 final advisoriesProvider = FutureProvider<List<OfficialAdvisory>>((ref) async {
@@ -151,7 +152,18 @@ class UpdatesScreen extends ConsumerWidget {
             );
           },
           error: (e, _) => Center(
-            child: Text('${context.l10n.failedToLoadUpdates}: $e', style: const TextStyle(color: AppColors.textSecondary)),
+            child: AppStateView(
+              icon: Icons.wifi_off,
+              title: context.l10n.failedToLoadUpdates,
+              message: e.toString().toLowerCase().contains('socket') || e.toString().toLowerCase().contains('failed host')
+                  ? context.l10n.youreOffline
+                  : e.toString(),
+              actionLabel: context.l10n.retry,
+              onAction: () async {
+                ref.invalidate(advisoriesProvider);
+                await ref.read(advisoriesProvider.future);
+              },
+            ),
           ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
         ),

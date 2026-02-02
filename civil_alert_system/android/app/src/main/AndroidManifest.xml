@@ -8,6 +8,9 @@
     <!-- Needed for recording video with audio on many devices -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Android 13+ notification permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Android 13+ granular media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />

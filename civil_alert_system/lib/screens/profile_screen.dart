@@ -192,6 +192,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             return "Permission denied";
                           case 'file_missing':
                             return "Missing media file";
+                          case 'rate_limited':
+                            return "Too many reports (rate limited)";
+                          case 'duplicate':
+                            return "Duplicate report detected";
                           case 'unknown':
                           default:
                             return "Upload failed";

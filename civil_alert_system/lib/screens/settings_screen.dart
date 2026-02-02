@@ -4,6 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
+import '../services/fcm_push_service.dart';
+import '../services/notification_settings_service.dart';
+import '../services/notification_service.dart';
+import '../services/realtime_notification_service.dart';
 import '../theme/app_colors.dart';
 import 'about_transparency_screen.dart';
 import 'help_faq_screen.dart';
@@ -12,11 +16,31 @@ import 'login_screen.dart';
 import 'profile_module_screen.dart';
 import 'privacy_controls_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final NotificationSettingsService _notificationSettings = NotificationSettingsService();
+  bool? _notificationsEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationsSetting();
+  }
+
+  Future<void> _loadNotificationsSetting() async {
+    final enabled = await _notificationSettings.isEnabled();
+    if (!mounted) return;
+    setState(() => _notificationsEnabled = enabled);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
@@ -37,6 +61,43 @@ class SettingsScreen extends ConsumerWidget {
           _card(
             child: Column(
               children: [
+                SwitchListTile(
+                  value: _notificationsEnabled ?? true,
+                  secondary: const Icon(Icons.notifications_outlined, color: AppColors.primaryBlue),
+                  title: const Text('Notifications'),
+                  subtitle: const Text('Advisories and report status updates'),
+                  onChanged: _notificationsEnabled == null
+                      ? null
+                      : (v) async {
+                          setState(() => _notificationsEnabled = v);
+                          await _notificationSettings.setEnabled(v);
+
+                          if (v) {
+                            await NotificationService.instance.initialize();
+                            await NotificationService.instance.requestPermissionIfNeeded();
+
+                            var fcmStarted = false;
+                            try {
+                              await FcmPushService.instance.enable();
+                              fcmStarted = true;
+                            } catch (_) {
+                              fcmStarted = false;
+                            }
+
+                            if (!fcmStarted) {
+                              await RealtimeNotificationService.instance.start();
+                            } else {
+                              await RealtimeNotificationService.instance.stop();
+                            }
+                          } else {
+                            // Best-effort: disable true push and stop realtime.
+                            // ignore: discarded_futures
+                            FcmPushService.instance.disable();
+                            await RealtimeNotificationService.instance.stop();
+                          }
+                        },
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.person_outline, color: AppColors.primaryBlue),
                   title: Text(context.l10n.profile),

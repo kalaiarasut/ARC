@@ -7,6 +7,10 @@ import 'l10n/app_localizations.dart';
 import 'core/supabase_config.dart';
 import 'providers/language_provider.dart';
 import 'services/android_workmanager_report_sync.dart';
+import 'services/fcm_push_service.dart';
+import 'services/notification_service.dart';
+import 'services/notification_settings_service.dart';
+import 'services/realtime_notification_service.dart';
 import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'theme/app_theme.dart';
@@ -29,6 +33,30 @@ void main() async {
   // Android-only periodic background sync (WorkManager)
   if (Platform.isAndroid) {
     await AndroidWorkmanagerReportSync.initialize(debug: false);
+
+    final notificationsEnabled = await NotificationSettingsService().isEnabled();
+
+    if (notificationsEnabled) {
+      await NotificationService.instance.initialize();
+      // Best-effort: request permission on startup (Android 13+).
+      // ignore: discarded_futures
+      NotificationService.instance.requestPermissionIfNeeded();
+    }
+
+    // Prefer true push (FCM). If Firebase isn't configured yet, fall back to Realtime.
+    var fcmStarted = false;
+    if (notificationsEnabled) {
+      try {
+        fcmStarted = await FcmPushService.instance.startIfEnabled();
+      } catch (_) {
+        fcmStarted = false;
+      }
+    }
+    if (notificationsEnabled && !fcmStarted) {
+      // Realtime listeners will generate local notifications while app process is alive.
+      // ignore: discarded_futures
+      RealtimeNotificationService.instance.start();
+    }
   }
 
   // Start offline report sync (best-effort, no UI required)

@@ -5,9 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_compress/video_compress.dart';
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
+import 'device_id_service.dart';
 
 class ReportService {
   final SupabaseClient _supabase = SupabaseConfig.client;
+  final DeviceIdService _deviceIdService = DeviceIdService();
 
   bool _isImage(XFile file) {
     final mt = file.mimeType;
@@ -93,15 +95,46 @@ class ReportService {
   /// Phase 1: Insert report WITHOUT media
   /// Returns the DB-generated report ID
   Future<String> insertReport(HazardReport report) async {
+    // Prefer the anti-spam RPC if it exists.
     try {
-      final response = await _supabase
-          .from('hazard_reports')
-          .insert(report.toJson())
-          .select('id')
-          .single();
+      final deviceId = await _deviceIdService.getOrCreate();
 
-      return response['id'] as String;
+      final response = await _supabase.rpc(
+        'create_hazard_report',
+        params: {
+          'p_client_id': report.clientId,
+          'p_user_phone': report.userPhone,
+          'p_user_name': report.userName,
+          'p_hazard_type': report.hazardType,
+          'p_description': report.description,
+          'p_latitude': report.latitude,
+          'p_longitude': report.longitude,
+          'p_is_high_risk': report.isHighRisk,
+          'p_people_at_risk': report.peopleAtRisk,
+          'p_urgency_level': report.urgencyLevel,
+          'p_event_time': report.eventTime.toIso8601String(),
+          'p_device_id': deviceId,
+        },
+      );
+
+      if (response is String) return response;
+      if (response is Map && response['id'] != null) return response['id'].toString();
+      return response.toString();
     } on PostgrestException catch (e) {
+      // If RPC isn't deployed yet, fall back to direct insert.
+      final msg = e.message.toLowerCase();
+      final details = (e.details ?? '').toString().toLowerCase();
+      final isMissingRpc = msg.contains('create_hazard_report') || details.contains('create_hazard_report');
+
+      if (isMissingRpc) {
+        final response = await _supabase
+            .from('hazard_reports')
+            .insert(report.toJson())
+            .select('id')
+            .single();
+        return response['id'] as String;
+      }
+
       // Check for duplicate client_id (idempotency)
       if (e.code == '23505') {
         // Unique violation - report already exists
