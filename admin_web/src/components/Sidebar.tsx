@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Avatar } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
@@ -38,6 +39,10 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
             boxShadow: isActive ? ACTIVE_SHADOW : 'none',
             '&:hover': {
                 backgroundColor: isActive ? 'transparent' : 'rgba(8, 131, 149, 0.08)',
+            backgroundColor: isActive ? PRIMARY_BLUE : 'transparent',
+            boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.35)' : 'none',
+            '&:hover': {
+                backgroundColor: isActive ? PRIMARY_BLUE : 'rgba(37, 99, 235, 0.08)',
                 transform: isActive ? 'none' : 'translateX(4px)',
             },
         }}
@@ -75,6 +80,16 @@ export const Sidebar: React.FC = () => {
     const isActive = (path: string) => {
         if (path === '/reports') return location.pathname.startsWith('/reports');
         return location.pathname.startsWith(path);
+        { icon: <MapOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Map View', path: '/map' },
+        { icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Reports', path: '/reports' },
+        { icon: <BarChartOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Analytics', path: '/analytics' },
+        { icon: <GroupOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Users', path: '/users' },
+        { icon: <SettingsOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Settings', path: '/settings' },
+    ];
+
+    const isActive = (path: string) => {
+        if (path === '/reports') return location.pathname === '/reports' || location.pathname === '/';
+        return location.pathname === path;
     };
 
     return (
@@ -83,12 +98,19 @@ export const Sidebar: React.FC = () => {
             sx={{
                 width: DRAWER_WIDTH,
                 flexShrink: 0,
+            sx={{
+                width: DRAWER_WIDTH,
+                minWidth: DRAWER_WIDTH,
                 height: '100vh',
                 background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
                 display: 'flex',
                 flexDirection: 'column',
                 borderRight: '1px solid rgba(226, 232, 240, 0.8)',
                 zIndex: 1200,
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                borderRight: '1px solid rgba(226, 232, 240, 0.8)',
             }}
         >
             {/* Logo */}
@@ -103,12 +125,18 @@ export const Sidebar: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         boxShadow: '0 4px 12px rgba(8, 131, 149, 0.3)',
+                        background: `linear-gradient(135deg, ${PRIMARY_BLUE} 0%, ${PRIMARY_BLUE_LIGHT} 100%)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
                     }}
                 >
                     <Typography sx={{ color: '#FFFFFF', fontWeight: 700, fontSize: '1rem' }}>C</Typography>
                 </Box>
                 <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1e293b', letterSpacing: '-0.02em' }}>
                     CoastSafe
+                    CivilAlert
                 </Typography>
             </Box>
 
@@ -128,3 +156,44 @@ export const Sidebar: React.FC = () => {
         </Box>
     );
 };
+
+            {/* User Profile */}
+            <Box
+                sx={{
+                    m: 2,
+                    p: 2,
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(226, 232, 240, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                }}
+            >
+                <Avatar
+                    sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: PRIMARY_BLUE,
+                        color: '#FFFFFF',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                    }}
+                >
+                    JD
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
+                        John Doe
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        Super Admin
+                    </Typography>
+                </Box>
+            </Box>
+        </Box>
+    );
+};
+
+export { DRAWER_WIDTH };
