@@ -1,29 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import '../services/storage_service.dart';
 
-// Language state provider
-final languageProvider = NotifierProvider<LanguageNotifier, String>(() {
-  return LanguageNotifier();
+// Language code provider (e.g., 'en', 'ta')
+final languageCodeProvider = NotifierProvider<LanguageCodeNotifier, String>(() {
+  return LanguageCodeNotifier();
 });
 
-class LanguageNotifier extends Notifier<String> {
+// Locale provider for MaterialApp
+final localeProvider = Provider<Locale>((ref) {
+  final code = ref.watch(languageCodeProvider);
+  return Locale(code);
+});
+
+class LanguageCodeNotifier extends Notifier<String> {
   @override
   String build() {
     _loadLanguage();
-    return 'English';
+    return 'en';
   }
 
   // Load saved language
   Future<void> _loadLanguage() async {
-    final savedLanguage = StorageService.getLanguage();
-    if (savedLanguage != null) {
-      state = savedLanguage;
+    final savedCode = StorageService.getLanguage();
+    if (savedCode != null && savedCode.trim().isNotEmpty) {
+      state = savedCode;
     }
   }
 
-  // Set language
-  Future<void> setLanguage(String language) async {
-    state = language;
-    await StorageService.saveLanguage(language);
+  // Set language code
+  Future<void> setLanguageCode(String code) async {
+    state = code;
+    await StorageService.saveLanguage(code);
   }
 }

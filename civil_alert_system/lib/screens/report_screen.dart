@@ -10,6 +10,7 @@ import 'package:record/record.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import '../models/hazard_report.dart';
@@ -17,6 +18,7 @@ import '../services/report_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../core/supabase_config.dart';
 import 'user_details_screen.dart';
+import 'settings_screen.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -51,6 +53,77 @@ class _ReportScreenState extends State<ReportScreen> {
     {'name': 'Flood', 'icon': '🌊'},
     {'name': 'Other', 'icon': '🚨'},
   ];
+
+  String _hazardDisplayName(String hazardName) {
+    switch (hazardName) {
+      case 'High Waves':
+        return context.l10n.hazardHighWaves;
+      case 'Tsunami':
+        return context.l10n.hazardTsunami;
+      case 'Storm':
+        return context.l10n.hazardStorm;
+      case 'Flood':
+        return context.l10n.hazardFlood;
+      case 'Other':
+        return context.l10n.hazardOther;
+      default:
+        return hazardName;
+    }
+  }
+
+  String _urgencyDisplayName(String level) {
+    switch (level) {
+      case 'Low':
+        return context.l10n.urgencyLow;
+      case 'Medium':
+        return context.l10n.urgencyMedium;
+      case 'High':
+        return context.l10n.urgencyHigh;
+      default:
+        return level;
+    }
+  }
+
+  Future<Position?> _getBestPosition({
+    Duration timeout = const Duration(seconds: 12),
+    double goodEnoughAccuracyMeters = 25,
+  }) async {
+    Position? best = await Geolocator.getLastKnownPosition();
+
+    final completer = Completer<Position?>();
+    StreamSubscription<Position>? sub;
+    try {
+      final settings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      );
+
+      sub = Geolocator.getPositionStream(locationSettings: settings).listen(
+        (pos) {
+          if (best == null || pos.accuracy < best!.accuracy) {
+            best = pos;
+          }
+          if (!completer.isCompleted && pos.accuracy <= goodEnoughAccuracyMeters) {
+            completer.complete(pos);
+          }
+        },
+        onError: (_) {
+          if (!completer.isCompleted) completer.complete(best);
+        },
+      );
+
+      final result = await Future.any<Position?>([
+        completer.future,
+        Future<Position?>.delayed(timeout, () => best),
+      ]);
+
+      return result ?? best;
+    } catch (_) {
+      return best;
+    } finally {
+      await sub?.cancel();
+    }
+  }
 
   @override
   void initState() {
@@ -93,19 +166,16 @@ class _ReportScreenState extends State<ReportScreen> {
           final shouldOpenSettings = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Location Services Off'),
-              content: const Text(
-                'Please enable location services (GPS) to report hazards. '
-                'Your location helps authorities respond quickly.',
-              ),
+              title: Text(context.l10n.locationServicesOffTitle),
+              content: Text(context.l10n.enableLocationServicesForReporting),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancel),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Open Settings'),
+                  child: Text(context.l10n.openSettings),
                 ),
               ],
             ),
@@ -125,9 +195,7 @@ class _ReportScreenState extends State<ReportScreen> {
         if (permission == LocationPermission.denied) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permission denied. Please allow access in settings.'),
-              ),
+              SnackBar(content: Text(context.l10n.locationPermissionDeniedAllowInSettings)),
             );
           }
           return;
@@ -140,19 +208,16 @@ class _ReportScreenState extends State<ReportScreen> {
           final shouldOpenSettings = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Permission Required'),
-              content: const Text(
-                'Location permission is permanently denied. '
-                'Please enable it in app settings to report hazards.',
-              ),
+              title: Text(context.l10n.permissionRequiredTitle),
+              content: Text(context.l10n.locationPermissionPermanentlyDeniedForReporting),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.cancel),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Open Settings'),
+                  child: Text(context.l10n.openSettings),
                 ),
               ],
             ),
@@ -166,16 +231,17 @@ class _ReportScreenState extends State<ReportScreen> {
       }
 
       // Step 3: Get current position with accuracy
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
+      final position = await _getBestPosition(timeout: const Duration(seconds: 12)) ??
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.bestForNavigation,
+            timeLimit: const Duration(seconds: 12),
+          );
       
       setState(() => _currentPosition = position);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error getting location: $e')),
+          SnackBar(content: Text(context.l10n.errorGettingLocationWithError(e.toString()))),
         );
       }
     }
@@ -221,7 +287,7 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       if (_selectedMedia.length >= _maxAttachments) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+          SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
         );
         return;
       }
@@ -233,7 +299,7 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
+          SnackBar(content: Text(context.l10n.errorPickingImageWithError(e.toString()))),
         );
       }
     }
@@ -277,7 +343,7 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       if (_selectedMedia.length >= _maxAttachments) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+          SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
         );
         return;
       }
@@ -289,7 +355,7 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking video: $e')),
+          SnackBar(content: Text(context.l10n.errorPickingVideoWithError(e.toString()))),
         );
       }
     }
@@ -299,7 +365,7 @@ class _ReportScreenState extends State<ReportScreen> {
     if (_selectedMedia.length >= _maxAttachments) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Maximum $_maxAttachments attachments allowed')),
+        SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
       );
       return;
     }
@@ -318,7 +384,7 @@ class _ReportScreenState extends State<ReportScreen> {
         if (!mounted) return;
         setState(() => _isRecordingAudio = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error stopping audio: $e')),
+          SnackBar(content: Text(context.l10n.errorStoppingAudioWithError(e.toString()))),
         );
       }
       return;
@@ -350,13 +416,13 @@ class _ReportScreenState extends State<ReportScreen> {
       if (!mounted) return;
       setState(() => _isRecordingAudio = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recording audio… tap again to stop.')),
+        SnackBar(content: Text(context.l10n.recordingAudioTapToStop)),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isRecordingAudio = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error starting audio: $e')),
+        SnackBar(content: Text(context.l10n.errorStartingAudioWithError(e.toString()))),
       );
     }
   }
@@ -365,28 +431,28 @@ class _ReportScreenState extends State<ReportScreen> {
     // Validation
     if (_selectedHazard.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a hazard type')),
+        SnackBar(content: Text(context.l10n.pleaseSelectHazardType)),
       );
       return;
     }
 
     if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please describe the situation')),
+        SnackBar(content: Text(context.l10n.pleaseDescribeSituation)),
       );
       return;
     }
 
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Waiting for location...')),
+        SnackBar(content: Text(context.l10n.waitingForLocation)),
       );
       return;
     }
 
     if (_isHighRisk && _peopleAtRisk <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an estimate of people at risk')),
+        SnackBar(content: Text(context.l10n.pleaseEnterPeopleAtRisk)),
       );
       return;
     }
@@ -402,7 +468,7 @@ class _ReportScreenState extends State<ReportScreen> {
       if (!isOnline) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No internet connection. Report will be queued.')),
+            SnackBar(content: Text(context.l10n.noInternetReportQueued)),
           );
         }
         // Queue offline report for background sync
@@ -455,11 +521,11 @@ class _ReportScreenState extends State<ReportScreen> {
           final go = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Profile Needed'),
-              content: const Text('Please add your phone number before submitting a report.'),
+              title: Text(context.l10n.profileNeededTitle),
+              content: Text(context.l10n.profileNeededBody),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Now')),
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.cancel)),
+                TextButton(onPressed: () => Navigator.pop(context, true), child: Text(context.l10n.addNow)),
               ],
             ),
           );
@@ -519,8 +585,8 @@ class _ReportScreenState extends State<ReportScreen> {
           // Partial success: Report saved, but media failed
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Report saved! Media upload failed, will retry later.'),
+              SnackBar(
+                content: Text(context.l10n.reportSavedMediaUploadFailedRetry),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -536,8 +602,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Report submitted successfully! 🎉'),
+          SnackBar(
+            content: Text(context.l10n.reportSubmittedSuccessfully),
             backgroundColor: AppColors.success,
           ),
         );
@@ -546,7 +612,7 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(context.l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -584,10 +650,21 @@ class _ReportScreenState extends State<ReportScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Report Hazard',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.reportHazard,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -595,8 +672,8 @@ class _ReportScreenState extends State<ReportScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            const Text(
-              'What are you seeing? 👁️',
+            Text(
+              context.l10n.whatAreYouSeeing,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -604,17 +681,17 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Your report helps keep everyone safe',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            Text(
+              context.l10n.reportHelpsKeepSafe,
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             
             const SizedBox(height: 24),
 
             // Hazard Type Selection
-            const Text(
-              'Hazard Type *',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              context.l10n.hazardTypeRequired,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             SingleChildScrollView(
@@ -637,16 +714,16 @@ class _ReportScreenState extends State<ReportScreen> {
             const SizedBox(height: 24),
 
             // Description
-            const Text(
-              'Description *',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              context.l10n.descriptionRequired,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descriptionController,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Describe what you\'re seeing...',
+                hintText: context.l10n.describeWhatYouSeeHint,
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -672,17 +749,17 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildInfoCard(
                     Icons.location_on,
-                    'Location',
+                    context.l10n.location,
                     _currentPosition != null
                         ? '${_currentPosition!.latitude.toStringAsFixed(4)}, ${_currentPosition!.longitude.toStringAsFixed(4)}'
-                        : 'Getting location...',
+                        : context.l10n.gettingLocation,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildInfoCard(
                     Icons.access_time,
-                    'Time',
+                    context.l10n.time,
                     '${_now.hour}:${_now.minute.toString().padLeft(2, '0')}',
                   ),
                 ),
@@ -695,7 +772,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 TextButton.icon(
                   onPressed: _getCurrentLocation,
                   icon: const Icon(Icons.my_location, size: 18),
-                  label: const Text('Retry GPS'),
+                  label: Text(context.l10n.retryGps),
                 ),
               ],
             ),
@@ -703,9 +780,9 @@ class _ReportScreenState extends State<ReportScreen> {
             const SizedBox(height: 24),
 
             // Media Upload
-            const Text(
-              'Add Media (Optional)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              context.l10n.addMediaOptional,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -713,7 +790,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildMediaButton(
                     Icons.camera_alt,
-                    'Camera',
+                    context.l10n.camera,
                     _pickFromCamera,
                   ),
                 ),
@@ -721,7 +798,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildMediaButton(
                     Icons.videocam,
-                    'Record',
+                    context.l10n.record,
                     _pickVideoFromCamera,
                   ),
                 ),
@@ -734,7 +811,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildMediaButton(
                     _isRecordingAudio ? Icons.stop : Icons.mic,
-                    _isRecordingAudio ? 'Stop Audio' : 'Record Audio',
+                    _isRecordingAudio ? context.l10n.stopAudio : context.l10n.recordAudio,
                     _toggleAudioRecording,
                   ),
                 ),
@@ -832,12 +909,12 @@ class _ReportScreenState extends State<ReportScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        children: const [
-                          Icon(Icons.warning_amber_rounded, color: AppColors.error),
-                          SizedBox(width: 8),
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: AppColors.error),
+                          const SizedBox(width: 8),
                           Text(
-                            'High Risk Situation',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            context.l10n.highRiskSituation,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -854,7 +931,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     TextField(
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'People at risk (estimate)',
+                        labelText: context.l10n.peopleAtRiskEstimate,
                         filled: true,
                         fillColor: const Color(0xFFF7F9FB),
                         border: OutlineInputBorder(
@@ -880,7 +957,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  level,
+                                  _urgencyDisplayName(level),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: isSelected ? Colors.white : AppColors.textSecondary,
@@ -906,7 +983,7 @@ class _ReportScreenState extends State<ReportScreen> {
               child: _isSubmitting
                   ? const Center(child: CircularProgressIndicator())
                   : PrimaryButton(
-                      text: 'Submit Report',
+                      text: context.l10n.submitReport,
                       backgroundColor: AppColors.primaryBlue,
                       onPressed: _submitReport,
                     ),
@@ -936,7 +1013,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Text(emoji, style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
             Text(
-              name,
+              _hazardDisplayName(name),
               style: TextStyle(
                 color: isSelected ? Colors.white : AppColors.textPrimary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,

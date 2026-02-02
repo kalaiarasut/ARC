@@ -1,0 +1,204 @@
+{
+  "@@locale": "ta",
+
+  "appTitle": "சிவில் அலர்ட் அமைப்பு",
+
+  "profileAndReports": "சுயவிவரம் & அறிக்கைகள்",
+  "edit": "திருத்து",
+  "user": "பயனர்",
+  "phoneNotSet": "தொலைபேசி அமைக்கப்படவில்லை",
+  "syncNow": "இப்போது ஒத்திசை",
+  "nothingToSync": "ஒத்திசைக்க எதுவும் இல்லை",
+  "syncDone": "ஒத்திசை முடிந்தது: {succeeded} வெற்றி, {failed} தோல்வி",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "ஆஃப்லைன் அறிக்கைகள்",
+  "noPendingReports": "நிலுவையில் உள்ள அறிக்கைகள் இல்லை",
+  "attemptsLabel": "முயற்சிகள்: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "மீண்டும் முயற்சி",
+  "remove": "நீக்கு",
+  "myReports": "என் அறிக்கைகள்",
+  "noUploadedReportsYet": "இன்னும் பதிவேற்றப்பட்ட அறிக்கைகள் இல்லை",
+  "failedToLoadReports": "அறிக்கைகள் ஏற்ற முடியவில்லை",
+  "youreOffline": "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்",
+  "connectToInternetToLoadMyReports": "என் அறிக்கைகளை ஏற்ற இணையத்துடன் இணைக்கவும்.",
+
+  "settings": "அமைப்புகள்",
+  "helpFaq": "உதவி / கேள்விகள்",
+  "aboutTransparency": "பற்றி & வெளிப்படைத்தன்மை",
+  "language": "மொழி",
+  "privacyControls": "மொழி & தனியுரிமை கட்டுப்பாடுகள்",
+  "privacy": "தனியுரிமை",
+
+  "chooseLanguage": "மொழியைத் தேர்ந்தெடுக்கவும்",
+  "save": "சேமி",
+  "continueLabel": "தொடரவும்",
+  "languageComingSoon": "இந்த மொழி விரைவில் வரும்.",
+
+  "updates": "புதுப்பிப்புகள்",
+  "pendingCount": "{count} நிலுவையில்",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "இன்னும் புதுப்பிப்புகள் இல்லை",
+  "failedToLoadUpdates": "புதுப்பிப்புகளை ஏற்ற முடியவில்லை",
+
+  "helpTitle": "உதவி / கேள்விகள்",
+  "aboutTitle": "பற்றி & வெளிப்படைத்தன்மை",
+  "privacyTitle": "தனியுரிமை கட்டுப்பாடுகள்",
+
+  "privacyReducePrecisionTitle": "வரைபடத்தில் இடத் துல்லியத்தை குறைக்கவும்",
+  "privacyReducePrecisionSubtitle": "இயக்கப்பட்டால், உங்கள் அறிக்கை குறியீடுகள் வரைபடத்தில் குறைந்த துல்லியத்துடன் காட்டப்படும்.",
+
+  "faqQ1": "ஆபத்தை எப்படி அறிக்கையிடுவது?",
+  "faqA1": "Report பக்கத்தில் சென்று நீங்கள் பார்க்கும் நிலையை விவரித்து அனுப்பவும். நீங்கள் ஆஃப்லைனில் இருந்தால், அது சேமிக்கப்பட்டு இணையம் வந்ததும் பதிவேற்றப்படும்.",
+  "faqQ2": "கேலரியிலிருந்து பதிவேற்ற முடியாதது ஏன்?",
+  "faqA2": "அறிக்கைகள் நம்பத்தகுந்ததாக இருக்க, நேரடியாகப் பதிவு செய்த (கேமரா/பதிவு) மீடியா மட்டும் அனுமதிக்கப்படுகிறது.",
+  "faqQ3": "என் இடம் எப்படி பயன்படுத்தப்படுகிறது?",
+  "faqA3": "ஆபம் எங்கு நிகழ்கிறது என்பதை புரிந்துகொள்ள உங்கள் இடம் உதவுகிறது. பொதுப் பார்வைக்கு, இடம் குறைந்த துல்லியத்துடன் காட்டப்படலாம்."
+
+  ,"loginTitle": "உள்நுழை / பதிவு செய்",
+  "signUpWithMobile": "பதிவு செய்யப்பட்ட கைபேசி எண்ணுடன் பதிவு செய்யவும்",
+  "otpIntro": "உங்கள் எண்ணை சரிபார்க்க OTP அனுப்பப்படும்",
+  "mobileNumberLabel": "கைபேசி எண் *",
+  "sendingLabel": "அனுப்பப்படுகிறது...",
+  "sendOtp": "OTP அனுப்பு",
+  "failedToSendOtp": "OTP அனுப்ப முடியவில்லை.",
+  "checkSupabasePhoneConfig": "Supabase: Authentication → Providers → Phone (enabled) மற்றும் SMS provider (Twilio) அமைக்கப்பட்டுள்ளதா என சரிபார்க்கவும்.",
+
+  "enterOtp": "OTP உள்ளிடவும்",
+  "sentToNumber": "இதற்கு அனுப்பப்பட்டது: {mobileNumber}",
+  "pleaseEnter6DigitOtp": "6 இலக்க OTP ஐ உள்ளிடவும்",
+  "otpVerificationFailed": "OTP சரிபார்ப்பு தோல்வியடைந்தது.",
+  "signInFailedWithError": "உள்நுழை தோல்வியடைந்தது: {error}",
+  "didntReceiveOtp": "OTP வரவில்லையா? ",
+  "otpResentSuccessfully": "OTP மீண்டும் அனுப்பப்பட்டது",
+  "failedToResendOtpWithError": "OTP மீண்டும் அனுப்ப முடியவில்லை: {error}",
+  "resendWithTimer": "மீண்டும் அனுப்பு (00:30)",
+  "savingLabel": "சேமிக்கிறது...",
+
+  "signedInSuccessfully": "உள்நுழைவு\nவெற்றிகரமாக முடிந்தது",
+  "directingToDashboard": "டாஷ்போர்டிற்கு கொண்டு செல்கிறோம்...",
+
+  "whatsYourName": "உங்கள் பெயர் என்ன?",
+  "personalizeExperience": "உங்கள் அனுபவத்தை தனிப்பயன் செய்ய உதவுங்கள்",
+  "enterYourName": "உங்கள் பெயரை உள்ளிடவும்",
+  "pleaseEnterValidName": "செல்லுபடியாகும் பெயரை உள்ளிடவும் (குறைந்தது 2 எழுத்துகள்)",
+
+  "onboarding1Title": "பேரிடர் நேரங்களில்\nஉங்கள் நம்பகமான துணை",
+  "onboarding1Description": "நேரடி அலர்ட்களை பெறுங்கள் மற்றும் கடல் ஆபங்களை நிகழும் போதே அறிக்கையிட்டு பாதுகாப்பில் பங்களிக்கவும்.",
+  "onboarding2Title": "பாதுகாப்பை வலுப்படுத்தி,\nஒரு படி ஒருமுறை",
+  "onboarding2Description": "கடலை கவனிக்கும் விழிப்பான சமூகத்தில் சேர்ந்து, நேரடி ஆபத் தகவலை பகிர்ந்து உயிர்களை காக்க உதவுங்கள்.",
+  "onboarding3Title": "உங்கள் கைவசத்தில்\nதயார்நிலை",
+  "onboarding3Description": "கடல் ஆபங்களை அறிக்கையிடுங்கள், முக்கிய அலர்ட்களை பெறுங்கள், நேரம் தாமதமாகும்முன் தகவலறிந்து இருக்கவும்.",
+  "skip": "தவிர்",
+
+  "splashTitle": "சிவில் அலர்ட்",
+  "splashSubtitle": "ஆபங்களை துல்லியமாக கண்டறிதல்",
+
+  "hiWelcome": "வணக்கம், வரவேற்கிறோம் 👋",
+  "togetherForOceanSafety": "கடல் பாதுகாப்பிற்காக\nஒன்றிணைந்து,\nஒன்றாக வலிமை",
+  "seeUpdates": "புதுப்பிப்புகளை காண்க",
+  "unusualActivity": "அசாதாரண செயல்பாடு 🔥",
+  "seeAll": "அனைத்தையும் காண்க",
+  "filterNow": "இப்போது",
+  "filterLastWeek": "கடந்த வாரம்",
+  "filterLastMonth": "கடந்த மாதம்",
+
+  "locationServicesOffTitle": "இடச் சேவைகள் அணைக்கப்பட்டுள்ளன",
+  "enableLocationServicesForReporting": "ஆபங்களை அறிக்கையிட, இடச் சேவைகளை (GPS) இயக்கவும். உங்கள் இடம் அதிகாரிகள் விரைவில் பதிலளிக்க உதவுகிறது.",
+  "enableLocationServicesForCurrentLocation": "இடச் சேவைகள் அணைக்கப்பட்டுள்ளன. உங்கள் தற்போதைய இடத்தை காட்ட GPS ஐ இயக்கவும்.",
+  "permissionRequiredTitle": "அனுமதி தேவை",
+  "locationPermissionDeniedAllowInSettings": "இட அனுமதி மறுக்கப்பட்டது. அமைப்புகளில் அனுமதி வழங்கவும்.",
+  "locationPermissionDeniedAllowForCurrentLocation": "இட அனுமதி மறுக்கப்பட்டது. உங்கள் தற்போதைய இடத்தை காட்ட அனுமதி வழங்கவும்.",
+  "locationPermissionBlockedEnableInSettings": "இட அனுமதி தடைசெய்யப்பட்டுள்ளது. ஆப் அமைப்புகளில் அதை இயக்கவும்.",
+  "locationPermissionPermanentlyDeniedForReporting": "இட அனுமதி நிரந்தரமாக மறுக்கப்பட்டுள்ளது. ஆபங்களை அறிக்கையிட, ஆப் அமைப்புகளில் அதை இயக்கவும்.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "இட அனுமதி நிரந்தரமாக மறுக்கப்பட்டுள்ளது. உங்கள் தற்போதைய இடத்தை காட்ட, ஆப் அமைப்புகளில் அதை இயக்கவும்.",
+  "cancel": "ரத்து",
+  "notNow": "இப்போது இல்லை",
+  "openSettings": "அமைப்புகளை திற",
+  "errorGettingLocationWithError": "இடம் பெறுவதில் பிழை: {error}",
+  "gettingLocation": "இடம் பெறுகிறது...",
+  "gettingYourLocation": "உங்கள் இடத்தை பெறுகிறது...",
+
+  "maximumAttachmentsAllowed": "அதிகபட்சம் {max} இணைப்புகள் மட்டுமே அனுமதி",
+  "errorPickingImageWithError": "படத்தை தேர்வு செய்வதில் பிழை: {error}",
+  "errorPickingVideoWithError": "வீடியோவை தேர்வு செய்வதில் பிழை: {error}",
+  "errorStoppingAudioWithError": "ஆடியோ நிறுத்துவதில் பிழை: {error}",
+  "recordingAudioTapToStop": "ஆடியோ பதிவு செய்கிறது… நிறுத்த மீண்டும் தட்டவும்.",
+  "errorStartingAudioWithError": "ஆடியோ தொடங்குவதில் பிழை: {error}",
+  "pleaseSelectHazardType": "ஒரு ஆப வகையைத் தேர்ந்தெடுக்கவும்",
+  "pleaseDescribeSituation": "நிகழ்வை விவரிக்கவும்",
+  "waitingForLocation": "இடம் பெற காத்திருக்கிறது...",
+  "pleaseEnterPeopleAtRisk": "ஆபத்தில் இருப்போர் எண்ணிக்கையை (மதிப்பீடு) உள்ளிடவும்",
+  "noInternetReportQueued": "இணையம் இல்லை. அறிக்கை வரிசையில் சேமிக்கப்படும்.",
+
+  "profileNeededTitle": "சுயவிவரம் தேவை",
+  "profileNeededBody": "அறிக்கையை சமர்ப்பிக்கும் முன் உங்கள் தொலைபேசி எண்ணை சேர்க்கவும்.",
+  "addNow": "இப்போது சேர்க்கவும்",
+
+  "reportSavedMediaUploadFailedRetry": "அறிக்கை சேமிக்கப்பட்டது! மீடியா பதிவேற்றம் தோல்வியடைந்தது, பின்னர் மீண்டும் முயற்சி செய்யப்படும்.",
+  "reportSubmittedSuccessfully": "அறிக்கை வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! 🎉",
+  "errorWithError": "பிழை: {error}",
+
+  "retryGps": "GPS மீண்டும் முயற்சி",
+  "reportHazard": "ஆபத்தை அறிக்கையிடு",
+  "whatAreYouSeeing": "நீங்கள் என்ன பார்க்கிறீர்கள்? 👁️",
+  "reportHelpsKeepSafe": "உங்கள் அறிக்கை அனைவரையும் பாதுகாப்பாக வைத்திருக்க உதவுகிறது",
+  "hazardTypeRequired": "ஆப வகை *",
+  "descriptionRequired": "விளக்கம் *",
+  "describeWhatYouSeeHint": "நீங்கள் பார்க்கும் நிலையை விவரிக்கவும்...",
+  "location": "இடம்",
+  "time": "நேரம்",
+  "addMediaOptional": "மீடியா சேர்க்கவும் (விருப்பம்)",
+  "camera": "கேமரா",
+  "record": "பதிவு",
+  "recordAudio": "ஆடியோ பதிவு",
+  "stopAudio": "ஆடியோ நிறுத்து",
+  "highRiskSituation": "உயர் ஆபத்து நிலை",
+  "peopleAtRiskEstimate": "ஆபத்தில் இருப்போர் (மதிப்பீடு)",
+  "urgencyLow": "குறைவு",
+  "urgencyMedium": "நடுத்தரம்",
+  "urgencyHigh": "அதிகம்",
+  "submitReport": "அறிக்கையை சமர்ப்பி",
+
+  "close": "மூடு",
+  "moreDetails": "மேலும் விவரங்கள்"
+
+  ,"hazardHighWaves": "உயர்ந்த அலைகள்",
+  "hazardTsunami": "சுனாமி",
+  "hazardStorm": "புயல்",
+  "hazardFlood": "வெள்ளம்",
+  "hazardOther": "மற்றவை",
+
+  "homeTab": "முகப்பு",
+  "mapTab": "வரைபடம்",
+  "updatesTab": "புதுப்பிப்புகள்",
+  "profileTab": "சுயவிவரம்",
+  "liveNews": "நேரடி செய்திகள்",
+  "sampleHazardHeadline": "பசிபிக் கரையில் உயர்ந்த அலைகள்",
+  "sampleDate": "ஞா, 11 ஜூன் 2024",
+  "sampleTimeAgo": "3 நிமிடங்களுக்கு முன்"
+
+  ,"@sentToNumber": {"placeholders": {"mobileNumber": {}}}
+  ,"@signInFailedWithError": {"placeholders": {"error": {}}}
+  ,"@failedToResendOtpWithError": {"placeholders": {"error": {}}}
+  ,"@errorGettingLocationWithError": {"placeholders": {"error": {}}}
+  ,"@maximumAttachmentsAllowed": {"placeholders": {"max": {}}}
+  ,"@errorPickingImageWithError": {"placeholders": {"error": {}}}
+  ,"@errorPickingVideoWithError": {"placeholders": {"error": {}}}
+  ,"@errorStoppingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorStartingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorWithError": {"placeholders": {"error": {}}}
+}

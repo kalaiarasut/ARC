@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import '../services/auth_service.dart';
@@ -107,8 +108,8 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     const SizedBox(height: 24),
                     
-                    const Text(
-                      "Enter OTP",
+                    Text(
+                      context.l10n.enterOtp,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -117,7 +118,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Sent to ${widget.mobileNumber}",
+                      context.l10n.sentToNumber(widget.mobileNumber),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14,
@@ -143,7 +144,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: PrimaryButton(
-                        text: "Continue",
+                        text: context.l10n.continueLabel,
                         backgroundColor: AppColors.primaryBlue, // Deep Sea Blue
                         onPressed: () async {
                           if (_isSubmitting) return;
@@ -151,7 +152,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           
                           if (otp.length != 6) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter 6-digit OTP')),
+                              SnackBar(content: Text(context.l10n.pleaseEnter6DigitOtp)),
                             );
                             return;
                           }
@@ -184,9 +185,9 @@ class _OtpScreenState extends State<OtpScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'OTP verification failed.\n'
+                                    '${context.l10n.otpVerificationFailed}\n'
                                     '${e.message}\n\n'
-                                    'Check Supabase: Authentication → Providers → Phone (enabled) and SMS provider configured (Twilio).',
+                                    '${context.l10n.checkSupabasePhoneConfig}',
                                   ),
                                 ),
                               );
@@ -194,7 +195,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             }
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Sign-in failed: $e')),
+                              SnackBar(content: Text(context.l10n.signInFailedWithError(e.toString()))),
                             );
                           } finally {
                             if (mounted) setState(() => _isSubmitting = false);
@@ -209,8 +210,8 @@ class _OtpScreenState extends State<OtpScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          "Didn't receive OTP? ",
+                        Text(
+                          context.l10n.didntReceiveOtp,
                           style: TextStyle(
                             fontSize: 12,
                             color: Color(0xFF8E8E93)
@@ -225,19 +226,19 @@ class _OtpScreenState extends State<OtpScreen> {
                                     await _authService.sendOTP(widget.mobileNumber);
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('OTP resent successfully')),
+                                      SnackBar(content: Text(context.l10n.otpResentSuccessfully)),
                                     );
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Failed to resend OTP: $e')),
+                                      SnackBar(content: Text(context.l10n.failedToResendOtpWithError(e.toString()))),
                                     );
                                   } finally {
                                     if (mounted) setState(() => _isResending = false);
                                   }
                                 },
-                          child: const Text(
-                            "Resend (00:30)", // Added hypothetical timer for visual match
+                          child: Text(
+                            context.l10n.resendWithTimer, // Added hypothetical timer for visual match
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.secondaryCyan, // Cyan

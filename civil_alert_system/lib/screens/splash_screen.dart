@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
@@ -77,8 +78,8 @@ class _SplashScreenState extends State<SplashScreen>
                     color: Colors.white,
                   ),
                 const SizedBox(height: 24),
-                const Text(
-                  "Civil Alert",
+                Text(
+                  context.l10n.splashTitle,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -88,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Focused Hazard Detection",
+                  context.l10n.splashSubtitle,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,

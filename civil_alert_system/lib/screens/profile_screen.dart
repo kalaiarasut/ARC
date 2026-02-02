@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +12,8 @@ import '../services/offline_report_queue_service.dart';
 import '../services/report_sync_service.dart';
 import '../services/report_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
+import 'settings_screen.dart';
 import 'user_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -26,10 +32,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<List<HazardReport>>? _myReportsFuture;
 
+  bool _isOnline = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+
   @override
   void initState() {
     super.initState();
+    _initConnectivity();
     _loadProfile();
+  }
+
+  Future<void> _initConnectivity() async {
+    final initial = await Connectivity().checkConnectivity();
+    if (!mounted) return;
+    setState(() => _isOnline = !initial.contains(ConnectivityResult.none));
+
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final online = !results.contains(ConnectivityResult.none);
+      if (!mounted) return;
+      final changed = online != _isOnline;
+      setState(() => _isOnline = online);
+      if (changed && online) {
+        _refreshMyReports();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -50,6 +82,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
+    // If we're offline, avoid throwing a DNS/Socket exception just to render the UI.
+    if (!_isOnline) {
+      setState(() => _myReportsFuture = Future.value(const []));
+      return;
+    }
+
     setState(() {
       _myReportsFuture = _reportService.getMyReports(userId: userId);
     });
@@ -63,8 +101,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Text(
           result.attempted == 0
-              ? 'Nothing to sync'
-              : 'Sync done: ${result.succeeded} succeeded, ${result.failed} failed',
+              ? context.l10n.nothingToSync
+              : context.l10n.syncDone(result.succeeded, result.failed),
         ),
         backgroundColor: result.failed == 0 ? AppColors.success : AppColors.warning,
       ),
@@ -75,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = (_name == null || _name!.trim().isEmpty) ? 'User' : _name!.trim();
+    final displayName = (_name == null || _name!.trim().isEmpty) ? context.l10n.user : _name!.trim();
     final phone = _phone?.trim();
 
     return Scaffold(
@@ -87,10 +125,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Profile & Reports',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.profileAndReports,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: AppColors.textPrimary),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -121,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          (phone == null || phone.isEmpty) ? 'Phone not set' : phone,
+                          (phone == null || phone.isEmpty) ? context.l10n.phoneNotSet : phone,
                           style: const TextStyle(color: AppColors.textSecondary),
                         ),
                       ],
@@ -135,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                       await _loadProfile();
                     },
-                    child: const Text('Edit'),
+                    child: Text(context.l10n.edit),
                   ),
                 ],
               ),
@@ -154,15 +203,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       elevation: 0,
                     ),
                     icon: const Icon(Icons.sync),
-                    label: const Text('Sync now'),
+                    label: Text(context.l10n.syncNow),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Offline Reports',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              context.l10n.offlineReports,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -170,10 +219,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 valueListenable: Hive.box(OfflineReportQueueService.boxName).listenable(),
                 builder: (context, box, _) {
                   if (box.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        'No pending reports',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        context.l10n.noPendingReports,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                     );
                   }
@@ -222,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Attempts: $attempts',
+                                  context.l10n.attemptsLabel(attempts),
                                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                 ),
                               ],
@@ -249,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 TextButton.icon(
                                   onPressed: _syncNow,
                                   icon: const Icon(Icons.sync, size: 18),
-                                  label: const Text('Retry'),
+                                  label: Text(context.l10n.retry),
                                 ),
                                 const Spacer(),
                                 TextButton.icon(
@@ -257,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     await OfflineReportQueueService.remove(key.toString());
                                   },
                                   icon: const Icon(Icons.delete_outline, size: 18),
-                                  label: const Text('Remove'),
+                                  label: Text(context.l10n.remove),
                                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
                                 ),
                               ],
@@ -271,9 +320,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'My Reports',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              context.l10n.myReports,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -286,18 +335,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
+                    final err = snapshot.error;
+                    final errText = err?.toString() ?? '';
+                    final isNetworkError =
+                        err is SocketException || errText.contains('SocketException') || errText.contains('Failed host lookup');
+                    if (!_isOnline || isNetworkError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              context.l10n.youreOffline,
+                              style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              context.l10n.connectToInternetToLoadMyReports,
+                              style: const TextStyle(color: AppColors.textSecondary),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            TextButton.icon(
+                              onPressed: _refreshMyReports,
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: Text(context.l10n.retry),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return Center(
                       child: Text(
-                        'Failed to load reports: ${snapshot.error}',
+                        '${context.l10n.failedToLoadReports}: ${snapshot.error}',
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
                     );
                   }
                   if (data == null || data.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        'No uploaded reports yet',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        context.l10n.noUploadedReportsYet,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                     );
                   }

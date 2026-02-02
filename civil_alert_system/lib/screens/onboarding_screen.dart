@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'language_screen.dart';
 
@@ -14,29 +15,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  final List<OnboardingItem> _items = [
-    OnboardingItem(
-      title: "Your Trusted Collaborator\nin Times of Disaster",
-      description: "Get real-time alerts and contribute to safety by reporting ocean hazards as they happen.",
-      // Using reliable Unsplash ID for Storm/Ocean
-      image: "https://images.unsplash.com/photo-1498354136128-58f7901945a9?q=80&w=800&auto=format&fit=crop", 
-    ),
-    OnboardingItem(
-      title: "Empowering Safety,\nOne Step at a Time",
-      description: "Join a network of vigilant eyes on the sea, sharing real-time hazard information to save lives.",
-      // Unsplash ID for Rescue/Safety
-      image: "https://images.unsplash.com/photo-1558486012-81714731dca9?q=80&w=800&auto=format&fit=crop",
-    ),
-    OnboardingItem(
-      title: "Preparedness at\nYour Fingertips",
-      description: "Report ocean hazards, receive crucial alerts, and stay informed before it's too late.",
-      // Unsplash ID for Calm Ocean/Tech
-      image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=800&auto=format&fit=crop",
-    ),
+  final List<String> _images = [
+    // Using reliable Unsplash ID for Storm/Ocean
+    "https://images.unsplash.com/photo-1498354136128-58f7901945a9?q=80&w=800&auto=format&fit=crop",
+    // Unsplash ID for Rescue/Safety
+    "https://images.unsplash.com/photo-1558486012-81714731dca9?q=80&w=800&auto=format&fit=crop",
+    // Unsplash ID for Calm Ocean/Tech
+    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=800&auto=format&fit=crop",
   ];
 
   @override
   Widget build(BuildContext context) {
+    final titles = [
+      context.l10n.onboarding1Title,
+      context.l10n.onboarding2Title,
+      context.l10n.onboarding3Title,
+    ];
+
+    final descriptions = [
+      context.l10n.onboarding1Description,
+      context.l10n.onboarding2Description,
+      context.l10n.onboarding3Description,
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -45,13 +46,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Positioned.fill(
             child: PageView.builder(
               controller: _pageController,
-              itemCount: _items.length,
+              itemCount: _images.length,
               onPageChanged: (index) {
                 setState(() => _currentIndex = index);
               },
               itemBuilder: (context, index) {
                 return Image.network(
-                  _items[index].image,
+                  _images[index],
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -90,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: Column(
                         children: [
                            Text(
-                            _items[_currentIndex].title,
+                            titles[_currentIndex],
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 22,
@@ -102,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _items[_currentIndex].description,
+                            descriptions[_currentIndex],
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 14,
@@ -120,7 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       height: 56,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (_currentIndex < _items.length - 1) {
+                          if (_currentIndex < titles.length - 1) {
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
@@ -140,9 +141,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
-                          "Continue",
-                          style: TextStyle(
+                        child: Text(
+                          context.l10n.continueLabel,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -155,7 +156,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     // Indicators
                     SmoothPageIndicator(
                       controller: _pageController,
-                      count: _items.length,
+                      count: _images.length,
                       effect: const ExpandingDotsEffect(
                         activeDotColor: AppColors.secondaryCyan, // Sea Cyan
                         dotColor: Color(0xFFE0E0E0),
@@ -188,9 +189,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   color: Colors.black.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  "Skip",
-                  style: TextStyle(
+                child: Text(
+                  context.l10n.skip,
+                  style: const TextStyle(
                     color: Colors.white, 
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -238,16 +239,4 @@ class TopCurveClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-class OnboardingItem {
-  final String title;
-  final String description;
-  final String image;
-
-  OnboardingItem({
-    required this.title,
-    required this.description,
-    required this.image,
-  });
 }

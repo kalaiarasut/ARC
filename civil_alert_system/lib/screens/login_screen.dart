@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/custom_text_field.dart';
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Log in / Sign up"),
+        title: Text(context.l10n.loginTitle),
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -40,8 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Sign up with your registered mobile number",
+              Text(
+                context.l10n.signUpWithMobile,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -50,8 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                "We will send you an OTP to verify your number",
+              Text(
+                context.l10n.otpIntro,
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -59,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
               
-              const Text(
-                "Mobile number *",
+              Text(
+                context.l10n.mobileNumberLabel,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
               
               
               PrimaryButton(
-                text: _isSending ? "Sending..." : "Send OTP",
+                text: _isSending ? context.l10n.sendingLabel : context.l10n.sendOtp,
                 onPressed: (_mobileController.text.length >= 10 && !_isSending)
                     ? () async {
                         final raw = _mobileController.text.trim();
@@ -105,9 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Failed to send OTP.\n'
+                                '${context.l10n.failedToSendOtp}\n'
                                 '$message\n\n'
-                                'Check Supabase: Authentication → Providers → Phone (enabled) and SMS provider configured (Twilio).',
+                                '${context.l10n.checkSupabasePhoneConfig}',
                               ),
                             ),
                           );

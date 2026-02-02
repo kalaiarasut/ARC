@@ -6,6 +6,7 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../providers/map_provider.dart';
 import '../models/map_marker_data.dart';
@@ -27,6 +28,47 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   bool _hasPromptedForGps = false;
   bool _hasPromptedForPermissionSettings = false;
   StreamSubscription<ServiceStatus>? _serviceStatusSub;
+
+  Future<Position?> _getBestPosition({
+    Duration timeout = const Duration(seconds: 12),
+    double goodEnoughAccuracyMeters = 25,
+  }) async {
+    Position? best = await Geolocator.getLastKnownPosition();
+
+    final completer = Completer<Position?>();
+    StreamSubscription<Position>? sub;
+    try {
+      final settings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      );
+
+      sub = Geolocator.getPositionStream(locationSettings: settings).listen(
+        (pos) {
+          if (best == null || pos.accuracy < best!.accuracy) {
+            best = pos;
+          }
+          if (!completer.isCompleted && pos.accuracy <= goodEnoughAccuracyMeters) {
+            completer.complete(pos);
+          }
+        },
+        onError: (_) {
+          if (!completer.isCompleted) completer.complete(best);
+        },
+      );
+
+      final result = await Future.any<Position?>([
+        completer.future,
+        Future<Position?>.delayed(timeout, () => best),
+      ]);
+
+      return result ?? best;
+    } catch (_) {
+      return best;
+    } finally {
+      await sub?.cancel();
+    }
+  }
 
   Future<void> _refreshUserLocationAndCenter() async {
     // Allow re-prompting if user previously dismissed dialogs.
@@ -88,18 +130,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Location Services Off'),
-        content: const Text(
-          'Please enable location services (GPS) to show your current location on the map.',
-        ),
+        title: Text(context.l10n.locationServicesOffTitle),
+        content: Text(context.l10n.enableLocationServicesForCurrentLocation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
+            child: Text(context.l10n.notNow),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Open Settings'),
+            child: Text(context.l10n.openSettings),
           ),
         ],
       ),
@@ -124,18 +164,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permission Required'),
-        content: const Text(
-          'Location permission is permanently denied. Please enable it in app settings to show your current location.',
-        ),
+        title: Text(context.l10n.permissionRequiredTitle),
+        content: Text(context.l10n.locationPermissionPermanentlyDeniedForCurrentLocation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
+            child: Text(context.l10n.notNow),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Open Settings'),
+            child: Text(context.l10n.openSettings),
           ),
         ],
       ),
@@ -169,9 +207,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location services are off. Enable GPS to show your current location.'),
-              ),
+              SnackBar(content: Text(context.l10n.enableLocationServicesForCurrentLocation)),
             );
           }
         }
@@ -190,9 +226,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permission denied. Allow access to show your current location.'),
-              ),
+              SnackBar(content: Text(context.l10n.locationPermissionDeniedAllowForCurrentLocation)),
             );
           }
         }
@@ -207,9 +241,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permission is blocked. Enable it in app settings.'),
-              ),
+              SnackBar(content: Text(context.l10n.locationPermissionBlockedEnableInSettings)),
             );
           }
         }
@@ -228,11 +260,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         });
       }
 
-      // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
+      // Get a more precise fix: sample stream briefly and pick best accuracy.
+      final position = await _getBestPosition(timeout: const Duration(seconds: 12)) ??
+          await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.bestForNavigation,
+            timeLimit: const Duration(seconds: 12),
+          );
 
       setState(() {
         _userAccuracyMeters = position.accuracy;
@@ -257,7 +290,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         await Future<void>.delayed(Duration.zero);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error getting location: $e')),
+            SnackBar(content: Text(context.l10n.errorGettingLocationWithError(e.toString()))),
           );
         }
       }
@@ -311,10 +344,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              CircularProgressIndicator(color: AppColors.primaryBlue),
-              SizedBox(height: 16),
-              Text('Getting your location...', style: TextStyle(color: AppColors.textSecondary)),
+            children: [
+              const CircularProgressIndicator(color: AppColors.primaryBlue),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.gettingYourLocation,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
@@ -880,7 +916,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           ref.read(mapProvider.notifier).clearSelectedMarker();
                         },
                         icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Close'),
+                        label: Text(context.l10n.close),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.greyOutline),
@@ -899,7 +935,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           // TODO: Navigate to report details or report similar
                         },
                         icon: const Icon(Icons.info_outline, size: 18),
-                        label: const Text('More Details'),
+                        label: Text(context.l10n.moreDetails),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryBlue,
                           foregroundColor: Colors.white,

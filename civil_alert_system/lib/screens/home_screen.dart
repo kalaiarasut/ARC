@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'report_screen.dart';
 import 'map_screen.dart';
@@ -17,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  String _userName = "User";
+  String _userName = '';
 
   @override
   void initState() {
@@ -56,15 +57,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Hi, Welcome 👋",
+                        Text(
+                          context.l10n.hiWelcome,
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
                         ),
                         Text(
-                          _userName,
+                          _userName.isEmpty ? context.l10n.user : _userName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -79,20 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (context, box, _) {
                       final count = box.length;
                       if (count == 0) return const SizedBox.shrink();
-                      return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.warning.withOpacity(0.35)),
-                        ),
-                        child: Text(
-                          '$count pending',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                      return Flexible(
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+                          ),
+                          child: Text(
+                            context.l10n.pendingCount(count),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
                       );
@@ -125,8 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Together for\nOcean Safety,\nStronger Together",
+                          Text(
+                            context.l10n.togetherForOceanSafety,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -153,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                               ),
-                              child: const Text("See Updates"),
+                              child: Text(context.l10n.seeUpdates),
                             ),
                           ),
                         ],
@@ -178,19 +185,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Unusual Activity 🔥", // Changed from Disaster Info to feel closer to "Report Hazard" theme
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      context.l10n.unusualActivity, // Changed from Disaster Info to feel closer to "Report Hazard" theme
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text(
-                      "See All",
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Text(
+                      context.l10n.seeAll,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -201,11 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip("Now", true),
+                    _buildFilterChip(context.l10n.filterNow, true),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Last week", false),
+                    _buildFilterChip(context.l10n.filterLastWeek, false),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Last month", false),
+                    _buildFilterChip(context.l10n.filterLastMonth, false),
                   ],
                 ),
               ),
@@ -271,12 +282,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.map, color: Colors.white, size: 14),
-                                    SizedBox(width: 4),
+                                  children: [
+                                    const Icon(Icons.map, color: Colors.white, size: 14),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'View Map',
-                                      style: TextStyle(
+                                      context.l10n.mapTab,
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -298,8 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    "High Waves in Pacific Coast",
+                                  Text(
+                                    context.l10n.sampleHazardHeadline,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -308,14 +319,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
-                                    children: const [
-                                      Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                                      SizedBox(width: 4),
-                                      Text("Sun, 11 June 2024", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                      SizedBox(width: 12),
-                                      Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                                      SizedBox(width: 4),
-                                      Text("3 min ago", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                    children: [
+                                      const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                                      const SizedBox(width: 4),
+                                      Text(context.l10n.sampleDate, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                      const SizedBox(width: 12),
+                                      const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                                      const SizedBox(width: 4),
+                                      Text(context.l10n.sampleTimeAgo, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                     ],
                                   ),
                                 ],
@@ -343,19 +354,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   const Text(
-                    "Live News",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      context.l10n.liveNews,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text(
-                      "See All",
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Text(
+                      context.l10n.seeAll,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -401,11 +416,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home_filled, "Home", 0),
-              _buildNavItem(Icons.map_outlined, "Map", 1),
+              Expanded(child: _buildNavItem(Icons.home_filled, context.l10n.homeTab, 0)),
+              Expanded(child: _buildNavItem(Icons.map_outlined, context.l10n.mapTab, 1)),
               const SizedBox(width: 48), // Space for FAB
-              _buildNavItem(Icons.article_outlined, "Updates", 2),
-              _buildNavItem(Icons.person_outline, "Profile", 3),
+              Expanded(child: _buildNavItem(Icons.article_outlined, context.l10n.updatesTab, 2)),
+              Expanded(child: _buildNavItem(Icons.person_outline, context.l10n.profileTab, 3)),
             ],
           ),
         ),
@@ -541,6 +556,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: TextStyle(
               fontSize: 10,
                color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
 import 'home_screen.dart';
@@ -26,7 +27,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     
     if (name.isEmpty || name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid name (at least 2 characters)')),
+        SnackBar(content: Text(context.l10n.pleaseEnterValidName)),
       );
       return;
     }
@@ -99,8 +100,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     ),
                     const SizedBox(height: 24),
                     
-                    const Text(
-                      "What's your name?",
+                    Text(
+                      context.l10n.whatsYourName,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -108,8 +109,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      "Help us personalize your experience",
+                    Text(
+                      context.l10n.personalizeExperience,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
@@ -123,7 +124,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        hintText: "Enter your name",
+                        hintText: context.l10n.enterYourName,
                         prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
                         filled: true,
                         fillColor: const Color(0xFFF7F9FB),
@@ -148,7 +149,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: PrimaryButton(
-                        text: _isLoading ? "Saving..." : "Continue",
+                        text: _isLoading
+                            ? context.l10n.savingLabel
+                            : context.l10n.continueLabel,
                         backgroundColor: AppColors.primaryBlue,
                         onPressed: _isLoading ? () {} : _saveName,
                       ),
