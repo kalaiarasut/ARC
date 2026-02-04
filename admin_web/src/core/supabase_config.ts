@@ -16,33 +16,23 @@ import { createClient } from '@supabase/supabase-js';
  */
 
 // Read credentials from environment variables.
-// Vite only exposes variables that match `envPrefix` in vite.config.ts.
-// We support a few common key names to reduce configuration foot-guns.
-const readEnv = (...keys: string[]): string => {
-  const env = (import.meta as any)?.env as Record<string, unknown> | undefined;
-  for (const key of keys) {
-    const value = env?.[key];
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed) return trimmed;
-    }
-  }
-  return '';
-};
+// IMPORTANT: Use direct `import.meta.env.X` access so Vite reliably injects values.
+// Avoid optional chaining/type-cast/dynamic indexing here; those can bypass Vite's env transform.
+const SUPABASE_URL = (
+  import.meta.env.VITE_SUPABASE_URL ||
+  import.meta.env.VITE_PUBLIC_SUPABASE_URL ||
+  import.meta.env.SUPABASE_URL ||
+  ''
+).trim();
 
-const SUPABASE_URL = readEnv(
-  'VITE_SUPABASE_URL',
-  'VITE_PUBLIC_SUPABASE_URL',
-  'SUPABASE_URL'
-);
-
-const SUPABASE_ANON_KEY = readEnv(
-  'VITE_SUPABASE_ANON_KEY',
-  'VITE_PUBLIC_SUPABASE_ANON_KEY',
-  'VITE_SUPABASE_KEY',
-  'SUPABASE_ANON_KEY',
-  'SUPABASE_KEY'
-);
+const SUPABASE_ANON_KEY = (
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_KEY ||
+  import.meta.env.SUPABASE_ANON_KEY ||
+  import.meta.env.SUPABASE_KEY ||
+  ''
+).trim();
 
 /**
  * Configuration status tracking

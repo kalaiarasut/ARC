@@ -274,7 +274,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeUpdates => 'See Updates';
 
   @override
-  String get unusualActivity => 'Unusual Activity 🔥';
+  String get unusualActivity => 'Reports';
 
   @override
   String get seeAll => 'See All';

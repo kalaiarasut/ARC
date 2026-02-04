@@ -60,7 +60,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         padding: 0,
                     }}
                 >
-                    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, width: '100%', boxSizing: 'border-box' }}>
+                    <Box sx={{ p: { xs: 1, sm: 1, md: 1 }, width: '100%', boxSizing: 'border-box' }}>
                         {/* Mobile Menu Button */}
                         <IconButton
                             color="inherit"

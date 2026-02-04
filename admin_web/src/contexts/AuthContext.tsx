@@ -3,16 +3,16 @@ import type { ReactNode } from 'react';
 import { supabase } from '../config/supabase';
 
 interface User {
+    id: string;
     email: string;
     name: string;
     avatar?: string;
-    role?: string;
+    role?: 'admin' | null;
 }
 
 interface AuthContextType {
     user: User | null;
     login: (email: string, password: string) => Promise<{ error: any }>;
-    signup: (email: string, password: string) => Promise<{ error: any }>;
     logout: () => Promise<void>;
     isAuthenticated: boolean;
     loading: boolean;
@@ -36,17 +36,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const hydrateUserFromSession = async (sessionUser: { id: string; email?: string | null; user_metadata?: any }) => {
+        const email = sessionUser.email || '';
+
+        // Best-effort role lookup (RLS allows users to read only their own row).
+        let role: 'admin' | null = null;
+        try {
+            const { data } = await supabase
+                .from('app_roles')
+                .select('role')
+                .eq('user_id', sessionUser.id)
+                .maybeSingle();
+            role = (data?.role as 'admin' | undefined) ?? null;
+        } catch {
+            // Ignore (table may not exist yet / RLS mismatch / network)
+            role = null;
+        }
+
+        setUser({
+            id: sessionUser.id,
+            email,
+            name: sessionUser.user_metadata?.name || email.split('@')[0] || 'User',
+            role,
+        });
+    };
+
     useEffect(() => {
         // Check active session
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                const email = session.user.email || '';
-                setUser({
-                    email,
-                    name: session.user.user_metadata?.name || email.split('@')[0],
-                    role: 'Admin', // Default role for now
-                });
+                await hydrateUserFromSession(session.user);
             }
             setLoading(false);
         };
@@ -56,15 +76,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                const email = session.user.email || '';
-                setUser({
-                    email,
-                    name: session.user.user_metadata?.name || email.split('@')[0],
-                    role: 'Admin',
-                });
-            } else {
-                setUser(null);
+                void hydrateUserFromSession(session.user).finally(() => setLoading(false));
+                return;
             }
+            setUser(null);
             setLoading(false);
         });
 
@@ -72,27 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     const login = async (email: string, password: string) => {
-        // DEV ONLY: Test Validation Bypass
-        // Allows access for testing/demo without needing a real Supabase account
-        if (email === 'admin@showcase.com' && password === 'admin123') {
-            setUser({
-                email: 'admin@showcase.com',
-                name: 'Test Admin',
-                role: 'Admin',
-            });
-            return { error: null };
-        }
-
         const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        return { error };
-    };
-
-    const signup = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signUp({
             email,
             password,
         });
@@ -108,7 +103,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const value = {
         user,
         login,
-        signup,
         logout,
         isAuthenticated: !!user,
         loading,

@@ -1,11 +1,15 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Divider, Typography, Avatar } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from '../contexts/AuthContext';
 
-export const DRAWER_WIDTH = 280;
+export const DRAWER_WIDTH = 240;
 
 // Ocean Gradient matching Login
 const OCEAN_GRADIENT = 'linear-gradient(135deg, #0a4d68 0%, #088395 50%, #05bfdb 100%)';
@@ -68,15 +72,21 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { isAuthenticated, logout, user } = useAuth();
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const navItems = [
         { icon: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Dashboard', path: '/dashboard' },
         { icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Hazard Reports', path: '/reports' },
+        { icon: <CampaignOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Official Updates', path: '/advisories' },
+        { icon: <HubOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Generated Zones', path: '/generated-zones' },
         { icon: <MapOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Live Map', path: '/map' },
     ];
 
     const isActive = (path: string) => {
         if (path === '/reports') return location.pathname.startsWith('/reports');
+        if (path === '/advisories') return location.pathname.startsWith('/advisories');
+        if (path === '/generated-zones') return location.pathname.startsWith('/generated-zones');
         if (path === '/map') return location.pathname.startsWith('/map');
         return location.pathname.startsWith(path);
     };
@@ -84,6 +94,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     const handleNavClick = (path: string) => {
         navigate(path);
         if (onNavigate) onNavigate();
+    };
+
+    const handleLogout = async () => {
+        if (loggingOut) return;
+        try {
+            setLoggingOut(true);
+            await logout();
+        } finally {
+            setLoggingOut(false);
+            navigate('/login');
+            if (onNavigate) onNavigate();
+        }
     };
 
     return (
@@ -134,6 +156,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                     />
                 ))}
             </Box>
+
+            {/* Bottom Actions */}
+            {/* Bottom Profile & Logout */}
+            {isAuthenticated && user && (
+                <Box sx={{ p: 2, pt: 1.5 }}>
+                    <Divider sx={{ mb: 1.5, opacity: 0.7 }} />
+                    <Box
+                        onClick={handleLogout}
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 1,
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            border: '1px solid transparent',
+                            '&:hover': {
+                                backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                                borderColor: 'rgba(239, 68, 68, 0.1)',
+                                '& .logout-icon': { opacity: 1, transform: 'translateX(0)' },
+                            }
+                        }}
+                    >
+                        <Avatar sx={{ width: 34, height: 34, background: OCEAN_GRADIENT, fontSize: '0.85rem', fontWeight: 600 }}>
+                            {user.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.85rem' }} noWrap>
+                                {user.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.7rem' }} noWrap>
+                                {loggingOut ? 'Logging out...' : 'Admin • Tap to Logout'}
+                            </Typography>
+                        </Box>
+                        <LogoutIcon
+                            className="logout-icon"
+                            sx={{
+                                fontSize: 18,
+                                color: '#EF4444',
+                                opacity: 0.4,
+                                transform: 'translateX(-4px)',
+                                transition: 'all 0.2s ease'
+                            }}
+                        />
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 };

@@ -10,6 +10,7 @@ class MapMarkerData {
   final DateTime timestamp;
   final bool isHighRisk;
   final bool isOwnReport; // true if this is the current user's report
+  final List<String> mediaUrls;
 
   MapMarkerData({
     required this.id,
@@ -19,6 +20,7 @@ class MapMarkerData {
     required this.timestamp,
     this.isHighRisk = false,
     this.isOwnReport = false,
+    this.mediaUrls = const [],
   });
 
   /// Get icon based on hazard type

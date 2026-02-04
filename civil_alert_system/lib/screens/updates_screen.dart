@@ -8,10 +8,12 @@ import '../services/offline_report_queue_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
 import '../widgets/app_state_view.dart';
+import '../providers/map_provider.dart';
 
 final advisoryServiceProvider = Provider<AdvisoryService>((ref) => AdvisoryService());
 final advisoriesProvider = FutureProvider<List<OfficialAdvisory>>((ref) async {
-  return ref.read(advisoryServiceProvider).getLatest();
+  final userLocation = ref.watch(userLocationProvider);
+  return ref.read(advisoryServiceProvider).getLatest(userLocation: userLocation);
 });
 
 class UpdatesScreen extends ConsumerWidget {

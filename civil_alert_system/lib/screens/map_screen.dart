@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,11 +7,14 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../core/supabase_config.dart';
 import '../providers/map_provider.dart';
 import '../models/map_marker_data.dart';
+import '../models/official_advisory.dart';
+import '../models/advisory_category.dart';
 import 'report_details_screen.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -30,6 +34,28 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   bool _hasPromptedForGps = false;
   bool _hasPromptedForPermissionSettings = false;
   StreamSubscription<ServiceStatus>? _serviceStatusSub;
+
+  double _markerScale = 1.0;
+  double _lastZoom = -1;
+
+  double _computeMarkerScale(double zoom) {
+    // Gentle scaling so markers feel responsive but not huge.
+    // Base: zoom 14 => 1.0; zoom +/-8 => x2 or x0.5
+    const baseZoom = 14.0;
+    final raw = math.pow(2, (zoom - baseZoom) / 8.0).toDouble();
+    return raw.clamp(0.65, 1.35);
+  }
+
+  Future<void> _openDirectionsTo(double lat, double lon) async {
+    // Use Google Maps directions with destination only; Google Maps will default origin to current location.
+    final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open maps')),
+      );
+    }
+  }
 
   Future<Position?> _getBestPosition({
     Duration timeout = const Duration(seconds: 12),
@@ -322,6 +348,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   }
 
   void _onMapEvent(MapEvent event) {
+    final zoom = _mapController.camera.zoom;
+    if (_lastZoom < 0 || (zoom - _lastZoom).abs() >= 0.01) {
+      final newScale = _computeMarkerScale(zoom);
+      _lastZoom = zoom;
+      if (mounted && (_markerScale - newScale).abs() >= 0.03) {
+        setState(() {
+          _markerScale = newScale;
+        });
+      }
+    }
+
     if (event is MapEventMoveEnd || event is MapEventRotateEnd) {
       _updateMapData();
     }
@@ -372,6 +409,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               minZoom: 5,
               maxZoom: 18,
               onMapEvent: _onMapEvent,
+              onTap: (tapPosition, point) {
+                ref.read(mapProvider.notifier).clearSelections();
+              },
             ),
             children: [
               // Base map tiles
@@ -400,17 +440,21 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               MarkerClusterLayerWidget(
                 options: MarkerClusterLayerOptions(
                   maxClusterRadius: 100,
-                  size: const Size(50, 50),
+                  size: Size(50 * _markerScale, 50 * _markerScale),
                   markers: mapState.markers.map((markerData) {
                     return Marker(
                       point: markerData.location,
-                      width: 40,
-                      height: 50,
+                      width: 40 * _markerScale,
+                      height: 50 * _markerScale,
                       child: GestureDetector(
                         onTap: () {
                           ref.read(mapProvider.notifier).selectMarker(markerData);
                         },
-                        child: _buildMarkerWidget(markerData),
+                        child: Transform.scale(
+                          scale: _markerScale,
+                          alignment: Alignment.bottomCenter,
+                          child: _buildMarkerWidget(markerData),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -419,12 +463,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlue,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
+                        border: Border.all(color: Colors.white, width: 3 * _markerScale),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            blurRadius: 8 * _markerScale,
+                            offset: Offset(0, 2 * _markerScale),
                           ),
                         ],
                       ),
@@ -435,13 +479,67 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                          ),
+                          ).copyWith(fontSize: 16 * _markerScale),
                         ),
                       ),
                     );
                   },
                 ),
               ),
+
+              // Advisory markers with clustering (official updates)
+              if (mapState.advisories.isNotEmpty)
+                MarkerClusterLayerWidget(
+                  options: MarkerClusterLayerOptions(
+                    maxClusterRadius: 100,
+                    size: Size(50 * _markerScale, 50 * _markerScale),
+                    markers: mapState.advisories
+                        .where((a) => a.latitude != null && a.longitude != null)
+                        .map((advisory) {
+                      return Marker(
+                        point: LatLng(advisory.latitude!, advisory.longitude!),
+                        width: 40 * _markerScale,
+                        height: 50 * _markerScale,
+                        child: GestureDetector(
+                          onTap: () {
+                            ref.read(mapProvider.notifier).selectAdvisory(advisory);
+                          },
+                          child: Transform.scale(
+                            scale: _markerScale,
+                            alignment: Alignment.bottomCenter,
+                            child: _buildAdvisoryMarkerWidget(advisory),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    builder: (context, markers) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryCyan,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3 * _markerScale),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8 * _markerScale,
+                              offset: Offset(0, 2 * _markerScale),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${markers.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ).copyWith(fontSize: 16 * _markerScale),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
               // User location marker
               if (_userLocation != null)
@@ -668,7 +766,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
           // Recenter FAB
           Positioned(
-            bottom: mapState.selectedMarker != null ? 280 : 100,
+            bottom: (mapState.selectedMarker != null || mapState.selectedAdvisory != null) ? 280 : 100,
             right: 16,
             child: FloatingActionButton(
               onPressed: _isFetchingLocation ? null : _refreshUserLocationAndCenter,
@@ -725,6 +823,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           // Bottom sheet for selected marker
           if (mapState.selectedMarker != null)
             _buildMarkerDetailsSheet(mapState.selectedMarker!),
+
+          if (mapState.selectedAdvisory != null)
+            _buildAdvisoryDetailsSheet(mapState.selectedAdvisory!),
         ],
       ),
     );
@@ -805,6 +906,326 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       default:
         return Icons.warning;
     }
+  }
+
+  Color _getAdvisoryColor(String category) {
+    switch (advisoryCategoryFromString(category)) {
+      case AdvisoryCategory.food:
+        return AppColors.success;
+      case AdvisoryCategory.shelter:
+        return AppColors.primaryBlue;
+      case AdvisoryCategory.medical:
+        return AppColors.error;
+      case AdvisoryCategory.rescue:
+        return const Color(0xFF6A1B9A); // Purple
+      case AdvisoryCategory.roadblock:
+        return const Color(0xFF5D4037); // Brown
+      case AdvisoryCategory.warning:
+        return const Color(0xFFFF9800); // Orange
+      case AdvisoryCategory.evacuation:
+        return const Color(0xFFD32F2F); // Red
+      case AdvisoryCategory.unknown:
+        return AppColors.secondaryCyan;
+    }
+  }
+
+  IconData _getAdvisoryIcon(String category) {
+    switch (advisoryCategoryFromString(category)) {
+      case AdvisoryCategory.food:
+        return Icons.restaurant;
+      case AdvisoryCategory.shelter:
+        return Icons.home;
+      case AdvisoryCategory.medical:
+        return Icons.medical_services;
+      case AdvisoryCategory.rescue:
+        return Icons.volunteer_activism;
+      case AdvisoryCategory.roadblock:
+        return Icons.block;
+      case AdvisoryCategory.warning:
+        return Icons.warning_amber;
+      case AdvisoryCategory.evacuation:
+        return Icons.directions_run;
+      case AdvisoryCategory.unknown:
+        return Icons.campaign;
+    }
+  }
+
+  Widget _buildAdvisoryMarkerWidget(OfficialAdvisory advisory) {
+    final color = _getAdvisoryColor(advisory.category);
+    final categoryLabel = advisoryCategoryLabel(advisoryCategoryFromString(advisory.category));
+
+    return Column(
+      children: [
+        SizedBox(
+          width: 40,
+          height: 40,
+          child: Container(
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(
+                    _getAdvisoryIcon(advisory.category),
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                Positioned(
+                  left: 6,
+                  bottom: 4,
+                  right: 6,
+                  child: Text(
+                    categoryLabel.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 7,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        CustomPaint(
+          size: const Size(10, 10),
+          painter: _TrianglePainter(color),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdvisoryDetailsSheet(OfficialAdvisory advisory) {
+    final color = _getAdvisoryColor(advisory.category);
+    final categoryLabel = advisoryCategoryLabel(advisoryCategoryFromString(advisory.category));
+    final validityParts = <String>[];
+    if (advisory.startsAt != null) validityParts.add('From: ${advisory.startsAt!.toLocal()}');
+    if (advisory.expiresAt != null) validityParts.add('Until: ${advisory.expiresAt!.toLocal()}');
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _getAdvisoryIcon(advisory.category),
+                        color: color,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            advisory.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  categoryLabel,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: color,
+                                  ),
+                                ),
+                              ),
+                              if ((advisory.region ?? '').isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    advisory.region!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  advisory.body,
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+
+                if (validityParts.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.event, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          validityParts.join(' • '),
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                if ((advisory.contactPhone ?? '').isNotEmpty ||
+                    (advisory.contactWhatsapp ?? '').isNotEmpty ||
+                    (advisory.contactHotline ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Contacts',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  if ((advisory.contactPhone ?? '').isNotEmpty)
+                    Text('Phone: ${advisory.contactPhone}', style: const TextStyle(color: AppColors.textSecondary)),
+                  if ((advisory.contactWhatsapp ?? '').isNotEmpty)
+                    Text('WhatsApp: ${advisory.contactWhatsapp}', style: const TextStyle(color: AppColors.textSecondary)),
+                  if ((advisory.contactHotline ?? '').isNotEmpty)
+                    Text('Hotline: ${advisory.contactHotline}', style: const TextStyle(color: AppColors.textSecondary)),
+                ],
+
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          ref.read(mapProvider.notifier).clearSelectedAdvisory();
+                        },
+                        icon: const Icon(Icons.close, size: 18),
+                        label: Text(context.l10n.close),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                          side: const BorderSide(color: AppColors.greyOutline),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    if (advisory.latitude != null && advisory.longitude != null) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final lat = advisory.latitude;
+                            final lon = advisory.longitude;
+                            if (lat == null || lon == null) return;
+                            // ignore: discarded_futures
+                            _openDirectionsTo(lat, lon);
+                          },
+                          icon: const Icon(Icons.directions, size: 18),
+                          label: const Text('Navigate'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBlue,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildMarkerDetailsSheet(MapMarkerData marker) {

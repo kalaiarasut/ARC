@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -35,7 +36,10 @@ import {
   Badge,
   Tooltip,
   Divider,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -43,9 +47,14 @@ import {
   Refresh as RefreshIcon,
   Image as ImageIcon,
   VideoLibrary as VideoIcon,
+  Audiotrack as AudioIcon,
   Warning as WarningIcon,
   People as PeopleIcon,
   Place as PlaceIcon,
+  Download as DownloadIcon,
+  OpenInNew as OpenInNewIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 
 import { landmarkService } from '../services/landmarkService';
@@ -59,18 +68,26 @@ import { format } from 'date-fns';
 
 const HAZARD_TYPES: HazardType[] = ['High Waves', 'Tsunami', 'Storm', 'Flood', 'Other'];
 const URGENCY_LEVELS: UrgencyLevel[] = ['Low', 'Medium', 'High'];
-const STATUSES: ReportStatus[] = ['pending', 'verified', 'resolved'];
+const STATUSES: ReportStatus[] = ['pending', 'verified', 'rejected', 'resolved'];
 
 export function Reports() {
+  const navigate = useNavigate();
+  const theme = useTheme();
   const [reports, setReports] = useState<HazardReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<HazardReport | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<{ open: boolean; urls: string[]; index: number }>(
+    { open: false, urls: [], index: 0 }
+  );
   const [landmarkManagerOpen, setLandmarkManagerOpen] = useState(false);
   const [landmarks, setLandmarks] = useState<Landmark[]>(landmarkService.getLandmarks());
 
@@ -142,6 +159,128 @@ export function Reports() {
     }
   };
 
+  const safeMaskPhone = (phone: string | null | undefined) => {
+    if (!phone) return '—';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 6) return phone;
+    const suffix = digits.slice(-3);
+    return `***-***-${suffix}`;
+  };
+
+  const looksLikeVideo = (url: string) => {
+    const lower = url.toLowerCase();
+    return lower.includes('video') || lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm');
+  };
+
+  const looksLikeAudio = (url: string) => {
+    const lower = url.toLowerCase();
+    return (
+      lower.includes('audio') ||
+      lower.endsWith('.mp3') ||
+      lower.endsWith('.wav') ||
+      lower.endsWith('.m4a') ||
+      lower.endsWith('.aac') ||
+      lower.endsWith('.ogg') ||
+      lower.endsWith('.opus')
+    );
+  };
+
+  const openInLiveMap = (report: HazardReport) => {
+    const params = new URLSearchParams({
+      reportId: report.id,
+      lat: String(report.latitude),
+      lng: String(report.longitude),
+    });
+    navigate(`/map?${params.toString()}`);
+  };
+
+  const downloadTextFile = (filename: string, content: string, mime = 'text/plain;charset=utf-8') => {
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const escapeCsv = (value: unknown) => {
+    const s = value === null || value === undefined ? '' : String(value);
+    const needsQuotes = /[\n\r,\"]/g.test(s);
+    const escaped = s.replace(/\"/g, '""');
+    return needsQuotes ? `"${escaped}"` : escaped;
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      if (!isSupabaseConfigured()) {
+        setError('Supabase not configured. Cannot export.');
+        return;
+      }
+
+      setExporting(true);
+      setError(null);
+
+      const isLandmarkFilterActive = !!filters.landmarkId;
+      const { data } = await hazardService.getReportsWithCount(
+        filters,
+        0,
+        5000,
+        { fetchAll: true, maxRows: 5000 }
+      );
+
+      let exportRows = data;
+      if (isLandmarkFilterActive) {
+        const landmark = landmarks.find((l) => l.id === filters.landmarkId);
+        if (landmark) {
+          const radius = filters.landmarkRadius || landmark.radius || 5000;
+          exportRows = data.filter((report) =>
+            landmarkService.isWithinLandmark(report.latitude, report.longitude, landmark, radius)
+          );
+        }
+      }
+
+      const headers = [
+        'id',
+        'status',
+        'hazard_type',
+        'description',
+        'latitude',
+        'longitude',
+        'is_high_risk',
+        'urgency_level',
+        'people_at_risk',
+        'user_name',
+        'user_phone',
+        'event_time',
+        'created_at',
+        'media_urls',
+      ];
+
+      const csv = [
+        headers.join(','),
+        ...exportRows.map((r) =>
+          headers
+            .map((h) => {
+              const key = h as keyof HazardReport;
+              const value = key === 'media_urls' ? (r.media_urls || []).join('|') : (r as any)[key];
+              return escapeCsv(value);
+            })
+            .join(',')
+        ),
+      ].join('\n');
+
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      downloadTextFile(`hazard-reports-${stamp}.csv`, csv, 'text/csv;charset=utf-8');
+    } catch (e) {
+      console.error(e);
+      setError('Failed to export CSV.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Keep a ref to the latest loadReports implementation so realtime callbacks
   // always use current filters/pagination without re-subscribing.
   const loadReportsRef = useRef(loadReports);
@@ -168,6 +307,31 @@ export function Reports() {
     loadReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage]); // Removed filters from dep array to match original behavior where explicit search/filter button is needed, or add if auto-filtering is desired. Original only had page/rows.
+
+  // Auto-search effect with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Only reload if query changed or if we need to applying new filters (logic is simplified here for instant search)
+      // Note: We might want to avoid initial double load since loadReports is called on mount.
+      // But checking if query is different from previous ref would be better.
+      // For now, simple debounce for search query changes:
+      setPage(0);
+      loadReports();
+    }, 100); // 100ms debounce for fast search
+    return () => clearTimeout(timer);
+  }, [filters.searchQuery]);
+
+  // Optional auto-refresh (does not change filters; just reloads current view)
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+    if (!isSupabaseConfigured()) return;
+
+    const id = window.setInterval(() => {
+      loadReportsRef.current();
+    }, 30000);
+
+    return () => window.clearInterval(id);
+  }, [autoRefreshEnabled]);
 
   // Real-time subscription disabled for static mode
   /*
@@ -212,6 +376,39 @@ export function Reports() {
     setDetailDialogOpen(true);
   };
 
+  const updateStatus = async (report: HazardReport, nextStatus: ReportStatus) => {
+    try {
+      if (!isSupabaseConfigured()) {
+        setError('Supabase not configured. Cannot update status.');
+        return;
+      }
+
+      if (report.status === nextStatus) return;
+
+      const confirmText =
+        nextStatus === 'verified'
+          ? 'Accept this report and mark as VERIFIED?'
+          : nextStatus === 'rejected'
+            ? 'Reject this report?'
+            : `Change status to ${nextStatus.toUpperCase()}?`;
+
+      if (!window.confirm(confirmText)) return;
+
+      setStatusUpdatingId(report.id);
+      await hazardService.setReportStatus(report.id, nextStatus);
+
+      // Update local list for snappy UX
+      setReports((prev) => prev.map((r) => (r.id === report.id ? { ...r, status: nextStatus } : r)));
+      setSelectedReport((prev) => (prev && prev.id === report.id ? { ...prev, status: nextStatus } : prev));
+      setLastRefreshedAt(new Date());
+    } catch (e) {
+      console.error(e);
+      setError('Failed to update report status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
 
 
   const getActiveFilterCount = () => {
@@ -253,6 +450,7 @@ export function Reports() {
     const colors = {
       'pending': 'default',
       'verified': 'info',
+      'rejected': 'error',
       'resolved': 'success',
     };
     return colors[status] as any;
@@ -261,30 +459,48 @@ export function Reports() {
   return (
     <Box>
       <Header title="Hazard Reports" category="Reports" />
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Action Buttons */}
-        <Box display="flex" justifyContent="flex-end" mb={3}>
-          <Stack direction="row" spacing={2}>
+      <Container maxWidth={false} sx={{ py: 1, px: { xs: 1, sm: 2, md: 2 } }}>
+        {/* Floating Actions Row */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, gap: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={autoRefreshEnabled}
+                  onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                  disabled={!isSupabaseConfigured()}
+                  size="small"
+                />
+              }
+              label={<Typography variant="body2" fontWeight={500} color="text.secondary">Auto-refresh</Typography>}
+              sx={{ mr: 1 }}
+            />
             <Button
-              variant="outlined"
-              startIcon={<PlaceIcon />}
-              onClick={() => setLandmarkManagerOpen(true)}
+              variant="text"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportCsv}
+              disabled={loading || exporting || !isSupabaseConfigured()}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08) }
+              }}
             >
-              Manage Landmarks
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={loadReports}
-              disabled={loading}
-            >
-              Refresh
+              Export CSV
             </Button>
           </Stack>
         </Box>
 
         {/* Search and Filter Bar */}
-        <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+        <Box
+          sx={{
+            p: 1,
+            mb: 1.5, // Reduced margin
+            borderRadius: '12px',
+            background: alpha(theme.palette.background.paper, 0.8),
+            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            boxShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.04)}`,
+          }}
+        >
           {/* Active Landmark Filter Badge */}
           {filters.landmarkId && (
             <Box mb={2}>
@@ -293,7 +509,18 @@ export function Reports() {
                 label={`Filtering by: ${landmarks.find(l => l.id === filters.landmarkId)?.name} (${(filters.landmarkRadius || 5000).toLocaleString()}m radius)`}
                 onDelete={() => setFilters({ ...filters, landmarkId: null })}
                 color="primary"
-                variant="outlined"
+                sx={{
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  '& .MuiChip-deleteIcon': {
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      color: theme.palette.primary.dark,
+                    },
+                  },
+                }}
               />
             </Box>
           )}
@@ -305,11 +532,30 @@ export function Reports() {
                 placeholder="Search by description, location, or user name..."
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && handleApplyFilters()}
+                onKeyPress={(e) => {
+                  // Removed Enter key handler for instant search (or you can keep it to force immediate search)
+                  if (e.key === 'Enter') {
+                    // Force refresh or just let debounce handle it? 
+                    // Let's keep it just in case user wants to force it.
+                    loadReports();
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    bgcolor: alpha(theme.palette.grey[100], 0.5),
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.grey[100], 0.8),
+                    },
+                    '&.Mui-focused': {
+                      bgcolor: 'background.paper',
+                    },
+                  },
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon sx={{ color: 'text.secondary' }} />
                     </InputAdornment>
                   ),
                   endAdornment: filters.searchQuery && (
@@ -317,6 +563,10 @@ export function Reports() {
                       <IconButton
                         size="small"
                         onClick={() => setFilters({ ...filters, searchQuery: '' })}
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': { color: 'text.primary' },
+                        }}
                       >
                         <CloseIcon fontSize="small" />
                       </IconButton>
@@ -326,21 +576,52 @@ export function Reports() {
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Stack direction="row" spacing={2}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<SearchIcon />}
-                  onClick={handleApplyFilters}
+              <Stack direction="row" spacing={1.5}>
+                <IconButton
+                  onClick={loadReports}
                   disabled={loading}
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    color: 'white',
+                    borderRadius: '12px',
+                    p: 1, // Smaller padding for lower height
+                    '&:hover': {
+                      bgcolor: theme.palette.primary.dark,
+                    },
+                    '&.Mui-disabled': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.5),
+                      color: 'white',
+                    },
+                  }}
                 >
-                  Search
-                </Button>
-                <Badge badgeContent={getActiveFilterCount()} color="primary">
+                  <RefreshIcon />
+                </IconButton>
+                <Badge
+                  badgeContent={getActiveFilterCount()}
+                  color="error"
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontWeight: 700,
+                      fontSize: '0.7rem',
+                    },
+                  }}
+                >
                   <Button
                     variant="outlined"
                     startIcon={<FilterIcon />}
                     onClick={() => setFilterDrawerOpen(true)}
+                    sx={{
+                      py: 0.75, // Lower height
+                      px: 2,
+                      borderRadius: '12px',
+                      borderColor: alpha(theme.palette.grey[400], 0.5),
+                      color: 'text.primary',
+                      fontWeight: 600,
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
                   >
                     Filters
                   </Button>
@@ -348,7 +629,7 @@ export function Reports() {
               </Stack>
             </Grid>
           </Grid>
-        </Paper>
+        </Box>
 
         {/* Error Alert */}
         {error && (
@@ -358,26 +639,58 @@ export function Reports() {
         )}
 
         {/* Data Table */}
-        <Paper elevation={3}>
+        <Box
+          sx={{
+            borderRadius: '20px',
+            overflow: 'hidden',
+            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            bgcolor: 'background.paper',
+            boxShadow: `0 4px 24px ${alpha(theme.palette.common.black, 0.06)}`,
+          }}
+        >
           <TableContainer sx={{ maxHeight: 'calc(100vh - 400px)' }}>
-            <Table stickyHeader>
+            <Table
+              stickyHeader
+              size="small"
+              sx={{
+                '& .MuiTableCell-root': {
+                  py: 1,
+                  px: 1.5,
+                  lineHeight: 1.4,
+                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                },
+                '& .MuiTableCell-head': {
+                  py: 1.5,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: theme.palette.text.secondary,
+                  bgcolor: alpha(theme.palette.grey[50], 0.95),
+                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                },
+                '& .MuiChip-root': { height: 24 },
+                '& .MuiIconButton-root': { p: 0.5 },
+              }}
+            >
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Hazard Type</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Location</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Risk Level</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Urgency</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>People at Risk</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Media</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: 'grey.50' }}>Date & Time</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Hazard Type</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Risk Level</TableCell>
+                  <TableCell>Urgency</TableCell>
+                  <TableCell>People at Risk</TableCell>
+                  <TableCell>Media</TableCell>
+                  <TableCell>Date & Time</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
                       <CircularProgress />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                         Loading reports...
@@ -386,22 +699,43 @@ export function Reports() {
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
-                      <Typography variant="body1" color="text.secondary">
-                        No reports found matching your criteria
-                      </Typography>
+                    <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                      <Stack spacing={1} alignItems="center">
+                        <Typography variant="body1" color="text.secondary">
+                          No reports found matching your criteria
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button size="small" variant="outlined" onClick={handleResetFilters}>
+                            Clear filters
+                          </Button>
+                          <Button size="small" variant="contained" onClick={loadReports}>
+                            Refresh
+                          </Button>
+                        </Stack>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  reports.map((report) => (
+                  reports.map((report, index) => (
                     <TableRow
                       key={report.id}
-                      hover
                       onClick={() => handleRowClick(report)}
                       sx={{
                         cursor: 'pointer',
-                        bgcolor: report.is_high_risk ? 'error.50' : 'inherit',
-                        '&:hover': { bgcolor: report.is_high_risk ? 'error.100' : 'action.hover' },
+                        bgcolor: report.is_high_risk
+                          ? alpha(theme.palette.error.main, 0.04)
+                          : index % 2 === 0
+                            ? 'transparent'
+                            : alpha(theme.palette.grey[50], 0.5),
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                          transform: 'scale(1.001)',
+                          boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
+                        },
+                        ...(report.is_high_risk && {
+                          borderLeft: `3px solid ${theme.palette.error.main}`,
+                        }),
                       }}
                     >
                       <TableCell>
@@ -426,12 +760,24 @@ export function Reports() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="caption" display="block">
-                          {report.latitude.toFixed(4)}°N
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          {report.longitude.toFixed(4)}°E
-                        </Typography>
+                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
+                          </Typography>
+                          <Tooltip title="Open in Live Map">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openInLiveMap(report);
+                              }}
+                              aria-label="Open in Live Map"
+                            >
+                              <PlaceIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </TableCell>
                       <TableCell>
                         {report.is_high_risk ? (
@@ -481,13 +827,17 @@ export function Reports() {
                               color="primary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (report.media_urls && report.media_urls.length > 0) {
-                                  window.open(report.media_urls[0], '_blank');
-                                }
+                                setMediaPreview({ open: true, urls: report.media_urls ?? [], index: 0 });
                               }}
                             >
                               <Badge badgeContent={report.media_urls.length} color="primary">
-                                <ImageIcon />
+                                {report.media_urls.some(looksLikeVideo) ? (
+                                  <VideoIcon />
+                                ) : report.media_urls.some(looksLikeAudio) ? (
+                                  <AudioIcon />
+                                ) : (
+                                  <ImageIcon />
+                                )}
                               </Badge>
                             </IconButton>
                           </Tooltip>
@@ -495,13 +845,50 @@ export function Reports() {
                           <Typography variant="caption" color="text.secondary">—</Typography>
                         )}
                       </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {format(new Date(report.created_at), 'MMM dd, yyyy HH:mm')}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
-                        <Typography variant="caption" display="block">
-                          {format(new Date(report.created_at), 'MMM dd, yyyy')}
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          {format(new Date(report.created_at), 'HH:mm:ss')}
-                        </Typography>
+                        {report.status === 'pending' ? (
+                          <Stack direction="row" spacing={0.75}>
+                            <Tooltip title="Accept (Verify)">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="success"
+                                  disabled={statusUpdatingId === report.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateStatus(report, 'verified');
+                                  }}
+                                  aria-label="Accept report"
+                                >
+                                  {statusUpdatingId === report.id ? <CircularProgress size={18} /> : <CheckCircleIcon fontSize="small" />}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title="Reject">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  disabled={statusUpdatingId === report.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateStatus(report, 'rejected');
+                                  }}
+                                  aria-label="Reject report"
+                                >
+                                  {statusUpdatingId === report.id ? <CircularProgress size={18} /> : <CancelIcon fontSize="small" />}
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Stack>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">—</Typography>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -509,19 +896,34 @@ export function Reports() {
               </TableBody>
             </Table>
           </TableContainer>
-          <TablePagination
-            component="div"
-            count={totalCount}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              px: 2,
+              py: 1,
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`
             }}
-            rowsPerPageOptions={[10, 25, 50, 100]}
-          />
-        </Paper>
+          >
+            <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+              Total: {totalCount.toLocaleString()} Reports
+            </Typography>
+            <TablePagination
+              component="div"
+              count={totalCount}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={{ border: 'none' }}
+            />
+          </Box>
+        </Box>
 
         {/* Filter Drawer */}
         <Drawer
@@ -697,6 +1099,21 @@ export function Reports() {
                 />
               )}
 
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                <Button
+                  size="small"
+                  startIcon={<PlaceIcon fontSize="small" />}
+                  onClick={() => setLandmarkManagerOpen(true)}
+                  sx={{
+                    fontSize: '0.8125rem',
+                    color: 'text.secondary',
+                    '&:hover': { color: 'primary.main', bgcolor: 'transparent' }
+                  }}
+                >
+                  Manage Landmarks
+                </Button>
+              </Box>
+
               <Divider />
 
               {/* Date Range */}
@@ -831,7 +1248,7 @@ export function Reports() {
                         Phone Number
                       </Typography>
                       <Typography variant="body1" fontFamily="monospace">
-                        {selectedReport.user_phone.replace(/(\d{2})(\d{4})(\d{2})(\d+)/, '+$1-****-**$4')}
+                        {safeMaskPhone(selectedReport.user_phone)}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -868,10 +1285,10 @@ export function Reports() {
                             key={idx}
                             variant="outlined"
                             size="small"
-                            startIcon={url.includes('video') ? <VideoIcon /> : <ImageIcon />}
-                            onClick={() => window.open(url, '_blank')}
+                            startIcon={looksLikeVideo(url) ? <VideoIcon /> : looksLikeAudio(url) ? <AudioIcon /> : <ImageIcon />}
+                            onClick={() => setMediaPreview({ open: true, urls: selectedReport.media_urls ?? [], index: idx })}
                           >
-                            {url.includes('video') ? 'Video' : 'Image'} {idx + 1}
+                            {looksLikeVideo(url) ? 'Video' : looksLikeAudio(url) ? 'Audio' : 'Image'} {idx + 1}
                           </Button>
                         ))}
                       </Box>
@@ -880,10 +1297,131 @@ export function Reports() {
                 </Stack>
               </DialogContent>
               <DialogActions>
+                {selectedReport.status === 'pending' && (
+                  <Stack direction="row" spacing={1} sx={{ mr: 'auto', pl: 1 }}>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<CheckCircleIcon />}
+                      disabled={statusUpdatingId === selectedReport.id}
+                      onClick={() => updateStatus(selectedReport, 'verified')}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<CancelIcon />}
+                      disabled={statusUpdatingId === selectedReport.id}
+                      onClick={() => updateStatus(selectedReport, 'rejected')}
+                    >
+                      Reject
+                    </Button>
+                  </Stack>
+                )}
                 <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
               </DialogActions>
             </>
           )}
+        </Dialog>
+
+        {/* Media Preview Dialog */}
+        <Dialog
+          open={mediaPreview.open}
+          onClose={() => setMediaPreview({ open: false, urls: [], index: 0 })}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" fontWeight={700}>
+                Media Preview
+              </Typography>
+              <IconButton onClick={() => setMediaPreview({ open: false, urls: [], index: 0 })}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {mediaPreview.urls.length > 0 ? (
+              <Stack spacing={2}>
+                <Typography variant="caption" color="text.secondary">
+                  {mediaPreview.index + 1} / {mediaPreview.urls.length}
+                </Typography>
+
+                {looksLikeVideo(mediaPreview.urls[mediaPreview.index]) ? (
+                  <Box
+                    component="video"
+                    src={mediaPreview.urls[mediaPreview.index]}
+                    controls
+                    sx={{ width: '100%', borderRadius: 1 }}
+                  />
+                ) : looksLikeAudio(mediaPreview.urls[mediaPreview.index]) ? (
+                  <Box
+                    component="audio"
+                    src={mediaPreview.urls[mediaPreview.index]}
+                    controls
+                    sx={{ width: '100%' }}
+                  />
+                ) : (
+                  <Box
+                    component="img"
+                    src={mediaPreview.urls[mediaPreview.index]}
+                    alt="Report media"
+                    sx={{ width: '100%', borderRadius: 1 }}
+                  />
+                )}
+
+                {mediaPreview.urls.length > 1 && (
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={mediaPreview.index === 0}
+                      onClick={() => setMediaPreview((s) => ({ ...s, index: Math.max(0, s.index - 1) }))}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={mediaPreview.index >= mediaPreview.urls.length - 1}
+                      onClick={() => setMediaPreview((s) => ({ ...s, index: Math.min(s.urls.length - 1, s.index + 1) }))}
+                    >
+                      Next
+                    </Button>
+
+                    <Divider flexItem sx={{ mx: 1 }} />
+
+                    {mediaPreview.urls.map((_, idx) => (
+                      <Button
+                        key={idx}
+                        size="small"
+                        variant={idx === mediaPreview.index ? 'contained' : 'text'}
+                        onClick={() => setMediaPreview((s) => ({ ...s, index: idx }))}
+                      >
+                        {idx + 1}
+                      </Button>
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="text.secondary">No media</Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            {mediaPreview.urls.length > 0 && (
+              <Button
+                variant="outlined"
+                startIcon={<OpenInNewIcon />}
+                onClick={() => window.open(mediaPreview.urls[mediaPreview.index], '_blank', 'noopener,noreferrer')}
+              >
+                Open in new tab
+              </Button>
+            )}
+            <Button onClick={() => setMediaPreview({ open: false, urls: [], index: 0 })}>Close</Button>
+          </DialogActions>
         </Dialog>
 
         {/* Landmark Manager Dialog */}

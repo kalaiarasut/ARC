@@ -275,7 +275,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get seeUpdates => 'புதுப்பிப்புகளை காண்க';
 
   @override
-  String get unusualActivity => 'அசாதாரண செயல்பாடு 🔥';
+  String get unusualActivity => 'அறிக்கைகள்';
 
   @override
   String get seeAll => 'அனைத்தையும் காண்க';

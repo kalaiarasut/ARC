@@ -1,6 +1,6 @@
 export type HazardType = 'High Waves' | 'Tsunami' | 'Storm' | 'Flood' | 'Other';
 export type UrgencyLevel = 'Low' | 'Medium' | 'High';
-export type ReportStatus = 'pending' | 'verified' | 'resolved';
+export type ReportStatus = 'pending' | 'verified' | 'rejected' | 'resolved';
 
 export interface HazardReport {
   id: string;

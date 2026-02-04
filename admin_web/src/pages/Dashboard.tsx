@@ -15,114 +15,11 @@ import {
   PendingActions as PendingIcon,
   Assessment as AssessmentIcon,
 } from '@mui/icons-material';
-import { StatCard, ReportCard } from '../components/ReportCard';
-import { Header } from '../components/Header';
-// import { hazardService } from '../services/hazardService';
+import { StatCard } from '../components/ReportCard';
+import { RecentReportsTable } from '../components/RecentReportsTable';
+import { hazardService } from '../services/hazardService';
+import { isSupabaseConfigured } from '../core/supabase_config';
 import type { HazardReport, DashboardStats } from '../types/hazard';
-
-const STATIC_DASHBOARD_STATS: DashboardStats = {
-  totalReports: 1250,
-  pendingReports: 45,
-  highRiskReports: 12,
-  reportsToday: 8,
-  reportsThisWeek: 42,
-  byHazardType: {
-    'High Waves': 450,
-    'Tsunami': 2,
-    'Storm': 310,
-    'Flood': 280,
-    'Other': 208,
-  },
-  byUrgency: {
-    'High': 120,
-    'Medium': 450,
-    'Low': 680,
-  },
-  byStatus: {
-    'pending': 45,
-    'verified': 890,
-    'resolved': 315,
-  }
-};
-
-const STATIC_RECENT_REPORTS: HazardReport[] = [
-  {
-    id: '1',
-    client_id: 'c1',
-    user_id: 'u1',
-    user_phone: '9876543210',
-    user_name: 'John Doe',
-    hazard_type: 'High Waves',
-    description: 'Waves exceeding 4m height near the lighthouse. Small vessels advised to return.',
-    latitude: 13.0827,
-    longitude: 80.2707,
-    is_high_risk: true,
-    people_at_risk: 12,
-    urgency_level: 'High',
-    media_urls: [],
-    upload_complete: true,
-    status: 'pending',
-    event_time: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    client_id: 'c2',
-    user_id: 'u2',
-    user_phone: '9123456789',
-    user_name: 'Jane Smith',
-    hazard_type: 'Storm',
-    description: 'Heavy wind gusts uprooting trees. Power outage in the coastal block.',
-    latitude: 12.9716,
-    longitude: 77.5946,
-    is_high_risk: true,
-    people_at_risk: 50,
-    urgency_level: 'High',
-    media_urls: ['url1'],
-    upload_complete: true,
-    status: 'verified',
-    event_time: new Date(Date.now() - 3600000).toISOString(),
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '3',
-    client_id: 'c3',
-    user_id: 'u3',
-    user_phone: '8888888888',
-    user_name: 'Bob Wilson',
-    hazard_type: 'Flood',
-    description: 'Water logging in low lying areas. 2 feet water on the main road.',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    is_high_risk: false,
-    people_at_risk: null,
-    urgency_level: 'Medium',
-    media_urls: [],
-    upload_complete: true,
-    status: 'resolved',
-    event_time: new Date(Date.now() - 7200000).toISOString(),
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: '4',
-    client_id: 'c4',
-    user_id: 'u4',
-    user_phone: '7777777777',
-    user_name: 'Alice Brown',
-    hazard_type: 'Other',
-    description: 'Unusual rapid retreat of sea water observed.',
-    latitude: 9.9252,
-    longitude: 78.1198,
-    is_high_risk: true,
-    people_at_risk: 100,
-    urgency_level: 'High',
-    media_urls: [],
-    upload_complete: true,
-    status: 'verified',
-    event_time: new Date(Date.now() - 86400000).toISOString(),
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  }
-];
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -135,13 +32,20 @@ export function Dashboard() {
       setLoading(true);
       setError(null);
 
-      console.log('Loading static dashboard data...');
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase not configured');
+      }
 
-      setStats(STATIC_DASHBOARD_STATS);
-      setRecentReports(STATIC_RECENT_REPORTS);
+      const [nextStats, recent] = await Promise.all([
+        hazardService.getDashboardStats(),
+        hazardService.getReportsWithCount(undefined, 0, 10),
+      ]);
+
+      setStats(nextStats);
+      setRecentReports(recent.data);
     } catch (err) {
-      setError('Failed to load dashboard data');
+      const message = err instanceof Error ? err.message : 'Failed to load dashboard data';
+      setError(message);
       console.error(err);
     } finally {
       setLoading(false);
@@ -194,13 +98,18 @@ export function Dashboard() {
         <Alert severity="error" onClose={() => setError(null)}>
           {error || 'Failed to load dashboard data'}
         </Alert>
+        {!isSupabaseConfigured() && (
+          <Button sx={{ mt: 2 }} variant="contained" href="/reports">
+            Open Reports
+          </Button>
+        )}
       </Container>
     );
   }
 
   return (
     <Box>
-      <Header title="Dashboard Overview" category="Dashboard" />
+      {/* Header removed */}
       <Container maxWidth="xl" sx={{ py: 4 }}>
 
         {/* Key Metrics */}
@@ -416,33 +325,13 @@ export function Dashboard() {
         </Grid>
 
         {/* Recent Reports */}
-        <Box>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Box>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Recent Reports
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Latest 10 hazard reports from the field
-              </Typography>
-            </Box>
-            <Button
-              variant="outlined"
-              href="/reports"
-              endIcon={<TrendingUpIcon />}
-              sx={{ textTransform: 'none' }}
-            >
-              View All Reports
-            </Button>
-          </Box>
-          <Grid container spacing={2}>
-            {recentReports.map((report) => (
-              <Grid key={report.id} size={{ xs: 12 }}>
-                <ReportCard report={report} />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
+        <RecentReportsTable
+          reports={recentReports}
+          loading={loading}
+          onViewReport={(report) => {
+            window.location.href = `/reports?id=${report.id}`;
+          }}
+        />
       </Container>
     </Box>
   );

@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/map_marker_data.dart';
+import '../models/official_advisory.dart';
 import '../models/risk_zone.dart';
+import '../core/supabase_config.dart';
 import '../services/map_service.dart';
 
 /// Map filters state
@@ -38,8 +41,10 @@ class MapFilters{
 /// Map state including data and UI state
 class MapState {
   final List<MapMarkerData> markers;
+  final List<OfficialAdvisory> advisories;
   final List<RiskZone> riskZones;
   final MapMarkerData? selectedMarker;
+  final OfficialAdvisory? selectedAdvisory;
   final DateTime? lastUpdated;
   final bool isLoading;
   final String? error;
@@ -47,8 +52,10 @@ class MapState {
 
   MapState({
     this.markers = const [],
+    this.advisories = const [],
     this.riskZones = const [],
     this.selectedMarker,
+    this.selectedAdvisory,
     this.lastUpdated,
     this.isLoading = false,
     this.error,
@@ -57,9 +64,12 @@ class MapState {
 
   MapState copyWith({
     List<MapMarkerData>? markers,
+    List<OfficialAdvisory>? advisories,
     List<RiskZone>? riskZones,
     MapMarkerData? selectedMarker,
     bool clearSelectedMarker = false,
+    OfficialAdvisory? selectedAdvisory,
+    bool clearSelectedAdvisory = false,
     DateTime? lastUpdated,
     bool? isLoading,
     String? error,
@@ -68,8 +78,10 @@ class MapState {
   }) {
     return MapState(
       markers: markers ?? this.markers,
+      advisories: advisories ?? this.advisories,
       riskZones: riskZones ?? this.riskZones,
       selectedMarker: clearSelectedMarker ? null : (selectedMarker ?? this.selectedMarker),
+      selectedAdvisory: clearSelectedAdvisory ? null : (selectedAdvisory ?? this.selectedAdvisory),
       lastUpdated: lastUpdated ?? this.lastUpdated,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
@@ -97,6 +109,116 @@ class MapState {
 /// Notifier for map data
 class MapNotifier extends Notifier<MapState> {
   final MapService _mapService = MapService();
+  final SupabaseClient _supabase = SupabaseConfig.client;
+
+  RealtimeChannel? _advisoriesChannel;
+
+  bool _isAdvisoryActive(OfficialAdvisory advisory) {
+    final now = DateTime.now();
+    if (advisory.startsAt != null && advisory.startsAt!.isAfter(now)) return false;
+    if (advisory.expiresAt != null && advisory.expiresAt!.isBefore(now)) return false;
+    return true;
+  }
+
+  void _upsertRealtimeAdvisory(OfficialAdvisory advisory) {
+    // Only keep advisories with a location.
+    if (advisory.latitude == null || advisory.longitude == null) {
+      _removeRealtimeAdvisory(advisory.id);
+      return;
+    }
+
+    // Filter out inactive advisories.
+    if (!_isAdvisoryActive(advisory)) {
+      _removeRealtimeAdvisory(advisory.id);
+      return;
+    }
+
+    // If we have bounds, keep only those within the viewport.
+    final bounds = state.currentBounds;
+    if (bounds != null) {
+      final lat = advisory.latitude!;
+      final lon = advisory.longitude!;
+      final inBounds =
+          lat >= bounds.south && lat <= bounds.north && lon >= bounds.west && lon <= bounds.east;
+      if (!inBounds) {
+        _removeRealtimeAdvisory(advisory.id);
+        return;
+      }
+    }
+
+    final next = [...state.advisories];
+    final idx = next.indexWhere((a) => a.id == advisory.id);
+    if (idx >= 0) {
+      next[idx] = advisory;
+    } else {
+      next.add(advisory);
+    }
+    next.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    state = state.copyWith(advisories: next);
+  }
+
+  void _removeRealtimeAdvisory(String id) {
+    if (id.isEmpty) return;
+    if (state.advisories.isEmpty) return;
+    final next = state.advisories.where((a) => a.id != id).toList();
+    if (next.length == state.advisories.length) return;
+
+    final shouldClearSelected = state.selectedAdvisory?.id == id;
+    state = state.copyWith(
+      advisories: next,
+      clearSelectedAdvisory: shouldClearSelected,
+    );
+  }
+
+  void _ensureRealtimeAdvisories() {
+    if (_advisoriesChannel != null) return;
+
+    _advisoriesChannel = _supabase.channel('realtime:map:official_advisories');
+
+    _advisoriesChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'official_advisories',
+          callback: (payload) {
+            try {
+              _upsertRealtimeAdvisory(OfficialAdvisory.fromJson(payload.newRecord));
+            } catch (_) {
+              // Ignore malformed payloads.
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'official_advisories',
+          callback: (payload) {
+            try {
+              _upsertRealtimeAdvisory(OfficialAdvisory.fromJson(payload.newRecord));
+            } catch (_) {
+              // Ignore malformed payloads.
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: 'official_advisories',
+          callback: (payload) {
+            final old = payload.oldRecord;
+            final id = (old['id'] as String?) ?? '';
+            _removeRealtimeAdvisory(id);
+          },
+        )
+        .subscribe();
+
+    ref.onDispose(() {
+      final ch = _advisoriesChannel;
+      _advisoriesChannel = null;
+      // ignore: discarded_futures
+      ch?.unsubscribe();
+    });
+  }
 
   bool _isWithinBounds(LatLng point, LatLngBounds bounds) {
     return point.latitude >= bounds.south &&
@@ -153,60 +275,65 @@ class MapNotifier extends Notifier<MapState> {
   }
 
   @override
-  MapState build() => MapState();
+  MapState build() {
+    _ensureRealtimeAdvisories();
+    return MapState();
+  }
 
   /// Update viewport and fetch data (debounced in service)
   Future<void> updateViewport(LatLngBounds bounds, {String? currentUserId, MapFilters? filters}) async {
     state = state.copyWith(currentBounds: bounds, isLoading: true, clearError: true);
 
     try {
-      // Use debounced fetch
-      await _mapService.debouncedGetReportsInBounds(
+      // Use debounced fetch for reports
+      final markers = await _mapService.debouncedGetReportsInBounds(
         minLat: bounds.south,
         maxLat: bounds.north,
         minLon: bounds.west,
         maxLon: bounds.east,
         currentUserId: currentUserId,
-        onComplete: (markers) {
-          // Apply filters
-          var filteredMarkers = markers;
-          
-          if (filters != null) {
-            filteredMarkers = markers.where((marker) {
-              // Hazard type filter
-              if (!filters.selectedHazardTypes.contains(marker.hazardType)) {
-                return false;
-              }
-              
-              // High risk only filter
-              if (filters.showOnlyHighRisk && !marker.isHighRisk) {
-                return false;
-              }
-              
-              // Time filter
-              final daysDiff = DateTime.now().difference(marker.timestamp).inDays;
-              if (daysDiff > filters.daysBack) {
-                return false;
-              }
-              
-              return true;
-            }).toList();
-          }
-
-          state = state.copyWith(
-            markers: filteredMarkers,
-            lastUpdated: DateTime.now(),
-            isLoading: false,
-          );
-
-          // Overlay current user's own report locations (full precision) if available.
-          if (currentUserId != null && currentUserId.isNotEmpty) {
-            // Fire-and-forget: keep UI responsive.
-            // ignore: discarded_futures
-            _loadOwnReportsForBounds(bounds: bounds, userId: currentUserId, filters: filters);
-          }
-        },
+        onComplete: (_) {},
       );
+
+      // Apply filters
+      var filteredMarkers = markers;
+      if (filters != null) {
+        filteredMarkers = markers.where((marker) {
+          if (!filters.selectedHazardTypes.contains(marker.hazardType)) {
+            return false;
+          }
+          if (filters.showOnlyHighRisk && !marker.isHighRisk) {
+            return false;
+          }
+          final daysDiff = DateTime.now().difference(marker.timestamp).inDays;
+          if (daysDiff > filters.daysBack) {
+            return false;
+          }
+          return true;
+        }).toList();
+      }
+
+      final advisories = await _mapService.getAdvisoriesInBounds(
+        minLat: bounds.south,
+        maxLat: bounds.north,
+        minLon: bounds.west,
+        maxLon: bounds.east,
+      );
+      final activeAdvisories = advisories.where(_isAdvisoryActive).toList();
+
+      state = state.copyWith(
+        markers: filteredMarkers,
+        advisories: activeAdvisories,
+        lastUpdated: DateTime.now(),
+        isLoading: false,
+      );
+
+      // Overlay current user's own report locations (full precision) if available.
+      if (currentUserId != null && currentUserId.isNotEmpty) {
+        // Fire-and-forget: keep UI responsive.
+        // ignore: discarded_futures
+        _loadOwnReportsForBounds(bounds: bounds, userId: currentUserId, filters: filters);
+      }
 
       // Fetch risk zones if enabled
       if (filters?.showRiskZones == true) {
@@ -258,12 +385,24 @@ class MapNotifier extends Notifier<MapState> {
 
   /// Select a marker for details view
   void selectMarker(MapMarkerData marker) {
-    state = state.copyWith(selectedMarker: marker);
+    state = state.copyWith(selectedMarker: marker, clearSelectedAdvisory: true);
+  }
+
+  void selectAdvisory(OfficialAdvisory advisory) {
+    state = state.copyWith(selectedAdvisory: advisory, clearSelectedMarker: true);
   }
 
   /// Clear selected marker
   void clearSelectedMarker() {
     state = state.copyWith(clearSelectedMarker: true);
+  }
+
+  void clearSelectedAdvisory() {
+    state = state.copyWith(clearSelectedAdvisory: true);
+  }
+
+  void clearSelections() {
+    state = state.copyWith(clearSelectedMarker: true, clearSelectedAdvisory: true);
   }
 
   /// Manual refresh

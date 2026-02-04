@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Typography, Link, Container, Alert, Collapse } from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Alert, Collapse } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import WavesIcon from '@mui/icons-material/Waves';
 import { useAuth } from '../contexts/AuthContext';
@@ -214,13 +214,17 @@ const IconWrapper = styled(Box)({
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { login, signup } = useAuth();
+    const { login, isAuthenticated, loading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [isLogin, setIsLogin] = useState(true);
+
+    useEffect(() => {
+        if (!loading && isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, loading, navigate]);
 
     const handleInputFocus = () => {
         setIsTyping(true);
@@ -234,7 +238,6 @@ export const Login: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setSuccessMessage(null);
 
         // Basic validation
         if (!email.trim() || !password.trim()) {
@@ -242,40 +245,17 @@ export const Login: React.FC = () => {
             return;
         }
 
-        console.log(`${isLogin ? 'Login' : 'Signup'} attempt:`, { email });
+        // Login user via Supabase
+        const { error: loginError } = await login(email, password);
 
-        if (isLogin) {
-            // Login user via Supabase
-            const { error: loginError } = await login(email, password);
-
-            if (loginError) {
-                console.error('Login error:', loginError);
-                setError(loginError.message || 'Failed to login. Please check your credentials.');
-                return;
-            }
-
-            // Navigate to dashboard after successful login
-            navigate('/dashboard');
-        } else {
-            // Signup user via Supabase
-            const { error: signupError } = await signup(email, password);
-
-            if (signupError) {
-                console.error('Signup error:', signupError);
-                setError(signupError.message || 'Failed to sign up. Please try again.');
-                return;
-            }
-
-            setSuccessMessage('Registration successful! Please check your email to confirm your account, then log in.');
-            setIsLogin(true); // Switch back to login mode
-            setPassword(''); // Clear password
+        if (loginError) {
+            console.error('Login error:', loginError);
+            setError(loginError.message || 'Failed to login. Please check your credentials.');
+            return;
         }
-    };
 
-    const toggleMode = () => {
-        setIsLogin(!isLogin);
-        setError(null);
-        setSuccessMessage(null);
+        // Navigate to dashboard after successful login
+        navigate('/dashboard');
     };
 
     return (
@@ -338,15 +318,10 @@ export const Login: React.FC = () => {
 
                     <form onSubmit={handleLogin} style={{ width: '100%' }}>
                         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <Collapse in={!!error || !!successMessage}>
+                            <Collapse in={!!error}>
                                 {error && (
                                     <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
                                         {error}
-                                    </Alert>
-                                )}
-                                {successMessage && (
-                                    <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }}>
-                                        {successMessage}
                                     </Alert>
                                 )}
                             </Collapse>
@@ -383,51 +358,12 @@ export const Login: React.FC = () => {
                                 size="large"
                                 sx={{ marginBottom: '24px' }}
                             >
-                                {isLogin ? 'Login' : 'Sign Up'}
+                                Login
                             </OceanButton>
 
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="body2" sx={{ color: 'white' }}>
-                                    {isLogin ? "Don't have an account? " : "Already have an account? "}
-                                    <Link
-                                        component="button"
-                                        variant="body2"
-                                        type="button"
-                                        onClick={toggleMode}
-                                        sx={{
-                                            color: 'white',
-                                            fontWeight: 'bold',
-                                            textDecoration: 'underline',
-                                            cursor: 'pointer',
-                                            '&:hover': {
-                                                opacity: 0.8,
-                                            }
-                                        }}
-                                    >
-                                        {isLogin ? 'Sign Up' : 'Login'}
-                                    </Link>
-                                </Typography>
-                            </Box>
-
-                            <Box sx={{ mt: 3, textAlign: 'center' }}>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
-                                    Test Credentials:
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: 'rgba(255,255,255,0.8)',
-                                        fontFamily: 'monospace',
-                                        cursor: 'pointer',
-                                        '&:hover': { color: 'white' }
-                                    }}
-                                    onClick={() => {
-                                        setEmail('admin@showcase.com');
-                                        setPassword('admin123');
-                                        setIsLogin(true);
-                                    }}
-                                >
-                                    admin@showcase.com / admin123
+                                    Need an account? Ask your administrator to create one in Supabase.
                                 </Typography>
                             </Box>
                         </Box>

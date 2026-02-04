@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/supabase_config.dart';
 import '../models/risk_zone.dart';
 import '../models/map_marker_data.dart';
+import '../models/official_advisory.dart';
 
 /// Service for handling map-specific data fetching
 /// Implements debouncing and caching for performance
@@ -53,6 +54,11 @@ class MapService {
         final longitude = (json['longitude'] as num).toDouble();
         final isHighRisk = json['is_high_risk'] as bool? ?? false;
 
+        final mediaRaw = json['media_urls'];
+        final mediaUrls = mediaRaw is List
+            ? mediaRaw.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList()
+            : const <String>[];
+
         // Prefer event_time; fall back to created_at.
         final tsRaw = (json['event_time'] ?? json['created_at']) as String;
         final timestamp = DateTime.parse(tsRaw);
@@ -67,10 +73,47 @@ class MapService {
           // Own-report highlighting comes from a different RPC (get_user_reports_on_map)
           // so leave false here.
           isOwnReport: false,
+          mediaUrls: mediaUrls,
         );
       }).toList();
     } catch (e) {
       // Offline or network error - return empty list for graceful degradation
+      return [];
+    }
+  }
+
+  /// Fetch official advisories with a location inside the viewport.
+  /// This is intentionally lightweight (latest first) and filtered client-side by bounds.
+  Future<List<OfficialAdvisory>> getAdvisoriesInBounds({
+    required double minLat,
+    required double maxLat,
+    required double minLon,
+    required double maxLon,
+    int limit = 100,
+  }) async {
+    try {
+      final safeLimit = limit > 300 ? 300 : (limit < 1 ? 1 : limit);
+
+      final response = await _supabase
+          .from('official_advisories')
+          .select(
+              'id,title,body,region,severity,category,latitude,longitude,starts_at,expires_at,contact_phone,contact_whatsapp,contact_hotline,published_at')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .gte('latitude', minLat)
+          .lte('latitude', maxLat)
+          .gte('longitude', minLon)
+          .lte('longitude', maxLon)
+          .order('published_at', ascending: false)
+          .limit(safeLimit);
+
+      final list = (response as List)
+          .map((json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>))
+          .where((a) => a.latitude != null && a.longitude != null)
+          .toList();
+
+      return list;
+    } catch (_) {
       return [];
     }
   }

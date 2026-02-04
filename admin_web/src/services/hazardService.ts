@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 import { isSupabaseConfigured } from '../core/supabase_config';
-import type { HazardReport, FilterOptions, DashboardStats } from '../types/hazard';
+import type { HazardReport, FilterOptions, DashboardStats, ReportStatus } from '../types/hazard';
 
 export interface PagedResult<T> {
   data: T[];
@@ -198,6 +198,7 @@ export const hazardService = {
       byStatus: {
         'pending': 0,
         'verified': 0,
+        'rejected': 0,
         'resolved': 0,
       },
     };
@@ -207,10 +208,37 @@ export const hazardService = {
       if (report.urgency_level) {
         stats.byUrgency[report.urgency_level]++;
       }
-      stats.byStatus[report.status]++;
+      // Keep stats resilient if older rows contain unexpected values.
+      if (report.status in stats.byStatus) {
+        stats.byStatus[report.status as ReportStatus]++;
+      }
     });
 
     return stats;
+  },
+
+  async setReportStatus(reportId: string, status: ReportStatus): Promise<void> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { error } = await supabase
+      .from('hazard_reports')
+      .update({ status })
+      .eq('id', reportId);
+
+    if (error) {
+      console.error('Error updating report status:', error);
+      throw error;
+    }
+  },
+
+  async verifyReport(reportId: string): Promise<void> {
+    return this.setReportStatus(reportId, 'verified');
+  },
+
+  async rejectReport(reportId: string): Promise<void> {
+    return this.setReportStatus(reportId, 'rejected');
   },
 
   subscribeToReports(callback: (report: HazardReport) => void) {
@@ -235,5 +263,47 @@ export const hazardService = {
         }
       )
       .subscribe();
+  },
+
+  async seedMockReports(params?: {
+    clusters?: number;
+    reportsPerCluster?: number;
+    centerLat?: number;
+    centerLon?: number;
+    clusterSpreadMeters?: number;
+    ageMinutes?: number;
+  }): Promise<number> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { data, error } = await supabase.rpc('admin_seed_mock_hazard_reports', {
+      p_clusters: params?.clusters ?? 3,
+      p_reports_per_cluster: params?.reportsPerCluster ?? 25,
+      p_center_lat: params?.centerLat ?? 13.08,
+      p_center_lon: params?.centerLon ?? 80.27,
+      p_cluster_spread_meters: params?.clusterSpreadMeters ?? 350,
+      p_age_minutes: params?.ageMinutes ?? 45,
+    });
+
+    if (error) {
+      console.error('Seed mock reports error:', error);
+      throw error;
+    }
+
+    return Number(data ?? 0);
+  },
+
+  async clearMockReports(): Promise<number> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { data, error } = await supabase.rpc('admin_clear_mock_hazard_reports');
+    if (error) {
+      console.error('Clear mock reports error:', error);
+      throw error;
+    }
+    return Number(data ?? 0);
   },
 };

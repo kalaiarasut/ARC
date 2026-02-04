@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @unusualActivity.
   ///
   /// In en, this message translates to:
-  /// **'Unusual Activity 🔥'**
+  /// **'Reports'**
   String get unusualActivity;
 
   /// No description provided for @seeAll.
