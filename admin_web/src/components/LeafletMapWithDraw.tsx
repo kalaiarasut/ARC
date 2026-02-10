@@ -16,36 +16,22 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  TextField
+  TextField,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import type { Map as LeafletMapInstance, Circle as LeafletCircle } from 'leaflet';
 import { supabase, testSupabaseConnection, safeInsert, safeDelete, safeUpdate } from '../core/supabase_config';
-
-// Icons
-const WifiIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-    <line x1="12" y1="20" x2="12.01" y2="20"></line>
-  </svg>
-);
-
-const WifiOffIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="1" y1="1" x2="23" y2="23"></line>
-    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-    <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
-    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-    <line x1="12" y1="20" x2="12.01" y2="20"></line>
-  </svg>
-);
+import RefreshIcon from '@mui/icons-material/Refresh';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
+import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff';
+import LayersIcon from '@mui/icons-material/Layers';
 
 /**
  * LeafletMapWithDraw Component
@@ -287,6 +273,7 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
         center: center as L.LatLngExpression,
         zoom: zoom,
         worldCopyJump: true,
+        zoomControl: false,
       });
 
       mapInstanceRef.current = map;
@@ -301,18 +288,23 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
         minZoom: 2,
       }).addTo(map);
 
+      // Zoom Control (Top Right)
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
       // Add Draw Control
       drawnItemsRef.current = L.featureGroup().addTo(map);
 
-      const drawControl = new L.Control.Draw({
+      const drawControl = new (L.Control as any).Draw({
+        position: 'topright',
         edit: {
           featureGroup: drawnItemsRef.current,
           remove: true,
-          edit: {
-            selectedPathOptions: {
-              opacity: 0.8,
-            }
-          }
+          // Keep the zone's existing color while editing (avoids defaulting to black).
+          selectedPathOptions: {
+            maintainColor: true,
+            opacity: 0.85,
+            fillOpacity: 0.18,
+          },
         },
         draw: {
           marker: false,
@@ -324,16 +316,21 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
             metric: true,
             feet: false,
             shapeOptions: {
-              color: '#2563eb',
+              color: '#4caf50',
               weight: 2,
               opacity: 0.7,
               fillOpacity: 0.15,
-              fillColor: '#2563eb',
+              fillColor: '#4caf50',
             }
           }
         }
       });
       map.addControl(drawControl);
+
+      const drawContainer = (drawControl as any).getContainer?.();
+      if (drawContainer) {
+        drawContainer.classList.add('leaflet-draw-center-right');
+      }
 
       // --- EVENT LISTENERS ---
 
@@ -473,6 +470,8 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
       };
     }, []);
 
+    const theme = useTheme();
+
     const clearAllZones = () => {
       drawnItemsRef.current.clearLayers();
       circlesRef.current.forEach(c => c.remove());
@@ -480,60 +479,99 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
       setExistingZones([]);
     };
 
-    const StatusChip = () => {
-      if (isOfflineMode) {
-        return (
-          <Chip
-            icon={<WifiOffIcon />} label="Offline" color="error" size="small" variant="outlined" sx={{ fontWeight: 'bold' }}
-          />
-        );
+    const refreshZones = () => {
+      if (mapInstanceRef.current) {
+        fetchAndRenderZones(mapInstanceRef.current);
       }
-      return (
-        <Chip
-          icon={<WifiIcon />} label="Connected" color="success" size="small" variant="outlined" sx={{ fontWeight: 'bold' }}
-        />
-      );
     };
 
     return (
       <Box sx={{ width: '100%', position: 'relative' }}>
 
-        {/* Header Toolbar */}
+        {/* Premium Header Toolbar */}
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            p: 1.5,
+            p: 2,
             mb: 2,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderRadius: '12px',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            backdropFilter: 'blur(20px)',
           }}
         >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
-              Monitoring Zones
-            </Typography>
-            <StatusChip />
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+              }}
+            >
+              <LayersIcon sx={{ color: 'white', fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                Monitoring Zones
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Draw circles to create monitoring areas
+              </Typography>
+            </Box>
+
+            {/* Connection Status */}
+            <Chip
+              icon={isOfflineMode ? <SignalWifiOffIcon /> : <SignalWifi4BarIcon />}
+              label={isOfflineMode ? 'Offline' : 'Connected'}
+              size="small"
+              color={isOfflineMode ? 'error' : 'success'}
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                fontSize: 11,
+                '& .MuiChip-icon': { fontSize: 16 },
+              }}
+            />
           </Stack>
 
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <Chip
-              label={`${existingZones.length} Active Zones`}
+              label={`${existingZones.length} Active`}
               size="small"
-              sx={{ backgroundColor: '#e3f2fd', color: '#1565c0', fontWeight: '500' }}
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                fontSize: 11,
+              }}
             />
-            <Button
-              size="small"
-              variant="text"
-              color="error"
-              onClick={clearAllZones}
-              disabled={existingZones.length === 0 && drawnItemsRef.current.getLayers().length === 0}
-            >
-              Clear Local
-            </Button>
+            <Tooltip title="Refresh zones from database">
+              <span>
+                <IconButton size="small" onClick={refreshZones} disabled={isOfflineMode}>
+                  <RefreshIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Clear all local zones">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={clearAllZones}
+                  disabled={existingZones.length === 0 && drawnItemsRef.current.getLayers().length === 0}
+                  sx={{ color: 'error.main' }}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Stack>
         </Paper>
 
@@ -549,7 +587,11 @@ export const LeafletMapWithDraw = React.forwardRef<LeafletMapInstance, LeafletMa
             border: '1px solid #e0e0e0',
           }}
         >
-          <Box ref={mapContainerRef} sx={{ width: '100%', height: '100%', zIndex: 1 }} />
+          <Box
+            ref={mapContainerRef}
+            className="leaflet-monitoring-map"
+            sx={{ width: '100%', height: '100%', zIndex: 1 }}
+          />
 
           {isLoading && (
             <Box sx={{

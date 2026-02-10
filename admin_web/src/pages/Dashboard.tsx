@@ -194,7 +194,7 @@ export function Dashboard() {
                             width: `${(count / stats.totalReports) * 100}%`,
                             height: '100%',
                             bgcolor: type === 'Tsunami' ? theme.palette.error.main :
-                              type === 'High Waves' ? theme.palette.warning.main :
+                              type === 'High Waves' ? theme.palette.secondary.main :
                                 type === 'Storm' ? theme.palette.info.main : theme.palette.primary.main,
                             borderRadius: 4,
                             transition: 'width 1s ease-in-out',

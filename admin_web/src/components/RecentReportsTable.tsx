@@ -21,7 +21,6 @@ import {
   Visibility as ViewIcon,
   VerifiedUser as VerifyIcon,
   Warning as WarningIcon,
-  TrendingUp as TrendingUpIcon,
   Schedule as TimeIcon,
   Place as PlaceIcon,
   Waves as WavesIcon,
@@ -60,7 +59,7 @@ const getHazardIcon = (type: string) => {
 const getHazardColor = (type: string) => {
   const colors: Record<string, string> = {
     'Tsunami': '#ef4444',
-    'High Waves': '#f59e0b',
+    'High Waves': '#0891b2',
     'Storm': '#3b82f6',
     'Flood': '#6366f1',
     'Other': '#64748b',

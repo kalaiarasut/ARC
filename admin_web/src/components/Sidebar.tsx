@@ -188,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                                 {user.name}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.7rem' }} noWrap>
-                                {loggingOut ? 'Logging out...' : 'Admin • Tap to Logout'}
+                                {loggingOut ? 'Logging out...' : 'Admin'}
                             </Typography>
                         </Box>
                         <LogoutIcon

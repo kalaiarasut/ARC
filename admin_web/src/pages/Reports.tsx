@@ -63,7 +63,6 @@ import { isSupabaseConfigured } from '../core/supabase_config';
 import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus } from '../types/hazard';
 import type { Landmark } from '../types/landmark';
 import { LandmarkManager } from '../components/LandmarkManager';
-import { Header } from '../components/Header';
 import { format } from 'date-fns';
 
 const HAZARD_TYPES: HazardType[] = ['High Waves', 'Tsunami', 'Storm', 'Flood', 'Other'];
@@ -400,7 +399,6 @@ export function Reports() {
       // Update local list for snappy UX
       setReports((prev) => prev.map((r) => (r.id === report.id ? { ...r, status: nextStatus } : r)));
       setSelectedReport((prev) => (prev && prev.id === report.id ? { ...prev, status: nextStatus } : prev));
-      setLastRefreshedAt(new Date());
     } catch (e) {
       console.error(e);
       setError('Failed to update report status.');
@@ -428,7 +426,7 @@ export function Reports() {
   const getHazardColor = (type: HazardType) => {
     const colors = {
       'Tsunami': 'error',
-      'High Waves': 'warning',
+      'High Waves': 'secondary',
       'Storm': 'info',
       'Flood': 'primary',
       'Other': 'default',
@@ -458,7 +456,6 @@ export function Reports() {
 
   return (
     <Box>
-      <Header title="Hazard Reports" category="Reports" />
       <Container maxWidth={false} sx={{ py: 1, px: { xs: 1, sm: 2, md: 2 } }}>
         {/* Floating Actions Row */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, gap: 2 }}>

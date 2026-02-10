@@ -111,7 +111,7 @@ export function ReportCard({ report, onClick }: ReportCardProps) {
   const getHazardColor = (type: string) => {
     const colors: Record<string, string> = {
       'Tsunami': 'error',
-      'High Waves': 'warning',
+      'High Waves': 'secondary',
       'Storm': 'info',
       'Flood': 'primary',
       'Other': 'default',

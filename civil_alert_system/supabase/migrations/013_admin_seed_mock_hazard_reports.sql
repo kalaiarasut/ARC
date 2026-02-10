@@ -90,6 +90,7 @@ BEGIN
       created_ts := now() - ((random() * p_age_minutes)::text || ' minutes')::interval;
 
       INSERT INTO public.hazard_reports(
+        id,
         client_id,
         user_id,
         user_phone,
@@ -110,6 +111,7 @@ BEGIN
         device_id
       )
       VALUES (
+        gen_random_uuid(),
         gen_random_uuid(),
         v_user_id,
         '0000000000',

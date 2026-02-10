@@ -3,6 +3,10 @@ import { Box, CircularProgress } from '@mui/material';
 import L from 'leaflet';
 import type { Map as LeafletMapInstance } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw';
+import 'leaflet-draw/dist/leaflet.draw.css';
+
+import type { MonitoringZone } from '../types/monitoringZone';
 
 const computePinScale = (zoomLevel: number) => {
   // Scale gently with zoom so hitboxes stay reasonable.
@@ -48,6 +52,38 @@ interface LeafletMapProps {
    * Default: India's coastline (13.08, 80.27) - suitable for coastal disaster monitoring
    */
   center?: [number, number];
+
+  /**
+   * When enabled, reduces marker visual effects (shadows/pulses)
+   * to keep zone overlays readable during review.
+   */
+  zoneReviewMode?: boolean;
+
+  /**
+   * Show/hide monitoring zones (manual, drawable)
+   */
+  showMonitoringZones?: boolean;
+
+  /**
+   * Enable draw/edit tools for monitoring zones
+   */
+  monitoringEditEnabled?: boolean;
+
+  onMonitoringZoneCreateRequested?: (params: {
+    tempLayerId: number;
+    center_lat: number;
+    center_lng: number;
+    radius_meters: number;
+  }) => void;
+
+  onMonitoringZoneEdited?: (params: {
+    zoneId: string;
+    center_lat: number;
+    center_lng: number;
+    radius_meters: number;
+  }) => void;
+
+  onMonitoringZoneDeleted?: (params: { zoneId: string }) => void;
 }
 
 interface ReportMarker {
@@ -172,6 +208,7 @@ export interface MapMethods {
   addMarker: (report: ReportMarker) => void;
   removeMarker: (reportId: string) => void;
   clearAllMarkers: () => void;
+  getMarkerCount: () => number;
   panToLocation: (lat: number, lng: number, zoomLevel?: number) => void;
   drawZone: (coordinates: Array<[number, number]>, name: string, color?: string) => L.Polygon | undefined;
 
@@ -191,6 +228,13 @@ export interface MapMethods {
   }) => void;
   removeZone: (id: string) => void;
   clearAllZones: () => void;
+
+  // Monitoring zones (manual)
+  setMonitoringZones: (zones: MonitoringZone[]) => void;
+  setMonitoringZonesVisible: (visible: boolean) => void;
+  clearMonitoringZones: () => void;
+  finalizeMonitoringZone: (tempLayerId: number, zone: MonitoringZone) => void;
+  discardPendingMonitoringZone: (tempLayerId: number) => void;
 }
 
 /**
@@ -204,6 +248,12 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       onMapReady,
       zoom = 6,
       center = [13.08, 80.27], // India's coastline (default)
+      zoneReviewMode = false,
+      showMonitoringZones = true,
+      monitoringEditEnabled = false,
+      onMonitoringZoneCreateRequested,
+      onMonitoringZoneEdited,
+      onMonitoringZoneDeleted,
     },
     ref
   ) => {
@@ -212,9 +262,23 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
     const mapInstanceRef = useRef<LeafletMapInstance | null>(null);
     const markersRef = useRef<Map<string, L.Marker>>(new Map());
     const zonesRef = useRef<Map<string, L.Layer>>(new Map());
+
+    // Monitoring zones live in a separate FeatureGroup so refreshing generated zones doesn't wipe them.
+    const monitoringGroupRef = useRef<L.FeatureGroup>(L.featureGroup());
+    const monitoringZonesRef = useRef<Map<string, L.Circle>>(new Map());
+    const pendingMonitoringRef = useRef<Map<number, L.Circle>>(new Map());
+    const drawControlRef = useRef<any | null>(null);
+
     const onMapReadyRef = useRef<LeafletMapProps['onMapReady']>(onMapReady);
     const initialCenterRef = useRef<[number, number]>(center);
     const initialZoomRef = useRef<number>(zoom);
+
+    const showMonitoringZonesRef = useRef<boolean>(showMonitoringZones);
+    const onMonitoringZoneCreateRequestedRef = useRef<LeafletMapProps['onMonitoringZoneCreateRequested']>(
+      onMonitoringZoneCreateRequested
+    );
+    const onMonitoringZoneEditedRef = useRef<LeafletMapProps['onMonitoringZoneEdited']>(onMonitoringZoneEdited);
+    const onMonitoringZoneDeletedRef = useRef<LeafletMapProps['onMonitoringZoneDeleted']>(onMonitoringZoneDeleted);
 
     // State management
     const [isLoading, setIsLoading] = useState(true);
@@ -223,6 +287,39 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
     useEffect(() => {
       onMapReadyRef.current = onMapReady;
     }, [onMapReady]);
+
+    useEffect(() => {
+      showMonitoringZonesRef.current = showMonitoringZones;
+    }, [showMonitoringZones]);
+
+    useEffect(() => {
+      onMonitoringZoneCreateRequestedRef.current = onMonitoringZoneCreateRequested;
+    }, [onMonitoringZoneCreateRequested]);
+
+    useEffect(() => {
+      onMonitoringZoneEditedRef.current = onMonitoringZoneEdited;
+    }, [onMonitoringZoneEdited]);
+
+    useEffect(() => {
+      onMonitoringZoneDeletedRef.current = onMonitoringZoneDeleted;
+    }, [onMonitoringZoneDeleted]);
+
+    const getMonitoringZoneColor = (peopleCount: number): string => {
+      if (peopleCount >= 50) return '#ff9800';
+      if (peopleCount >= 30) return '#f44336';
+      if (peopleCount >= 20) return '#ffc107';
+      return '#4caf50';
+    };
+
+    const ensureMonitoringGroupOnMap = (visible: boolean) => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+
+      const group = monitoringGroupRef.current;
+      const has = map.hasLayer(group);
+      if (visible && !has) group.addTo(map);
+      if (!visible && has) group.removeFrom(map);
+    };
 
     /**
      * Force map resize when tab becomes visible
@@ -357,6 +454,105 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       markersRef.current.clear();
     };
 
+    const clearMonitoringZones = () => {
+      monitoringZonesRef.current.forEach((circle) => circle.remove());
+      monitoringZonesRef.current.clear();
+
+      pendingMonitoringRef.current.forEach((circle) => circle.remove());
+      pendingMonitoringRef.current.clear();
+
+      monitoringGroupRef.current.clearLayers();
+    };
+
+    const setMonitoringZonesVisible = (visible: boolean) => {
+      ensureMonitoringGroupOnMap(visible);
+    };
+
+    const setMonitoringZones = (zones: MonitoringZone[]) => {
+      // Preserve any pending (unsaved) circle the admin is currently naming.
+      monitoringZonesRef.current.forEach((circle) => circle.remove());
+      monitoringZonesRef.current.clear();
+      monitoringGroupRef.current.clearLayers();
+
+      pendingMonitoringRef.current.forEach((circle) => {
+        monitoringGroupRef.current.addLayer(circle);
+      });
+
+      zones.forEach((z) => {
+        const zoneColor = getMonitoringZoneColor(Number(z.people_count ?? 0));
+        const circle = L.circle([z.center_lat, z.center_lng], {
+          radius: Number(z.radius_meters) || 0,
+          color: zoneColor,
+          weight: 3,
+          opacity: 0.85,
+          fillColor: zoneColor,
+          fillOpacity: 0.18,
+        });
+
+        (circle as any)._monitoringZoneId = z.id;
+        circle.bindPopup(
+          `<div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom: 1px solid #e2e8f0;">
+              <strong style="font-size: 13px; color: #0f172a;">Monitoring Zone</strong>
+              <span style="padding: 2px 8px; border-radius: 999px; background: ${zoneColor}15; color: ${zoneColor}; font-weight: 700; font-size: 10px; letter-spacing: 0.4px;">MANUAL</span>
+            </div>
+            <div style="color:#334155; display:grid; gap:6px;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Name</span> <strong>${escapeHtml(z.name || 'Unnamed')}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(z.people_count ?? 0)}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(z.radius_meters) || 0)} m</strong></div>
+            </div>
+          </div>`
+        );
+
+        monitoringGroupRef.current.addLayer(circle);
+        monitoringZonesRef.current.set(z.id, circle);
+      });
+
+      ensureMonitoringGroupOnMap(showMonitoringZonesRef.current);
+    };
+
+    const finalizeMonitoringZone = (tempLayerId: number, zone: MonitoringZone) => {
+      const circle = pendingMonitoringRef.current.get(tempLayerId);
+      if (!circle) return;
+
+      pendingMonitoringRef.current.delete(tempLayerId);
+      (circle as any)._monitoringZoneId = zone.id;
+
+      const zoneColor = getMonitoringZoneColor(Number(zone.people_count ?? 0));
+      circle.setStyle({
+        color: zoneColor,
+        weight: 3,
+        opacity: 0.85,
+        fillColor: zoneColor,
+        fillOpacity: 0.18,
+      });
+
+      circle.bindPopup(
+        `<div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom: 1px solid #e2e8f0;">
+            <strong style="font-size: 13px; color: #0f172a;">Monitoring Zone</strong>
+            <span style="padding: 2px 8px; border-radius: 999px; background: ${zoneColor}15; color: ${zoneColor}; font-weight: 700; font-size: 10px; letter-spacing: 0.4px;">MANUAL</span>
+          </div>
+          <div style="color:#334155; display:grid; gap:6px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Name</span> <strong>${escapeHtml(zone.name || 'Unnamed')}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(zone.people_count ?? 0)}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(zone.radius_meters) || 0)} m</strong></div>
+          </div>
+        </div>`
+      );
+
+      monitoringZonesRef.current.set(zone.id, circle);
+    };
+
+    const discardPendingMonitoringZone = (tempLayerId: number) => {
+      const circle = pendingMonitoringRef.current.get(tempLayerId);
+      if (!circle) return;
+      pendingMonitoringRef.current.delete(tempLayerId);
+      circle.remove();
+    };
+
+    const getMarkerCount = () => markersRef.current.size;
+
     const getBounds = () => {
       const map = mapInstanceRef.current;
       if (!map) return null;
@@ -459,12 +655,18 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       addMarker,
       removeMarker,
       clearAllMarkers,
+      getMarkerCount,
       panToLocation,
       drawZone,
       getBounds,
       addZoneCircle,
       removeZone,
       clearAllZones,
+      setMonitoringZones,
+      setMonitoringZonesVisible,
+      clearMonitoringZones,
+      finalizeMonitoringZone,
+      discardPendingMonitoringZone,
     }));
 
     /**
@@ -481,6 +683,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
         const map = L.map(mapContainerRef.current, {
           center: initialCenterRef.current as L.LatLngExpression,
           zoom: initialZoomRef.current,
+          zoomControl: false,
           worldCopyJump: true,
           maxBounds: [
             [-90, -180],
@@ -498,6 +701,12 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
         mapInstanceRef.current = map;
         setIsLoading(false);
+
+        // Monitoring zones group (manual circles)
+        monitoringGroupRef.current.addTo(map);
+        if (!showMonitoringZonesRef.current) {
+          monitoringGroupRef.current.removeFrom(map);
+        }
 
         // Zoom-aware marker scaling (CSS variable consumed by .hazard-pin)
         const container = map.getContainer();
@@ -521,6 +730,9 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
         updatePinScale();
         map.on('zoom', scheduleUpdate);
 
+        // Zoom controls: keep them away from the floating layer panel (top-left)
+        L.control.zoom({ position: 'topright' }).addTo(map);
+
         // Add scale control
         L.control.scale({ imperial: false, metric: true }).addTo(map);
 
@@ -539,6 +751,20 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
           window.removeEventListener('resize', handleMapResize);
           map.off('zoom', scheduleUpdate);
           if (rafId !== null) cancelAnimationFrame(rafId);
+
+          // Cleanup draw control + handlers
+          map.off('draw:created');
+          map.off('draw:edited');
+          map.off('draw:deleted');
+          if (drawControlRef.current) {
+            try {
+              map.removeControl(drawControlRef.current);
+            } catch {
+              // ignore
+            }
+            drawControlRef.current = null;
+          }
+
           if (mapInstanceRef.current) {
             mapInstanceRef.current.off();
             mapInstanceRef.current.remove();
@@ -550,6 +776,131 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
         setIsLoading(false);
       }
     }, []);
+
+    useEffect(() => {
+      ensureMonitoringGroupOnMap(showMonitoringZones);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showMonitoringZones]);
+
+    useEffect(() => {
+      const map = mapInstanceRef.current;
+      if (!map) return;
+
+      const removeDraw = () => {
+        map.off('draw:created');
+        map.off('draw:edited');
+        map.off('draw:deleted');
+        if (drawControlRef.current) {
+          try {
+            map.removeControl(drawControlRef.current);
+          } catch {
+            // ignore
+          }
+          drawControlRef.current = null;
+        }
+      };
+
+      if (!monitoringEditEnabled) {
+        removeDraw();
+        return;
+      }
+
+      // Editing requires the group to be visible.
+      ensureMonitoringGroupOnMap(true);
+      removeDraw();
+
+      const drawControl = new (L.Control as any).Draw({
+        position: 'topright',
+        edit: {
+          featureGroup: monitoringGroupRef.current,
+          remove: true,
+          selectedPathOptions: {
+            maintainColor: true,
+            opacity: 0.9,
+            fillOpacity: 0.2,
+          },
+        },
+        draw: {
+          marker: false,
+          circlemarker: false,
+          polyline: false,
+          polygon: false,
+          rectangle: false,
+          circle: {
+            metric: true,
+            feet: false,
+            shapeOptions: {
+              color: '#4caf50',
+              weight: 3,
+              opacity: 0.85,
+              fillOpacity: 0.18,
+              fillColor: '#4caf50',
+            },
+          },
+        },
+      });
+
+      map.addControl(drawControl);
+      drawControlRef.current = drawControl;
+
+      const drawContainer = (drawControl as any).getContainer?.();
+      if (drawContainer) {
+        drawContainer.classList.add('leaflet-draw-monitoring-middle-right');
+      }
+
+      map.on('draw:created', (e: any) => {
+        const layer = e.layer;
+        if (!(layer instanceof L.Circle)) return;
+
+        const tempLayerId = (layer as any)._leaflet_id as number;
+        pendingMonitoringRef.current.set(tempLayerId, layer);
+        monitoringGroupRef.current.addLayer(layer);
+
+        const c = layer.getLatLng();
+        layer.bindPopup(
+          `<div style="font-size: 12px; font-family: system-ui, -apple-system, sans-serif;">
+            <strong>New monitoring zone</strong><br/>
+            <span style="color:#64748b">Enter a name to save</span>
+          </div>`
+        );
+
+        onMonitoringZoneCreateRequestedRef.current?.({
+          tempLayerId,
+          center_lat: c.lat,
+          center_lng: c.lng,
+          radius_meters: layer.getRadius(),
+        });
+      });
+
+      map.on('draw:edited', (e: any) => {
+        e.layers.eachLayer((layer: any) => {
+          if (!(layer instanceof L.Circle)) return;
+          const zoneId = (layer as any)._monitoringZoneId as string | undefined;
+          if (!zoneId) return;
+          const c = layer.getLatLng();
+          onMonitoringZoneEditedRef.current?.({
+            zoneId,
+            center_lat: c.lat,
+            center_lng: c.lng,
+            radius_meters: layer.getRadius(),
+          });
+        });
+      });
+
+      map.on('draw:deleted', (e: any) => {
+        e.layers.eachLayer((layer: any) => {
+          const zoneId = (layer as any)._monitoringZoneId as string | undefined;
+          if (!zoneId) return;
+          monitoringZonesRef.current.delete(zoneId);
+          onMonitoringZoneDeletedRef.current?.({ zoneId });
+        });
+      });
+
+      return () => {
+        removeDraw();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [monitoringEditEnabled]);
 
     return (
       <Box
@@ -565,6 +916,12 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       >
         <Box
           ref={mapContainerRef}
+          className={[
+            'leaflet-live-map',
+            zoneReviewMode ? 'zone-review' : null,
+          ]
+            .filter(Boolean)
+            .join(' ')}
           sx={{
             width: '100%',
             height: '100%',
@@ -573,17 +930,46 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
               fontFamily: 'system-ui, -apple-system, sans-serif',
               zIndex: 1,
             },
-            '& .leaflet-control': {
-              backgroundColor: 'white',
-              borderRadius: '4px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            '& .leaflet-top .leaflet-control': {
+              marginTop: 12,
             },
-            '& .leaflet-control-zoom-in, & .leaflet-control-zoom-out': {
-              backgroundColor: 'white',
-              color: '#333',
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
+            '& .leaflet-right .leaflet-control': {
+              marginRight: 12,
+            },
+            '& .leaflet-control': {
+              backgroundColor: 'rgba(255,255,255,0.78)',
+              borderRadius: '12px',
+              border: '1px solid rgba(0,0,0,0.12)',
+              boxShadow: '0 10px 26px rgba(0,0,0,0.14)',
+              backdropFilter: 'blur(8px)',
+              overflow: 'hidden',
+            },
+            '& .leaflet-control-zoom': {
+              borderRadius: '12px',
+            },
+            '& .leaflet-control-zoom a': {
+              width: 38,
+              height: 38,
+              lineHeight: '38px',
+              fontSize: 22,
+              fontWeight: 800,
+              color: 'rgba(15,23,42,0.82)',
+              background: 'transparent',
+              transition: 'background 120ms ease, color 120ms ease',
+            },
+            '& .leaflet-control-zoom a:hover': {
+              background: 'rgba(2,6,23,0.06)',
+              color: 'rgba(15,23,42,0.95)',
+            },
+            '& .leaflet-control-zoom a:focus': {
+              outline: 'none',
+            },
+            '& .leaflet-control-zoom a:focus-visible': {
+              outline: '2px solid rgba(59,130,246,0.65)',
+              outlineOffset: -2,
+            },
+            '& .leaflet-control-zoom-in': {
+              borderBottom: '1px solid rgba(2,6,23,0.10)',
             },
           }}
         />

@@ -5,8 +5,10 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   Container,
   Grid,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -17,15 +19,18 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import { format } from 'date-fns';
 
-import { Header } from '../components/Header';
 import { advisoryService } from '../services/advisoryService';
 import { riskZoneService } from '../services/riskZoneService';
 import { isSupabaseConfigured } from '../core/supabase_config';
@@ -81,9 +86,11 @@ const getCategoryChipColor = (category: AdvisoryCategory) => {
 
 export function Advisories() {
   const { isAuthenticated } = useAuth();
+  const theme = useTheme();
 
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [publishExpanded, setPublishExpanded] = useState(false);
 
   const [items, setItems] = useState<OfficialAdvisory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,302 +286,420 @@ export function Advisories() {
   };
 
   return (
-    <Container maxWidth={false} sx={{ py: 2, px: { xs: 1, sm: 2, md: 2 } }}>
-
-      {!supabaseOk && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          Supabase is not configured. Publishing and loading updates will not work.
-        </Alert>
-      )}
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12 }}>
-          <Paper elevation={2} sx={{ p: 2.5 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-              <CampaignOutlinedIcon />
-              <Typography variant="h6" fontWeight={800}>
-                Publish Update
+    <Box sx={{ minHeight: '100vh', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+      {/* Page Header */}
+      <Box
+        sx={{
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.04)} 100%)`,
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+        }}
+      >
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+              }}
+            >
+              <CampaignOutlinedIcon sx={{ color: 'white', fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                Official Updates
               </Typography>
-            </Stack>
+              <Typography variant="caption" color="text.secondary">
+                Publish alerts and advisories
+              </Typography>
+            </Box>
+          </Stack>
 
-            <Stack spacing={2}>
-              <TextField
-                label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                fullWidth
-                size="small"
-              />
+          <Stack direction="row" spacing={1}>
+            <Tooltip title="Refresh updates">
+              <IconButton onClick={load} disabled={loading} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Button
+              variant={publishExpanded ? 'outlined' : 'contained'}
+              size="small"
+              startIcon={publishExpanded ? <CloseIcon /> : <AddCircleOutlineIcon />}
+              onClick={() => setPublishExpanded(!publishExpanded)}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2,
+              }}
+            >
+              {publishExpanded ? 'Cancel' : 'New Update'}
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
 
-              <TextField
-                label="Message"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                fullWidth
-                size="small"
-                multiline
-                minRows={4}
-              />
+      <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1.5, sm: 2.5 } }}>
+        {!supabaseOk && (
+          <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
+            Supabase is not configured. Publishing and loading updates will not work.
+          </Alert>
+        )}
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Category"
-                  select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as AdvisoryCategory)}
-                  fullWidth
-                  size="small"
-                  SelectProps={{ native: true }}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </TextField>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
-                <TextField
-                  label="Severity"
-                  select
-                  value={severity}
-                  onChange={(e) => setSeverity(e.target.value as AdvisorySeverity)}
-                  fullWidth
-                  size="small"
-                  SelectProps={{ native: true }}
-                >
-                  {SEVERITIES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </TextField>
-              </Stack>
-
-              <TextField
-                label="Region (optional)"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                fullWidth
-                size="small"
-              />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Latitude (optional)"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  fullWidth
-                  size="small"
-                  inputProps={{ inputMode: 'decimal' }}
-                />
-                <TextField
-                  label="Longitude (optional)"
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  fullWidth
-                  size="small"
-                  inputProps={{ inputMode: 'decimal' }}
-                />
-              </Stack>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Starts At (optional)"
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                />
-                <TextField
-                  label="Expires At (optional)"
-                  type="datetime-local"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Stack>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Phone (optional)"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  fullWidth
-                  size="small"
-                />
-                <TextField
-                  label="WhatsApp (optional)"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  fullWidth
-                  size="small"
-                />
-              </Stack>
-
-              <TextField
-                label="Hotline (optional)"
-                value={hotline}
-                onChange={(e) => setHotline(e.target.value)}
-                fullWidth
-                size="small"
-              />
-
-              <Stack direction="row" spacing={1} justifyContent="flex-end">
-                <Button variant="outlined" onClick={resetForm} disabled={publishing}>
-                  Clear
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<SendOutlinedIcon />}
-                  onClick={handlePublish}
-                  disabled={publishing}
-                >
-                  {publishing ? 'Publishing…' : 'Publish'}
-                </Button>
-              </Stack>
-            </Stack>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12 }}>
-          <Box
+        {/* Collapsible Publish Form */}
+        <Collapse in={publishExpanded}>
+          <Paper
+            elevation={0}
             sx={{
-              borderRadius: '20px',
-              overflow: 'hidden',
-              bgcolor: 'background.paper',
-              border: '1px solid rgba(0,0,0,0.08)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              mb: 2,
+              p: 2.5,
+              borderRadius: '16px',
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.04)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
             }}
           >
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="h6" fontWeight={800}>
-                Recent Updates
-              </Typography>
-              <Button startIcon={<RefreshIcon />} onClick={load} disabled={loading}>
-                Refresh
-              </Button>
-            </Box>
+            <Grid container spacing={2}>
+              {/* Left Column - Essential Fields */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Stack spacing={1.5}>
+                  <TextField
+                    label="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Enter alert title..."
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  />
+                  <TextField
+                    label="Message"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    fullWidth
+                    size="small"
+                    multiline
+                    minRows={3}
+                    maxRows={5}
+                    placeholder="Detailed message content..."
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  />
+                  <Stack direction="row" spacing={1.5}>
+                    <TextField
+                      label="Category"
+                      select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value as AdvisoryCategory)}
+                      fullWidth
+                      size="small"
+                      SelectProps={{ native: true }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Severity"
+                      select
+                      value={severity}
+                      onChange={(e) => setSeverity(e.target.value as AdvisorySeverity)}
+                      fullWidth
+                      size="small"
+                      SelectProps={{ native: true }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    >
+                      {SEVERITIES.map((s) => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </TextField>
+                  </Stack>
+                  <TextField
+                    label="Region"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="e.g., Chennai Coast"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  />
+                </Stack>
+              </Grid>
 
-            <TableContainer sx={{ maxHeight: 'calc(100vh - 320px)' }}>
-              <Table stickyHeader size="small" sx={{
-                '& .MuiTableCell-root': { py: 0.75, px: 1.25 },
-                '& .MuiTableCell-head': { py: 1, fontSize: 12, fontWeight: 800, bgcolor: 'grey.50' },
-                '& .MuiChip-root': { height: 22 },
-              }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Published</TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Severity</TableCell>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Region</TableCell>
-                    <TableCell>Validity</TableCell>
-                    <TableCell>Contacts</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                        <CircularProgress size={22} />
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Loading updates…
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No official updates found.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items.map((a) => {
-                      const validity =
-                        a.starts_at || a.expires_at
-                          ? `${a.starts_at ? format(new Date(a.starts_at), 'MMM dd HH:mm') : '—'} → ${a.expires_at ? format(new Date(a.expires_at), 'MMM dd HH:mm') : '—'}`
-                          : '—';
+              {/* Right Column - Optional Fields */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={1.5}>
+                    <TextField
+                      label="Latitude"
+                      value={lat}
+                      onChange={(e) => setLat(e.target.value)}
+                      fullWidth
+                      size="small"
+                      inputProps={{ inputMode: 'decimal' }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                      label="Longitude"
+                      value={lng}
+                      onChange={(e) => setLng(e.target.value)}
+                      fullWidth
+                      size="small"
+                      inputProps={{ inputMode: 'decimal' }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                  </Stack>
+                  <Stack direction="row" spacing={1.5}>
+                    <TextField
+                      label="Starts At"
+                      type="datetime-local"
+                      value={startsAt}
+                      onChange={(e) => setStartsAt(e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                      label="Expires At"
+                      type="datetime-local"
+                      value={expiresAt}
+                      onChange={(e) => setExpiresAt(e.target.value)}
+                      fullWidth
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                  </Stack>
+                  <Stack direction="row" spacing={1.5}>
+                    <TextField
+                      label="Phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                      label="WhatsApp"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      fullWidth
+                      size="small"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                  </Stack>
+                  <TextField
+                    label="Hotline"
+                    value={hotline}
+                    onChange={(e) => setHotline(e.target.value)}
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  />
+                </Stack>
+              </Grid>
 
-                      const contacts =
-                        [a.contact_phone, a.contact_whatsapp, a.contact_hotline]
-                          .filter(Boolean)
-                          .join(' • ') || '—';
+              {/* Action Buttons */}
+              <Grid size={{ xs: 12 }}>
+                <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ pt: 1 }}>
+                  <Button
+                    variant="text"
+                    onClick={resetForm}
+                    disabled={publishing}
+                    sx={{ borderRadius: '10px', textTransform: 'none' }}
+                  >
+                    Clear
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <SendOutlinedIcon />}
+                    onClick={handlePublish}
+                    disabled={publishing || !title.trim() || !body.trim()}
+                    sx={{
+                      borderRadius: '10px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    }}
+                  >
+                    {publishing ? 'Publishing…' : 'Publish Update'}
+                  </Button>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Collapse>
 
-                      return (
-                        <TableRow key={a.id} hover>
-                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                            {format(new Date(a.published_at), 'MMM dd, yyyy HH:mm')}
-                          </TableCell>
-                          <TableCell>
-                            <Chip label={a.category} size="small" color={getCategoryChipColor(a.category)} variant="outlined" />
-                          </TableCell>
-                          <TableCell>
-                            <Chip label={a.severity} size="small" color={getSeverityChipColor(a.severity)} />
-                          </TableCell>
-                          <TableCell sx={{ maxWidth: 260 }}>
-                            <Typography variant="body2" noWrap title={a.title}>
-                              {a.title}
-                            </Typography>
-                          </TableCell>
-                          <TableCell sx={{ maxWidth: 220 }}>
-                            <Typography variant="body2" noWrap title={a.region ?? ''}>
-                              {a.region || '—'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell sx={{ whiteSpace: 'nowrap' }}>{validity}</TableCell>
-                          <TableCell sx={{ maxWidth: 260 }}>
-                            <Typography variant="caption" color="text.secondary" noWrap title={contacts}>
-                              {contacts}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                            <Button
-                              size="small"
-                              color="error"
-                              variant="text"
-                              startIcon={<DeleteOutlineIcon />}
-                              onClick={() => handleDelete(a.id)}
-                              disabled={!isAuthenticated || !isAdmin || deletingId === a.id}
-                            >
-                              {deletingId === a.id ? 'Deleting…' : 'Delete'}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              component="div"
-              count={totalCount}
-              page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
+        {/* Updates Table */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '16px',
+            overflow: 'hidden',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.04)}`,
+          }}
+        >
+          <Box
+            sx={{
+              px: 2.5,
+              py: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              background: alpha(theme.palette.grey[50], 0.5),
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={700} color="text.secondary">
+              Recent Updates
+            </Typography>
+            <Chip
+              label={`${totalCount} total`}
+              size="small"
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                fontSize: 11,
               }}
-              rowsPerPageOptions={[10, 25, 50]}
             />
           </Box>
-        </Grid>
-      </Grid>
-    </Container>
+
+          <TableContainer sx={{ maxHeight: publishExpanded ? 'calc(100vh - 520px)' : 'calc(100vh - 220px)' }}>
+            <Table stickyHeader size="small" sx={{
+              '& .MuiTableCell-root': { py: 1, px: 1.5 },
+              '& .MuiTableCell-head': {
+                py: 1.25,
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                bgcolor: alpha(theme.palette.grey[100], 0.8),
+                color: 'text.secondary',
+              },
+              '& .MuiChip-root': { height: 22, fontSize: 11 },
+              '& .MuiTableRow-root:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+            }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Published</TableCell>
+                  <TableCell>Category</TableCell>
+                  <TableCell>Severity</TableCell>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Region</TableCell>
+                  <TableCell>Validity</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                      <CircularProgress size={28} thickness={4} />
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                        Loading updates…
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                      <CampaignOutlinedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        No official updates yet. Click "New Update" to publish one.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items.map((a) => {
+                    const validity =
+                      a.starts_at || a.expires_at
+                        ? `${a.starts_at ? format(new Date(a.starts_at), 'MMM dd HH:mm') : '—'} → ${a.expires_at ? format(new Date(a.expires_at), 'MMM dd HH:mm') : '—'}`
+                        : '—';
+
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 12 }}>
+                          {format(new Date(a.published_at), 'MMM dd, yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={a.category} size="small" color={getCategoryChipColor(a.category)} variant="outlined" />
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={a.severity} size="small" color={getSeverityChipColor(a.severity)} />
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 280 }}>
+                          <Typography variant="body2" fontWeight={500} noWrap title={a.title}>
+                            {a.title}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 180 }}>
+                          <Typography variant="body2" color="text.secondary" noWrap title={a.region ?? ''}>
+                            {a.region || '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap', fontSize: 12, color: 'text.secondary' }}>
+                          {validity}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title={!isAuthenticated || !isAdmin ? 'Login as admin to delete' : 'Delete update'}>
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDelete(a.id)}
+                                disabled={!isAuthenticated || !isAdmin || deletingId === a.id}
+                                sx={{ opacity: deletingId === a.id ? 0.5 : 1 }}
+                              >
+                                {deletingId === a.id ? <CircularProgress size={16} /> : <DeleteOutlineIcon fontSize="small" />}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <TablePagination
+            component="div"
+            count={totalCount}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 25, 50]}
+            sx={{
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                fontSize: 12,
+              },
+            }}
+          />
+        </Paper>
+      </Container>
+    </Box>
   );
 }
