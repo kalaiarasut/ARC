@@ -593,6 +593,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                 margin: const EdgeInsets.all(16),
                 child: Row(
                   children: [
+                    Material(
+                      color: Colors.white.withOpacity(0.95),
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(999),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     // Freshness indicator
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -732,10 +742,29 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           ),
                           value: filters.showRiskZones,
                           activeColor: AppColors.primaryBlue,
-                          onChanged: (value) {
-                            ref.read(mapFiltersProvider.notifier).update(
-                              filters.copyWith(showRiskZones: value));
-                            _updateMapData();
+                          onChanged: (value) async {
+                            final nextFilters = filters.copyWith(showRiskZones: value);
+                            ref.read(mapFiltersProvider.notifier).update(nextFilters);
+
+                            // Force a fetch immediately (no need to wait for a moveend).
+                            final bounds = _mapController.camera.visibleBounds;
+                            await ref.read(mapProvider.notifier).updateViewport(
+                              bounds,
+                              currentUserId: SupabaseConfig.client.auth.currentUser?.id,
+                              filters: nextFilters,
+                            );
+
+                            if (!mounted) return;
+
+                            // Give users feedback when there are no verified zones available.
+                            if (value == true && ref.read(mapProvider).riskZones.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('No verified risk zones in this area yet.'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
                           },
                         ),
 

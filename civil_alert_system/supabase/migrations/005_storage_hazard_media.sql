@@ -19,62 +19,69 @@
 --   SELECT (authenticated): bucket_id = 'hazard-media' AND (storage.foldername(name))[1] = auth.uid()::text
 --
 -- The SQL below is kept as reference for environments where you CAN run it as the storage owner.
+DO $$
+BEGIN
+  -- 1) Create bucket (id == name convention)
+  INSERT INTO storage.buckets (id, name, public)
+  VALUES ('hazard-media', 'hazard-media', true)
+  ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 
--- 1) Create bucket (id == name convention)
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('hazard-media', 'hazard-media', true)
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+  -- 2) Enable RLS on storage.objects (usually already enabled)
+  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
--- 2) Enable RLS on storage.objects (usually already enabled)
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+  -- 3) Policies for hazard-media
+  -- Clean up for idempotency
+  DROP POLICY IF EXISTS "hazard media: insert own" ON storage.objects;
+  DROP POLICY IF EXISTS "hazard media: update own" ON storage.objects;
+  DROP POLICY IF EXISTS "hazard media: select own" ON storage.objects;
+  DROP POLICY IF EXISTS "hazard media: delete own" ON storage.objects;
 
--- 3) Policies for hazard-media
--- Clean up for idempotency
-DROP POLICY IF EXISTS "hazard media: insert own" ON storage.objects;
-DROP POLICY IF EXISTS "hazard media: update own" ON storage.objects;
-DROP POLICY IF EXISTS "hazard media: select own" ON storage.objects;
-DROP POLICY IF EXISTS "hazard media: delete own" ON storage.objects;
+  -- Helper condition: object key starts with the user's uid folder
+  -- Note: `name` is the object path/key.
+  CREATE POLICY "hazard media: insert own"
+    ON storage.objects
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+      bucket_id = 'hazard-media'
+      AND name LIKE (auth.uid()::text || '/%')
+    );
 
--- Helper condition: object key starts with the user's uid folder
--- Note: `name` is the object path/key.
+  CREATE POLICY "hazard media: update own"
+    ON storage.objects
+    FOR UPDATE
+    TO authenticated
+    USING (
+      bucket_id = 'hazard-media'
+      AND name LIKE (auth.uid()::text || '/%')
+    )
+    WITH CHECK (
+      bucket_id = 'hazard-media'
+      AND name LIKE (auth.uid()::text || '/%')
+    );
 
-CREATE POLICY "hazard media: insert own"
-  ON storage.objects
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    bucket_id = 'hazard-media'
-    AND name LIKE (auth.uid()::text || '/%')
-  );
+  CREATE POLICY "hazard media: select own"
+    ON storage.objects
+    FOR SELECT
+    TO authenticated
+    USING (
+      bucket_id = 'hazard-media'
+      AND name LIKE (auth.uid()::text || '/%')
+    );
 
-CREATE POLICY "hazard media: update own"
-  ON storage.objects
-  FOR UPDATE
-  TO authenticated
-  USING (
-    bucket_id = 'hazard-media'
-    AND name LIKE (auth.uid()::text || '/%')
-  )
-  WITH CHECK (
-    bucket_id = 'hazard-media'
-    AND name LIKE (auth.uid()::text || '/%')
-  );
-
-CREATE POLICY "hazard media: select own"
-  ON storage.objects
-  FOR SELECT
-  TO authenticated
-  USING (
-    bucket_id = 'hazard-media'
-    AND name LIKE (auth.uid()::text || '/%')
-  );
-
-CREATE POLICY "hazard media: delete own"
-  ON storage.objects
-  FOR DELETE
-  TO authenticated
-  USING (
-    bucket_id = 'hazard-media'
-    AND name LIKE (auth.uid()::text || '/%')
-  );
+  CREATE POLICY "hazard media: delete own"
+    ON storage.objects
+    FOR DELETE
+    TO authenticated
+    USING (
+      bucket_id = 'hazard-media'
+      AND name LIKE (auth.uid()::text || '/%')
+    );
+EXCEPTION
+  WHEN insufficient_privilege THEN
+    RAISE NOTICE 'Skipping storage SQL (insufficient_privilege). Configure hazard-media bucket + policies in Supabase Dashboard.';
+  WHEN undefined_table THEN
+    RAISE NOTICE 'Skipping storage SQL (storage schema/tables unavailable in this environment).';
+END
+$$;
 

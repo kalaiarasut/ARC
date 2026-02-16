@@ -36,21 +36,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const hydrateUserFromSession = async (sessionUser: { id: string; email?: string | null; user_metadata?: any }) => {
-        const email = sessionUser.email || '';
-
-        // Best-effort role lookup (RLS allows users to read only their own row).
-        let role: 'admin' | null = null;
+    const getUserRole = async (userId: string): Promise<'admin' | null> => {
         try {
             const { data } = await supabase
                 .from('app_roles')
                 .select('role')
-                .eq('user_id', sessionUser.id)
+                .eq('user_id', userId)
                 .maybeSingle();
-            role = (data?.role as 'admin' | undefined) ?? null;
+
+            return (data?.role as 'admin' | undefined) ?? null;
         } catch {
-            // Ignore (table may not exist yet / RLS mismatch / network)
-            role = null;
+            return null;
+        }
+    };
+
+    const hydrateUserFromSession = async (sessionUser: { id: string; email?: string | null; user_metadata?: any }) => {
+        const email = sessionUser.email || '';
+
+        const role = await getUserRole(sessionUser.id);
+
+        // Strict admin-only web access.
+        if (role !== 'admin') {
+            await supabase.auth.signOut();
+            setUser(null);
+            return;
         }
 
         setUser({
@@ -87,12 +96,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     const login = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
 
-        return { error };
+        if (error) {
+            return { error };
+        }
+
+        const signedInUser = data.user;
+        if (!signedInUser) {
+            return { error: { message: 'Login failed. Please try again.' } };
+        }
+
+        const role = await getUserRole(signedInUser.id);
+        if (role !== 'admin') {
+            await supabase.auth.signOut();
+            setUser(null);
+            return { error: { message: 'Access denied. Admin account required.' } };
+        }
+
+        setUser({
+            id: signedInUser.id,
+            email: signedInUser.email || email,
+            name: signedInUser.user_metadata?.name || (signedInUser.email || email).split('@')[0] || 'Admin',
+            role,
+        });
+
+        return { error: null };
     };
 
     const logout = async () => {

@@ -1,6 +1,8 @@
 -- Fetch a single verified report with privacy-safe fields for public map details.
 -- RLS prevents direct SELECT for other users; public access should go through SECURITY DEFINER RPCs.
 
+DROP FUNCTION IF EXISTS public.get_verified_report_details(UUID);
+
 CREATE OR REPLACE FUNCTION get_verified_report_details(
   report_uuid UUID
 )

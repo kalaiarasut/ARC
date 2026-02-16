@@ -508,6 +508,8 @@ COMMENT ON FUNCTION refresh_system_risk_zones IS 'Recompute candidate zones from
 
 -- Keep backward-compatible scheduler entrypoint name.
 -- Existing deployments may already schedule refresh_cached_risk_zones().
+DROP FUNCTION IF EXISTS public.refresh_cached_risk_zones();
+
 CREATE OR REPLACE FUNCTION refresh_cached_risk_zones()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -524,6 +526,13 @@ GRANT EXECUTE ON FUNCTION refresh_cached_risk_zones TO service_role;
 -- ============================================
 -- 4. CITIZEN-SAFE FETCH (REUSES EXISTING RPC NAME)
 -- ============================================
+
+DROP FUNCTION IF EXISTS public.get_cached_risk_zones(
+  double precision,
+  double precision,
+  double precision,
+  double precision
+);
 
 CREATE OR REPLACE FUNCTION get_cached_risk_zones(
   min_lat DOUBLE PRECISION,

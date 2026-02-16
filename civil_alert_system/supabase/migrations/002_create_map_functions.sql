@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS risk_zones_cached (
 -- Spatial index for fast location queries
 CREATE INDEX IF NOT EXISTS idx_risk_zones_location 
   ON risk_zones_cached USING GIST (
-    ST_MakePoint(center_lon, center_lat)::geography
+    CAST(ST_MakePoint(center_lon, center_lat) AS geography)
   );
 
 -- Time index for freshness queries
@@ -32,6 +32,14 @@ CREATE INDEX IF NOT EXISTS idx_risk_zones_calculated_at
 -- ============================================
 
 -- Fetch verified reports within map viewport with privacy & security
+DROP FUNCTION IF EXISTS public.get_verified_reports_in_bounds(
+  double precision,
+  double precision,
+  double precision,
+  double precision,
+  integer
+);
+
 CREATE OR REPLACE FUNCTION get_verified_reports_in_bounds(
   min_lat DOUBLE PRECISION,
   max_lat DOUBLE PRECISION,
@@ -80,9 +88,15 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Calculate risk zones dynamically based on zoom level
 -- Uses DBSCAN clustering for density-based grouping
+DROP FUNCTION IF EXISTS public.calculate_risk_zones_on_demand(
+  double precision,
+  double precision,
+  integer
+);
+
 CREATE OR REPLACE FUNCTION calculate_risk_zones_on_demand(
-  center_lat DOUBLE PRECISION,
-  center_lon DOUBLE PRECISION,
+  p_center_lat DOUBLE PRECISION,
+  p_center_lon DOUBLE PRECISION,
   zoom_level INTEGER
 )
 RETURNS TABLE (
@@ -121,7 +135,7 @@ BEGIN
       r.status = 'verified'
       AND ST_DWithin(
         r.location,
-        ST_SetSRID(ST_MakePoint(center_lon, center_lat), 4326)::geography,
+        ST_SetSRID(ST_MakePoint(p_center_lon, p_center_lat), 4326)::geography,
         search_radius_km * 1000 -- Convert km to meters
       )
   ),
@@ -190,6 +204,11 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 -- ============================================
 
 -- Fetch authenticated user's own reports with optional time filter
+DROP FUNCTION IF EXISTS public.get_user_reports_on_map(
+  uuid,
+  integer
+);
+
 CREATE OR REPLACE FUNCTION get_user_reports_on_map(
   user_uuid UUID,
   days_back INTEGER DEFAULT 30
@@ -281,6 +300,13 @@ $$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
 -- ============================================
 
 -- Fetch pre-aggregated risk zones within viewport (fast!)
+DROP FUNCTION IF EXISTS public.get_cached_risk_zones(
+  double precision,
+  double precision,
+  double precision,
+  double precision
+);
+
 CREATE OR REPLACE FUNCTION get_cached_risk_zones(
   min_lat DOUBLE PRECISION,
   max_lat DOUBLE PRECISION,

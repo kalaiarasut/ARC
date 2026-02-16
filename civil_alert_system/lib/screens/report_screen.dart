@@ -17,8 +17,8 @@ import '../models/hazard_report.dart';
 import '../services/report_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../core/supabase_config.dart';
+import '../services/upload_progress_controller.dart';
 import 'profile_module_screen.dart';
-import 'video_record_screen.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -348,9 +348,9 @@ class _ReportScreenState extends State<ReportScreen> {
         return;
       }
 
-      final XFile? video = await Navigator.push<XFile?>(
-        context,
-        MaterialPageRoute(builder: (_) => const VideoRecordScreen()),
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
       );
       if (!mounted) return;
       if (video != null) {
@@ -510,6 +510,14 @@ class _ReportScreenState extends State<ReportScreen> {
         return;
       }
 
+      final totalSteps = 2 + _selectedMedia.length;
+      UploadProgressController.instance.start(
+        flowType: UploadFlowType.submit,
+        title: 'Uploading your report',
+        subtitle: 'Preparing report details',
+        totalSteps: totalSteps,
+      );
+
       // Get user data
       final userId = SupabaseConfig.client.auth.currentUser?.id;
       if (userId == null) {
@@ -566,6 +574,7 @@ class _ReportScreenState extends State<ReportScreen> {
       );
 
       final reportId = await _reportService.insertReport(report);
+      UploadProgressController.instance.step('Report details uploaded');
 
       // Phase 2: Upload media (if any)
       if (_selectedMedia.isNotEmpty) {
@@ -580,6 +589,10 @@ class _ReportScreenState extends State<ReportScreen> {
               index: index,
             );
             uploadedUrls.add(url);
+            UploadProgressController.instance.step(
+              'Uploaded attachment ${index + 1}/${_selectedMedia.length}',
+              subtitle: 'Uploading media',
+            );
           }
           
           // Phase 3: Update report with media URLs
@@ -601,19 +614,20 @@ class _ReportScreenState extends State<ReportScreen> {
             media: _selectedMedia,
             lastError: uploadError.toString(),
           );
+          UploadProgressController.instance.note('Media upload failed, queued for retry');
         }
       }
 
+      UploadProgressController.instance.step('Finalizing report');
+      UploadProgressController.instance.complete('Report submitted successfully');
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.reportSubmittedSuccessfully),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        Navigator.pop(context);
+        await _showSubmittedConfirmationDialog();
+        UploadProgressController.instance.clear();
+        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
+      UploadProgressController.instance.fail('Upload failed: ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
@@ -624,6 +638,57 @@ class _ReportScreenState extends State<ReportScreen> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  Future<void> _showSubmittedConfirmationDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.success.withOpacity(0.12),
+                  ),
+                  child: const Icon(Icons.check_circle, color: AppColors.success, size: 42),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  context.l10n.reportSubmittedSuccessfully,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your upload timeline has been completed and saved.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Done',
+                    backgroundColor: AppColors.primaryBlue,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Better connectivity check (not just connectivity_plus)

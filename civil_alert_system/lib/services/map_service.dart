@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import '../core/supabase_config.dart';
@@ -50,6 +51,7 @@ class MapService {
         final id = json['id'] as String;
         final hazardType = json['hazard_type'] as String;
         final urgencyLevel = (json['urgency_level'] as String?) ?? 'Low';
+        final description = (json['description'] as String?) ?? '';
         final latitude = (json['latitude'] as num).toDouble();
         final longitude = (json['longitude'] as num).toDouble();
         final isHighRisk = json['is_high_risk'] as bool? ?? false;
@@ -74,6 +76,7 @@ class MapService {
           // so leave false here.
           isOwnReport: false,
           mediaUrls: mediaUrls,
+          description: description,
         );
       }).toList();
     } catch (e) {
@@ -141,6 +144,7 @@ class MapService {
           .map((json) => RiskZone.fromJson(json, isCached: true))
           .toList();
     } catch (e) {
+      debugPrint('getCachedRiskZones failed: $e');
       return [];
     }
   }
@@ -202,6 +206,7 @@ class MapService {
         final id = json['id'] as String;
         final hazardType = json['hazard_type'] as String;
         final urgencyLevel = (json['urgency_level'] as String?) ?? 'Low';
+        final description = (json['description'] as String?) ?? '';
         final latitude = (json['latitude'] as num).toDouble();
         final longitude = (json['longitude'] as num).toDouble();
         final isHighRisk = json['is_high_risk'] as bool? ?? false;
@@ -216,6 +221,7 @@ class MapService {
           timestamp: timestamp,
           isHighRisk: isHighRisk,
           isOwnReport: true,
+          description: description,
         );
       }).toList();
     } catch (e) {

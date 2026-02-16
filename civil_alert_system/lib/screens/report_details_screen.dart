@@ -148,34 +148,36 @@ class ReportDetailsScreen extends ConsumerWidget {
                         ],
                       ),
 
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final uri = Uri.parse(
-                              'https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}',
-                            );
-                            final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            if (!ok && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Could not open maps')),
+                      if (!isOwnReport) ...[
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final uri = Uri.parse(
+                                'https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}',
                               );
-                            }
-                          },
-                          icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Navigate'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (!ok && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Could not open maps')),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.directions, size: 18),
+                            label: const Text('Navigate'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

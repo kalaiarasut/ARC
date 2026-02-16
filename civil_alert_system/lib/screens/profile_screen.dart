@@ -12,6 +12,7 @@ import '../services/report_sync_service.dart';
 import '../services/report_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
+import 'report_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -359,45 +360,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? AppColors.success
                           : (status == 'resolved' ? AppColors.secondaryCyan : AppColors.warning);
 
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () {
+                          final reportId = report.id;
+                          if (reportId == null || reportId.isEmpty) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ReportDetailsScreen(reportId: reportId, isOwnReport: true),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(hazardType, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${createdAt.toLocal()}'.split('.').first,
-                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                  ),
-                                ],
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(999),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(hazardType, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${createdAt.toLocal()}'.split('.').first,
+                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Text(
-                                status,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },

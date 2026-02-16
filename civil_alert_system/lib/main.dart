@@ -15,6 +15,7 @@ import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
+import 'widgets/upload_progress_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,6 +89,14 @@ class MyApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) child,
+            const UploadProgressOverlay(),
+          ],
+        );
+      },
       home: const SplashScreen(),
     );
   }

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:video_player/video_player.dart';
+import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'report_screen.dart';
@@ -37,7 +39,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   _ReportWindow _reportWindow = _ReportWindow.now;
   List<MapMarkerData> _liveReports = const [];
-  MapMarkerData? _latestReport;
 
   ProviderSubscription<LatLng?>? _locationSub;
 
@@ -153,14 +154,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
       setState(() {
         _liveReports = filtered.take(10).toList();
-        _latestReport = filtered.isNotEmpty ? filtered.first : null;
       });
     } catch (_) {
       // Ignore offline/network errors.
       if (!mounted) return;
       setState(() {
         _liveReports = const [];
-        _latestReport = null;
       });
     }
   }
@@ -171,6 +170,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
     if (diff.inHours < 24) return '${diff.inHours} hr ago';
     return '${diff.inDays} days ago';
+  }
+
+  String _formatDateTime(DateTime dt) {
+    return DateFormat('yyyy-MM-dd HH:mm').format(dt.toLocal());
+  }
+
+  String _shortDescription(String description) {
+    final text = description.trim();
+    final fallback = 'Reported hazard in your area';
+    final src = text.isEmpty ? fallback : text;
+    if (src.length <= 70) return src;
+    return '${src.substring(0, 70)}.......';
   }
 
   @override
@@ -412,7 +423,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 )
               else
                 SizedBox(
-                  height: 140,
+                  height: 280,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _liveReports.length,
@@ -446,7 +457,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           );
                         },
                         child: Container(
-                          width: 220,
+                          width: 285,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -462,111 +473,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (r.mediaUrls.isNotEmpty) ...[
-                                Builder(builder: (context) {
-                                  final urls = r.mediaUrls;
-                                  final video = urls.firstWhere(
-                                    (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.video,
-                                    orElse: () => '',
-                                  );
-                                  final image = urls.firstWhere(
-                                    (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.image,
-                                    orElse: () => '',
-                                  );
-
-                                  // If any video exists, show a video tile (no autoplay in feed).
-                                  if (video.isNotEmpty) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Container(
-                                        height: 74,
-                                        width: double.infinity,
-                                        color: AppColors.greyOutline.withOpacity(0.22),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: [
-                                            Center(
-                                              child: Icon(
-                                                Icons.videocam,
-                                                size: 34,
-                                                color: AppColors.textPrimary.withOpacity(0.8),
-                                              ),
-                                            ),
-                                            Positioned(
-                                              right: 8,
-                                              bottom: 8,
-                                              child: Container(
-                                                padding: const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black.withOpacity(0.55),
-                                                  borderRadius: BorderRadius.circular(999),
-                                                ),
-                                                child: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                              _buildReportMediaPreview(r, height: 120),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: urgencyColor.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: urgencyColor,
                                       ),
-                                    );
-                                  }
-
-                                  // Otherwise show the first image.
-                                  if (image.isNotEmpty) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: SizedBox(
-                                        height: 74,
-                                        width: double.infinity,
-                                        child: Image.network(
-                                          image,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            color: AppColors.greyOutline.withOpacity(0.22),
-                                            child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }
-
-                                  return const SizedBox.shrink();
-                                }),
-                                const SizedBox(height: 10),
-                              ],
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: urgencyColor.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: urgencyColor,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      r.hazardType,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _shortDescription(r.description),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                r.hazardType,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                distanceText.isNotEmpty ? distanceText : _timeAgo(r.timestamp),
+                                _formatDateTime(r.timestamp),
                                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                               if (distanceText.isNotEmpty)
                                 Text(
-                                  _timeAgo(r.timestamp),
+                                  distanceText,
                                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                 ),
                             ],
@@ -576,141 +531,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 ),
-
-              // 5. Map Card
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MapScreen()),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Map Image placeholder
-                      Expanded(
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                              child: Image.network(
-                                'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop', // Map/City view
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            // Location Pin
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.location_on, color: AppColors.error, size: 32),
-                              ),
-                            ),
-                            // "Tap to view" overlay
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.map, color: Colors.white, size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.l10n.mapTab,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Info
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _latestReport?.hazardType ?? 'No reports yet',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _latestReport != null
-                                            ? '${_latestReport!.timestamp.toLocal()}'.split(' ').first
-                                            : '--',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _latestReport != null ? _timeAgo(_latestReport!.timestamp) : '--',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.greyOutline),
-                              ),
-                              child: const Icon(Icons.warning_amber_rounded, color: AppColors.textPrimary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
 
               const SizedBox(height: 24),
 
@@ -901,6 +721,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildReportMediaPreview(
+    MapMarkerData report, {
+    required double height,
+    double borderRadius = 12,
+  }) {
+    final urls = report.mediaUrls;
+    final video = urls.firstWhere(
+      (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.video,
+      orElse: () => '',
+    );
+    final image = urls.firstWhere(
+      (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.image,
+      orElse: () => '',
+    );
+
+    if (video.isNotEmpty) {
+      return _VideoReportThumbnail(
+        videoUrl: video,
+        height: height,
+        borderRadius: borderRadius,
+      );
+    }
+
+    if (image.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: SizedBox(
+          height: height,
+          width: double.infinity,
+          child: Image.network(
+            image,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: AppColors.greyOutline.withOpacity(0.22),
+              child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
+        height: height,
+        width: double.infinity,
+        color: AppColors.greyOutline.withOpacity(0.22),
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.textPrimary.withOpacity(0.7),
+          size: 34,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String label, bool isSelected, {required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
@@ -979,6 +855,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           )
         ],
+      ),
+    );
+  }
+}
+
+class _VideoReportThumbnail extends StatefulWidget {
+  final String videoUrl;
+  final double height;
+  final double borderRadius;
+
+  const _VideoReportThumbnail({
+    required this.videoUrl,
+    required this.height,
+    required this.borderRadius,
+  });
+
+  @override
+  State<_VideoReportThumbnail> createState() => _VideoReportThumbnailState();
+}
+
+class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
+  VideoPlayerController? _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      await controller.initialize();
+      await controller.pause();
+      await controller.setVolume(0);
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _ready = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _ready = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_ready && _controller != null)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.size.width,
+                  height: _controller!.value.size.height,
+                  child: VideoPlayer(_controller!),
+                ),
+              )
+            else
+              Container(
+                color: AppColors.greyOutline.withOpacity(0.22),
+                child: Center(
+                  child: Icon(
+                    Icons.videocam,
+                    size: 34,
+                    color: AppColors.textPrimary.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Icon(Icons.play_arrow, size: 18, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
