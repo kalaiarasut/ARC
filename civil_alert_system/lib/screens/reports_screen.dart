@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:video_player/video_player.dart';
 
 import '../l10n/l10n.dart';
 import '../models/hazard_report.dart';
@@ -159,6 +161,70 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
+  String _shortDescription(String description) {
+    final src = description.trim();
+    if (src.isEmpty) return '';
+    if (src.length <= 90) return src;
+    return '${src.substring(0, 90)}.......';
+  }
+
+  Widget _buildReportMediaPreview(
+    MapMarkerData report, {
+    required double height,
+    double borderRadius = 16,
+  }) {
+    final urls = report.mediaUrls;
+    final video = urls.firstWhere(
+      (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.video,
+      orElse: () => '',
+    );
+    final image = urls.firstWhere(
+      (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.image,
+      orElse: () => '',
+    );
+
+    if (video.isNotEmpty) {
+      return _VideoReportThumbnail(
+        videoUrl: video,
+        fallbackImageUrl: image.isNotEmpty ? image : null,
+        height: height,
+        borderRadius: borderRadius,
+      );
+    }
+
+    if (image.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: SizedBox(
+          height: height,
+          width: double.infinity,
+          child: Image.network(
+            image,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: AppColors.greyOutline.withOpacity(0.22),
+              child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
+        height: height,
+        width: double.infinity,
+        color: AppColors.greyOutline.withOpacity(0.22),
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.textPrimary.withOpacity(0.7),
+          size: 36,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -265,68 +331,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           separatorBuilder: (context, index) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final r = _items[index];
-
-                            final urls = r.mediaUrls;
-                            final video = urls.firstWhere(
-                              (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.video,
-                              orElse: () => '',
-                            );
-                            final image = urls.firstWhere(
-                              (u) => MediaViewerScreen.kindFromUrl(u) == MediaKind.image,
-                              orElse: () => '',
-                            );
-
-                            Widget? preview;
-                            if (video.isNotEmpty) {
-                              preview = ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  height: 170,
-                                  width: double.infinity,
-                                  color: AppColors.greyOutline.withOpacity(0.22),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      Center(
-                                        child: Icon(
-                                          Icons.videocam,
-                                          size: 44,
-                                          color: AppColors.textPrimary.withOpacity(0.8),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: 12,
-                                        bottom: 12,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.55),
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: const Icon(Icons.play_arrow, size: 20, color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            } else if (image.isNotEmpty) {
-                              preview = ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: SizedBox(
-                                  height: 170,
-                                  width: double.infinity,
-                                  child: Image.network(
-                                    image,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      color: AppColors.greyOutline.withOpacity(0.22),
-                                      child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
-                                    ),
-                                  ),
-                                ),
-                              );
+                            final loc = ref.read(userLocationProvider);
+                            String distanceText = '';
+                            if (loc != null) {
+                              final d = Distance();
+                              final meters = d.as(LengthUnit.Meter, loc, r.location);
+                              distanceText = meters >= 1000
+                                  ? '${(meters / 1000).toStringAsFixed(1)} km away'
+                                  : '${meters.toStringAsFixed(0)} m away';
                             }
+
+                            final urgency = r.urgencyLevel.trim();
+                            final urgencyColor = urgency.toLowerCase() == 'critical'
+                                ? AppColors.error
+                                : urgency.toLowerCase() == 'high'
+                                    ? AppColors.warning
+                                    : AppColors.primaryBlue;
+                            final shortDescription = _shortDescription(r.description);
 
                             return InkWell(
                               onTap: () {
@@ -339,7 +360,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               },
                               borderRadius: BorderRadius.circular(18),
                               child: Container(
-                                padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(18),
@@ -347,43 +367,66 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (preview != null) ...[
-                                      preview,
-                                      const SizedBox(height: 12),
-                                    ],
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryBlue.withOpacity(0.12),
-                                            borderRadius: BorderRadius.circular(999),
+                                    _buildReportMediaPreview(r, height: 210, borderRadius: 18),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: urgencyColor.withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(999),
+                                                ),
+                                                child: Text(
+                                                  urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: urgencyColor,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  r.hazardType,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          child: Text(
-                                            r.urgencyLevel.toUpperCase(),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primaryBlue,
+                                          if (shortDescription.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              shortDescription,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(color: AppColors.textSecondary),
                                             ),
+                                          ],
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                r.timeAgo,
+                                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                              ),
+                                              const Spacer(),
+                                              if (distanceText.isNotEmpty)
+                                                Text(
+                                                  distanceText,
+                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                ),
+                                            ],
                                           ),
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          '${r.timestamp.toLocal()}'.split('.').first,
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      r.hazardType,
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      r.timeAgo,
-                                      style: const TextStyle(color: AppColors.textSecondary),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -471,6 +514,123 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoReportThumbnail extends StatefulWidget {
+  final String videoUrl;
+  final String? fallbackImageUrl;
+  final double height;
+  final double borderRadius;
+
+  const _VideoReportThumbnail({
+    required this.videoUrl,
+    this.fallbackImageUrl,
+    required this.height,
+    required this.borderRadius,
+  });
+
+  @override
+  State<_VideoReportThumbnail> createState() => _VideoReportThumbnailState();
+}
+
+class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
+  VideoPlayerController? _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      await controller.initialize();
+      await controller.pause();
+      await controller.setVolume(0);
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _ready = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _ready = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_ready && _controller != null)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.size.width,
+                  height: _controller!.value.size.height,
+                  child: VideoPlayer(_controller!),
+                ),
+              )
+            else if (widget.fallbackImageUrl != null && widget.fallbackImageUrl!.trim().isNotEmpty)
+              Image.network(
+                widget.fallbackImageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppColors.greyOutline.withOpacity(0.22),
+                  child: Center(
+                    child: Icon(
+                      Icons.videocam,
+                      size: 44,
+                      color: AppColors.textPrimary.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                color: AppColors.greyOutline.withOpacity(0.22),
+                child: Center(
+                  child: Icon(
+                    Icons.videocam,
+                    size: 44,
+                    color: AppColors.textPrimary.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Icon(Icons.play_arrow, size: 20, color: Colors.white),
+              ),
+            ),
           ],
         ),
       ),

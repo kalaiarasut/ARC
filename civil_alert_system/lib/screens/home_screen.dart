@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:video_player/video_player.dart';
-import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import 'report_screen.dart';
@@ -172,14 +171,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return '${diff.inDays} days ago';
   }
 
-  String _formatDateTime(DateTime dt) {
-    return DateFormat('yyyy-MM-dd HH:mm').format(dt.toLocal());
-  }
-
   String _shortDescription(String description) {
     final text = description.trim();
-    final fallback = 'Reported hazard in your area';
-    final src = text.isEmpty ? fallback : text;
+    final src = text;
+    if (src.isEmpty) return '';
     if (src.length <= 70) return src;
     return '${src.substring(0, 70)}.......';
   }
@@ -423,7 +418,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 )
               else
                 SizedBox(
-                  height: 280,
+                  height: 255,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _liveReports.length,
@@ -458,7 +453,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         },
                         child: Container(
                           width: 285,
-                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
@@ -473,57 +467,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildReportMediaPreview(r, height: 120),
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: urgencyColor.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(999),
+                              _buildReportMediaPreview(r, height: 130, borderRadius: 16),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: urgencyColor.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: urgencyColor,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            r.hazardType,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    child: Text(
-                                      urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                        color: urgencyColor,
+                                    const SizedBox(height: 8),
+                                    if (_shortDescription(r.description).isNotEmpty)
+                                      Text(
+                                        _shortDescription(r.description),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                                       ),
+                                    if (_shortDescription(r.description).isNotEmpty)
+                                      const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          _timeAgo(r.timestamp),
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                        ),
+                                        const Spacer(),
+                                        if (distanceText.isNotEmpty)
+                                          Text(
+                                            distanceText,
+                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          ),
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      r.hazardType,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _shortDescription(r.description),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                _formatDateTime(r.timestamp),
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                              ),
-                              if (distanceText.isNotEmpty)
-                                Text(
-                                  distanceText,
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ],
                                 ),
+                              ),
                             ],
                           ),
                         ),

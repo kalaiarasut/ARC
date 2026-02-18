@@ -46,7 +46,7 @@ class MapService {
       );
 
       // RPC returns a privacy-safe shape, not a full HazardReport.
-      return (response as List).map((row) {
+      final markers = (response as List).map((row) {
         final json = row as Map<String, dynamic>;
         final id = json['id'] as String;
         final hazardType = json['hazard_type'] as String;
@@ -79,6 +79,50 @@ class MapService {
           description: description,
         );
       }).toList();
+
+      // Some RPC versions may omit description; best-effort backfill.
+      final missingDescriptionIds = markers
+          .where((m) => m.description.trim().isEmpty)
+          .map((m) => m.id)
+          .toList();
+
+      if (missingDescriptionIds.isEmpty) return markers;
+
+      try {
+        final rows = await _supabase
+            .from('hazard_reports')
+            .select('id, description')
+            .inFilter('id', missingDescriptionIds)
+            .eq('status', 'verified');
+
+        final byId = <String, String>{};
+        for (final row in (rows as List)) {
+          final json = row as Map<String, dynamic>;
+          final id = json['id']?.toString();
+          final description = (json['description'] as String?)?.trim() ?? '';
+          if (id != null && description.isNotEmpty) {
+            byId[id] = description;
+          }
+        }
+
+        return markers
+            .map((m) => byId.containsKey(m.id)
+                ? MapMarkerData(
+                    id: m.id,
+                    location: m.location,
+                    hazardType: m.hazardType,
+                    urgencyLevel: m.urgencyLevel,
+                    timestamp: m.timestamp,
+                    isHighRisk: m.isHighRisk,
+                    isOwnReport: m.isOwnReport,
+                    mediaUrls: m.mediaUrls,
+                    description: byId[m.id]!,
+                  )
+                : m)
+            .toList();
+      } catch (_) {
+        return markers;
+      }
     } catch (e) {
       // Offline or network error - return empty list for graceful degradation
       return [];
