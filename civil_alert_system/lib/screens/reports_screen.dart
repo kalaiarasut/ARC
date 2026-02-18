@@ -27,6 +27,9 @@ class ReportsScreen extends ConsumerStatefulWidget {
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   _ReportWindow _window = _ReportWindow.now;
   _ReportsMode _mode = _ReportsMode.community;
+  DateTime _selectedFilterDate = DateTime.now();
+  bool _showWeekDaysDropdown = false;
+  bool _showInlineCalendar = false;
   bool _loading = true;
   String? _error;
   List<MapMarkerData> _items = const [];
@@ -40,15 +43,295 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   DateTime _sinceForWindow(_ReportWindow window) {
-    final now = DateTime.now();
+    final end = _endForWindow(window);
     switch (window) {
       case _ReportWindow.week:
-        return now.subtract(const Duration(days: 7));
+        return end.subtract(const Duration(days: 7));
       case _ReportWindow.month:
-        return now.subtract(const Duration(days: 30));
+        return end.subtract(const Duration(days: 30));
       case _ReportWindow.now:
-        return now.subtract(const Duration(hours: 24));
+        return end.subtract(const Duration(hours: 24));
     }
+  }
+
+  DateTime _endForWindow(_ReportWindow window) {
+    if (window == _ReportWindow.now) return DateTime.now();
+    return DateTime(
+      _selectedFilterDate.year,
+      _selectedFilterDate.month,
+      _selectedFilterDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
+  }
+
+  String _formatFilterDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    final local = DateTime(date.year, date.month, date.day);
+    final daysFromSunday = local.weekday % 7;
+    return local.subtract(Duration(days: daysFromSunday));
+  }
+
+  String _fullMonthLabel(DateTime date) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  Future<void> _pickWeekDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedFilterDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+      lastDate: DateTime.now(),
+      helpText: 'Select Week Date',
+    );
+    if (picked == null) return;
+    setState(() => _selectedFilterDate = picked);
+    _load();
+  }
+
+  Widget _buildWeekSelectorCard() {
+    final weekStart = _startOfWeek(_selectedFilterDate);
+    final days = List.generate(7, (index) => weekStart.add(Duration(days: index)));
+    const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    final today = DateTime.now();
+    final canGoNextWeek = _startOfWeek(_selectedFilterDate.add(const Duration(days: 7))).isBefore(
+      DateTime(today.year, today.month, today.day).add(const Duration(days: 1)),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.greyOutline.withOpacity(0.35)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
+            child: Row(
+              children: [
+                const Icon(Icons.view_week_outlined, color: AppColors.textSecondary, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Week',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _showWeekDaysDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+          if (_showWeekDaysDropdown) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  splashRadius: 18,
+                  icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+                  onPressed: () {
+                    setState(() => _selectedFilterDate = _selectedFilterDate.subtract(const Duration(days: 7)));
+                    _load();
+                  },
+                ),
+                Expanded(
+                  child: Text(
+                    _fullMonthLabel(_selectedFilterDate),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  splashRadius: 18,
+                  icon: const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 19),
+                  onPressed: _pickWeekDate,
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  splashRadius: 18,
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: canGoNextWeek ? AppColors.textPrimary : AppColors.textSecondary.withOpacity(0.5),
+                  ),
+                  onPressed: canGoNextWeek
+                      ? () {
+                          final nextDate = _selectedFilterDate.add(const Duration(days: 7));
+                          final normalizedToday = DateTime(today.year, today.month, today.day);
+                          setState(() => _selectedFilterDate = nextDate.isAfter(normalizedToday) ? normalizedToday : nextDate);
+                          _load();
+                        }
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: List.generate(7, (index) {
+                final day = days[index];
+                final selected = day.year == _selectedFilterDate.year &&
+                    day.month == _selectedFilterDate.month &&
+                    day.day == _selectedFilterDate.day;
+                final isCurrentMonth = day.month == _selectedFilterDate.month;
+
+                return Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      setState(() => _selectedFilterDate = day);
+                      _load();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                      child: Container(
+                        height: 62,
+                        decoration: BoxDecoration(
+                          color: selected ? AppColors.primaryBlue : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          border: selected
+                              ? null
+                              : Border.all(color: AppColors.greyOutline.withOpacity(0.35)),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              dayNames[index],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
+                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                color: selected
+                                    ? Colors.white
+                                    : (isCurrentMonth
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary.withOpacity(0.65)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthSelectorCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => setState(() => _showInlineCalendar = !_showInlineCalendar),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Date: ${_formatFilterDate(_selectedFilterDate)}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Icon(
+              _showInlineCalendar ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineMonthCalendar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: CalendarDatePicker(
+        initialDate: _selectedFilterDate,
+        firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+        lastDate: DateTime.now(),
+        onDateChanged: (date) {
+          setState(() => _selectedFilterDate = date);
+          _load();
+        },
+      ),
+    );
   }
 
   double _deltaDegreesForWindow(_ReportWindow window) {
@@ -135,26 +418,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
             color: selected ? AppColors.primaryBlue : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: selected ? null : Border.all(color: Colors.transparent),
           ),
-          child: Row(
-            children: [
-              if (selected) ...[
-                const Icon(Icons.notifications_active, color: Colors.white, size: 16),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? Colors.white : AppColors.textSecondary,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                ),
+          child: Center(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected ? Colors.white : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.bold : FontWeight.w600,
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -252,42 +532,75 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _filterChip(_mode == _ReportsMode.community ? 'Community' : 'Community', _mode == _ReportsMode.community, () {
+            Row(
+              children: [
+                Expanded(
+                  child: _filterChip('Community', _mode == _ReportsMode.community, () {
                     if (_mode == _ReportsMode.community) return;
                     setState(() => _mode = _ReportsMode.community);
                     _load();
                   }),
-                  const SizedBox(width: 8),
-                  _filterChip(_mode == _ReportsMode.mine ? 'My Submitted' : 'My Submitted', _mode == _ReportsMode.mine, () {
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _filterChip('My Submitted', _mode == _ReportsMode.mine, () {
                     if (_mode == _ReportsMode.mine) return;
                     setState(() => _mode = _ReportsMode.mine);
                     _load();
                   }),
-                  const SizedBox(width: 12),
-                  _filterChip(context.l10n.filterNow, _window == _ReportWindow.now, () {
-                    if (_window == _ReportWindow.now) return;
-                    setState(() => _window = _ReportWindow.now);
-                    _load();
-                  }),
-                  const SizedBox(width: 8),
-                  _filterChip(context.l10n.filterLastWeek, _window == _ReportWindow.week, () {
-                    if (_window == _ReportWindow.week) return;
-                    setState(() => _window = _ReportWindow.week);
-                    _load();
-                  }),
-                  const SizedBox(width: 8),
-                  _filterChip(context.l10n.filterLastMonth, _window == _ReportWindow.month, () {
-                    if (_window == _ReportWindow.month) return;
-                    setState(() => _window = _ReportWindow.month);
-                    _load();
-                  }),
-                ],
-              ),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _filterChip(context.l10n.filterNow, _window == _ReportWindow.now, () {
+                    if (_window == _ReportWindow.now) return;
+                    setState(() {
+                      _window = _ReportWindow.now;
+                      _showWeekDaysDropdown = false;
+                      _showInlineCalendar = false;
+                    });
+                    _load();
+                  }),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _filterChip(context.l10n.filterLastWeek, _window == _ReportWindow.week, () {
+                    if (_window == _ReportWindow.week) return;
+                    setState(() {
+                      _window = _ReportWindow.week;
+                      _showWeekDaysDropdown = false;
+                      _showInlineCalendar = false;
+                    });
+                    _load();
+                  }),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _filterChip(context.l10n.filterLastMonth, _window == _ReportWindow.month, () {
+                    if (_window == _ReportWindow.month) return;
+                    setState(() {
+                      _window = _ReportWindow.month;
+                      _showWeekDaysDropdown = false;
+                    });
+                    _load();
+                  }),
+                ),
+              ],
+            ),
+            if (_window == _ReportWindow.week) ...[
+              const SizedBox(height: 10),
+              _buildWeekSelectorCard(),
+            ] else if (_window == _ReportWindow.month) ...[
+              const SizedBox(height: 10),
+              _buildMonthSelectorCard(),
+              if (_showInlineCalendar) ...[
+                const SizedBox(height: 10),
+                _buildInlineMonthCalendar(),
+              ],
+            ],
             const SizedBox(height: 16),
             if (_loading)
               const Expanded(

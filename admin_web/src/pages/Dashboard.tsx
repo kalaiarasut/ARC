@@ -14,6 +14,10 @@ import {
   Warning as WarningIcon,
   PendingActions as PendingIcon,
   Assessment as AssessmentIcon,
+  Timeline as TimelineIcon,
+  Hub as HubIcon,
+  GppMaybe as GppMaybeIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { StatCard } from '../components/ReportCard';
 import { RecentReportsTable } from '../components/RecentReportsTable';
@@ -148,6 +152,46 @@ export function Dashboard() {
               subtitle={`${stats.reportsThisWeek} this week`}
               color="success"
               icon={<TrendingUpIcon />}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Analytics Metrics */}
+        <Grid container spacing={3} mb={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              title="Weekly Trend"
+              value={`${stats.weeklyTrendPercent >= 0 ? '+' : ''}${stats.weeklyTrendPercent.toFixed(1)}%`}
+              subtitle="vs previous week"
+              color={stats.weeklyTrendPercent >= 0 ? 'success' : 'warning'}
+              icon={<TimelineIcon />}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              title="Hotspot Clusters"
+              value={stats.hotspotClusters}
+              subtitle="Weekly cells with 3+ reports"
+              color="warning"
+              icon={<HubIcon />}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              title="False-Positive Rate"
+              value={`${stats.falsePositiveRate.toFixed(1)}%`}
+              subtitle="Rejected ÷ total reports"
+              color="error"
+              icon={<GppMaybeIcon />}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              title="Avg Verification Time"
+              value={`${stats.avgVerificationHours.toFixed(1)}h`}
+              subtitle="Avg age of verified/resolved"
+              color="info"
+              icon={<ScheduleIcon />}
             />
           </Grid>
         </Grid>

@@ -204,6 +204,18 @@ class ReportService {
     }).eq('id', reportId);
   }
 
+  /// Lightweight metadata fetch used by UI logic (duplicate/rate-limit messaging).
+  Future<Map<String, dynamic>?> getReportMetaById(String reportId) async {
+    final response = await _supabase
+        .from('hazard_reports')
+        .select('id, client_id, created_at, status')
+        .eq('id', reportId)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return Map<String, dynamic>.from(response);
+  }
+
   /// Fetch recent reports (for Map page)
   Future<List<HazardReport>> getRecentReports({int limit = 50}) async {
     final response = await _supabase

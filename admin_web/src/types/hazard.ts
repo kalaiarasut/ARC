@@ -41,6 +41,10 @@ export interface DashboardStats {
   highRiskReports: number;
   reportsToday: number;
   reportsThisWeek: number;
+  weeklyTrendPercent: number;
+  hotspotClusters: number;
+  falsePositiveRate: number;
+  avgVerificationHours: number;
   byHazardType: Record<HazardType, number>;
   byUrgency: Record<UrgencyLevel, number>;
   byStatus: Record<ReportStatus, number>;

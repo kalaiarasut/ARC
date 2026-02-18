@@ -176,6 +176,7 @@ export const hazardService = {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const previousWeekStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
     const stats: DashboardStats = {
       totalReports: allReports.length,
@@ -183,6 +184,10 @@ export const hazardService = {
       highRiskReports: allReports.filter(r => r.is_high_risk).length,
       reportsToday: allReports.filter(r => new Date(r.created_at) >= todayStart).length,
       reportsThisWeek: allReports.filter(r => new Date(r.created_at) >= weekStart).length,
+      weeklyTrendPercent: 0,
+      hotspotClusters: 0,
+      falsePositiveRate: 0,
+      avgVerificationHours: 0,
       byHazardType: {
         'High Waves': 0,
         'Tsunami': 0,
@@ -213,6 +218,40 @@ export const hazardService = {
         stats.byStatus[report.status as ReportStatus]++;
       }
     });
+
+    const thisWeekReports = allReports.filter(r => new Date(r.created_at) >= weekStart);
+    const previousWeekReports = allReports.filter(r => {
+      const created = new Date(r.created_at);
+      return created >= previousWeekStart && created < weekStart;
+    });
+
+    const previousCount = previousWeekReports.length;
+    stats.weeklyTrendPercent = previousCount === 0
+      ? (thisWeekReports.length > 0 ? 100 : 0)
+      : ((thisWeekReports.length - previousCount) / previousCount) * 100;
+
+    // Simple hotspot clustering by grid cell in weekly reports.
+    const grid = new Map<string, number>();
+    for (const r of thisWeekReports) {
+      const latBucket = Math.round(r.latitude * 20) / 20; // ~0.05 deg
+      const lonBucket = Math.round(r.longitude * 20) / 20;
+      const key = `${latBucket.toFixed(2)},${lonBucket.toFixed(2)}`;
+      grid.set(key, (grid.get(key) ?? 0) + 1);
+    }
+    stats.hotspotClusters = Array.from(grid.values()).filter((count) => count >= 3).length;
+
+    stats.falsePositiveRate = stats.totalReports === 0
+      ? 0
+      : (stats.byStatus.rejected / stats.totalReports) * 100;
+
+    const verifiedOrResolved = allReports.filter(r => r.status === 'verified' || r.status === 'resolved');
+    if (verifiedOrResolved.length > 0) {
+      const totalAgeHours = verifiedOrResolved.reduce((sum, r) => {
+        const ageMs = now.getTime() - new Date(r.created_at).getTime();
+        return sum + Math.max(0, ageMs / (1000 * 60 * 60));
+      }, 0);
+      stats.avgVerificationHours = totalAgeHours / verifiedOrResolved.length;
+    }
 
     return stats;
   },

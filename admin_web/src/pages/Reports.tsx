@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -38,6 +38,7 @@ import {
   Divider,
   Switch,
   FormControlLabel,
+  Popover,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
@@ -55,6 +56,9 @@ import {
   OpenInNew as OpenInNewIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
+  CalendarMonth as CalendarMonthIcon,
+  NavigateBefore as NavigateBeforeIcon,
+  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material';
 
 import { landmarkService } from '../services/landmarkService';
@@ -89,6 +93,9 @@ export function Reports() {
   );
   const [landmarkManagerOpen, setLandmarkManagerOpen] = useState(false);
   const [landmarks, setLandmarks] = useState<Landmark[]>(landmarkService.getLandmarks());
+  const [dayFilterAnchorEl, setDayFilterAnchorEl] = useState<HTMLElement | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+  const [showDayCalendar, setShowDayCalendar] = useState(false);
 
   const [filters, setFilters] = useState<Partial<FilterOptions>>({
     hazardTypes: [],
@@ -157,6 +164,57 @@ export function Reports() {
       setLoading(false);
     }
   };
+
+  const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+  const endOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  const startOfWeek = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    return startOfDay(d);
+  };
+  const addDays = (date: Date, days: number) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+  const applyDayFilter = (day: Date) => {
+    const from = startOfDay(day).toISOString();
+    const to = endOfDay(day).toISOString();
+    setFilters((prev) => ({ ...prev, dateFrom: from, dateTo: to }));
+    setPage(0);
+    loadReports();
+  };
+
+  const clearDayFilter = () => {
+    setFilters((prev) => ({ ...prev, dateFrom: null, dateTo: null }));
+    setPage(0);
+    loadReports();
+  };
+
+  const openDayFilter = (event: MouseEvent<HTMLElement>) => {
+    if (filters.dateFrom) {
+      const parsed = new Date(filters.dateFrom);
+      if (!Number.isNaN(parsed.getTime())) setSelectedDay(parsed);
+    }
+    setDayFilterAnchorEl(event.currentTarget);
+  };
+
+  const closeDayFilter = () => {
+    setDayFilterAnchorEl(null);
+    setShowDayCalendar(false);
+  };
+
+  const dayFilterOpen = Boolean(dayFilterAnchorEl);
+  const weekStart = startOfWeek(selectedDay);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const shortDayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const today = new Date();
+  const currentWeekStart = startOfWeek(today);
+  const canGoNextWeek = weekStart.getTime() < currentWeekStart.getTime();
 
   const safeMaskPhone = (phone: string | null | undefined) => {
     if (!phone) return '—';
@@ -364,6 +422,8 @@ export function Reports() {
       landmarkId: null,
       landmarkRadius: 5000,
     });
+    setSelectedDay(new Date());
+    setShowDayCalendar(false);
   };
 
   const handleLandmarkUpdate = () => {
@@ -452,6 +512,37 @@ export function Reports() {
       'resolved': 'success',
     };
     return colors[status] as any;
+  };
+
+  const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
+
+  const getSuspiciousFlags = (report: HazardReport) => {
+    const flags: string[] = [];
+    const reportTime = new Date(report.created_at).getTime();
+
+    const sameUser = reports.filter((r) => r.user_id === report.user_id);
+
+    const inFiveMinutes = sameUser.filter(
+      (r) => Math.abs(new Date(r.created_at).getTime() - reportTime) <= 5 * 60 * 1000
+    );
+    if (inFiveMinutes.length >= 3) flags.push('Rapid submissions');
+
+    const inOneHour = sameUser.filter(
+      (r) => Math.abs(new Date(r.created_at).getTime() - reportTime) <= 60 * 60 * 1000
+    );
+    if (inOneHour.length >= 8) flags.push('High hourly volume');
+
+    const desc = normalizeText(report.description || '');
+    if (desc.length >= 10) {
+      const sameDescription = sameUser.filter((r) => normalizeText(r.description || '') === desc);
+      if (sameDescription.length >= 2) flags.push('Repeated description');
+    }
+
+    if (report.is_high_risk && (!report.media_urls || report.media_urls.length === 0)) {
+      flags.push('High-risk without media');
+    }
+
+    return flags;
   };
 
   return (
@@ -623,9 +714,173 @@ export function Reports() {
                     Filters
                   </Button>
                 </Badge>
+                <Button
+                  variant={filters.dateFrom && filters.dateTo ? 'contained' : 'outlined'}
+                  startIcon={<CalendarMonthIcon />}
+                  onClick={openDayFilter}
+                  sx={{
+                    py: 0.75,
+                    px: 2,
+                    borderRadius: '12px',
+                    borderColor: alpha(theme.palette.grey[400], 0.5),
+                    color: filters.dateFrom && filters.dateTo ? 'white' : 'text.primary',
+                    fontWeight: 600,
+                    minWidth: 130,
+                    '&:hover': {
+                      borderColor: theme.palette.primary.main,
+                      bgcolor: filters.dateFrom && filters.dateTo
+                        ? theme.palette.primary.dark
+                        : alpha(theme.palette.primary.main, 0.04),
+                    },
+                  }}
+                >
+                  Day Filter
+                </Button>
               </Stack>
             </Grid>
           </Grid>
+
+          <Popover
+            open={dayFilterOpen}
+            anchorEl={dayFilterAnchorEl}
+            onClose={closeDayFilter}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                width: 390,
+                borderRadius: '16px',
+                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.12)}`,
+                p: 1.5,
+              },
+            }}
+          >
+            <Stack spacing={1.5}>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="subtitle1" fontWeight={700}>
+                  {format(selectedDay, 'MMMM yyyy')}
+                </Typography>
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setSelectedDay((prev) => addDays(prev, -7))}
+                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '10px' }}
+                  >
+                    <NavigateBeforeIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (!canGoNextWeek) return;
+                      setSelectedDay((prev) => addDays(prev, 7));
+                    }}
+                    disabled={!canGoNextWeek}
+                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '10px' }}
+                  >
+                    <NavigateNextIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowDayCalendar((prev) => !prev)}
+                    sx={{
+                      border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                      borderRadius: '10px',
+                      color: showDayCalendar ? 'primary.main' : 'text.secondary',
+                    }}
+                  >
+                    <CalendarMonthIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              <Stack direction="row" spacing={0.8}>
+                {weekDays.map((day, index) => {
+                  const selected = isSameDay(day, selectedDay);
+                  const disabled = day.getTime() > endOfDay(today).getTime();
+                  return (
+                    <Button
+                      key={day.toISOString()}
+                      disabled={disabled}
+                      onClick={() => {
+                        setSelectedDay(day);
+                        applyDayFilter(day);
+                      }}
+                      sx={{
+                        minWidth: 0,
+                        flex: 1,
+                        py: 1,
+                        px: 0,
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        border: `1px solid ${selected ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.divider, 0.6)}`,
+                        bgcolor: selected ? alpha(theme.palette.primary.main, 0.12) : 'background.paper',
+                        color: selected ? 'primary.main' : 'text.primary',
+                        '&:hover': {
+                          bgcolor: selected ? alpha(theme.palette.primary.main, 0.16) : alpha(theme.palette.grey[100], 0.8),
+                        },
+                      }}
+                    >
+                      <Stack alignItems="center" spacing={0.3}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: selected ? 'primary.main' : 'text.secondary' }}>
+                          {shortDayNames[index]}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {day.getDate()}
+                        </Typography>
+                      </Stack>
+                    </Button>
+                  );
+                })}
+              </Stack>
+
+              {showDayCalendar && (
+                <TextField
+                  fullWidth
+                  label="Pick day"
+                  type="date"
+                  value={format(selectedDay, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) return;
+                    const date = new Date(`${value}T00:00:00`);
+                    if (Number.isNaN(date.getTime())) return;
+                    setSelectedDay(date);
+                    applyDayFilter(date);
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
+
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Button
+                  size="small"
+                  onClick={() => {
+                    const now = new Date();
+                    setSelectedDay(now);
+                    applyDayFilter(now);
+                  }}
+                >
+                  Today
+                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      clearDayFilter();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                  <Button size="small" variant="contained" onClick={closeDayFilter}>
+                    Done
+                  </Button>
+                </Stack>
+              </Stack>
+            </Stack>
+          </Popover>
         </Box>
 
         {/* Error Alert */}
@@ -681,13 +936,14 @@ export function Reports() {
                   <TableCell>People at Risk</TableCell>
                   <TableCell>Media</TableCell>
                   <TableCell>Date & Time</TableCell>
+                  <TableCell>Flags</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
                       <CircularProgress />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                         Loading reports...
@@ -696,7 +952,7 @@ export function Reports() {
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
                       <Stack spacing={1} alignItems="center">
                         <Typography variant="body1" color="text.secondary">
                           No reports found matching your criteria
@@ -714,6 +970,9 @@ export function Reports() {
                   </TableRow>
                 ) : (
                   reports.map((report, index) => (
+                    (() => {
+                      const suspiciousFlags = getSuspiciousFlags(report);
+                      return (
                     <TableRow
                       key={report.id}
                       onClick={() => handleRowClick(report)}
@@ -847,6 +1106,17 @@ export function Reports() {
                           {format(new Date(report.created_at), 'MMM dd, yyyy HH:mm')}
                         </Typography>
                       </TableCell>
+                      <TableCell sx={{ minWidth: 180 }}>
+                        {suspiciousFlags.length > 0 ? (
+                          <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                            {suspiciousFlags.map((flag) => (
+                              <Chip key={flag} size="small" color="warning" label={flag} variant="outlined" />
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">—</Typography>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {report.status === 'pending' ? (
                           <Stack direction="row" spacing={0.75}>
@@ -888,6 +1158,8 @@ export function Reports() {
                         )}
                       </TableCell>
                     </TableRow>
+                      );
+                    })()
                   ))
                 )}
               </TableBody>
@@ -1113,24 +1385,9 @@ export function Reports() {
 
               <Divider />
 
-              {/* Date Range */}
-              <TextField
-                fullWidth
-                label="From Date"
-                type="datetime-local"
-                value={filters.dateFrom || ''}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              <TextField
-                fullWidth
-                label="To Date"
-                type="datetime-local"
-                value={filters.dateTo || ''}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                Day-based date filtering is available from the <strong>Day Filter</strong> button in the top bar.
+              </Alert>
             </Stack>
 
             <Box mt={4} display="flex" gap={2}>

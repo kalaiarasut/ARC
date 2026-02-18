@@ -576,6 +576,26 @@ class _ReportScreenState extends State<ReportScreen> {
       final reportId = await _reportService.insertReport(report);
       UploadProgressController.instance.step('Report details uploaded');
 
+      // If backend dedupe returned an existing report, stop and inform user.
+      final meta = await _reportService.getReportMetaById(reportId);
+      final existingClientId = meta?['client_id']?.toString();
+      final isLikelyDuplicate = existingClientId != null && existingClientId != report.clientId;
+      if (isLikelyDuplicate) {
+        UploadProgressController.instance.complete('Duplicate report detected, linked to existing report');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Similar report already exists nearby. We linked your submission to it.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          await _showSubmittedConfirmationDialog();
+          UploadProgressController.instance.clear();
+          if (mounted) Navigator.pop(context);
+        }
+        return;
+      }
+
       // Phase 2: Upload media (if any)
       if (_selectedMedia.isNotEmpty) {
         List<String> uploadedUrls = [];
@@ -627,11 +647,34 @@ class _ReportScreenState extends State<ReportScreen> {
         if (mounted) Navigator.pop(context);
       }
     } catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('rate_limited_min_interval')) {
+        UploadProgressController.instance.fail('Please wait before sending another report');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are sending reports too quickly. Please wait 30 seconds and try again.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else if (msg.contains('rate_limited_hourly')) {
+        UploadProgressController.instance.fail('Hourly report limit reached');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Hourly report limit reached. Please try again later.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
       UploadProgressController.instance.fail('Upload failed: ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
         );
+      }
       }
     } finally {
       if (mounted) {
