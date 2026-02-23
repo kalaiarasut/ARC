@@ -78,7 +78,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
     return MaterialApp(
-      title: 'Civil Alert System',
+      title: 'ARC',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       locale: locale,

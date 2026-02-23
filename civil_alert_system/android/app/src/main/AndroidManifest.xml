@@ -22,7 +22,7 @@
         android:maxSdkVersion="32" />
 
     <application
-        android:label="civil_alert_system"
+        android:label="ARC"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
