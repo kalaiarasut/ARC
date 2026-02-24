@@ -7,12 +7,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
+import '../models/citizen_stats.dart';
 import '../services/offline_report_queue_service.dart';
 import '../services/report_sync_service.dart';
 import '../services/report_service.dart';
+import '../services/gamification_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
 import 'report_details_screen.dart';
+import 'achievements_screen.dart';
+import 'leaderboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,17 +28,20 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ReportSyncService _syncService = ReportSyncService();
   final ReportService _reportService = ReportService();
+  final GamificationService _gamificationService = GamificationService();
 
   Future<List<HazardReport>>? _myReportsFuture;
 
   bool _isOnline = true;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  CitizenStats? _stats;
 
   @override
   void initState() {
     super.initState();
     _initConnectivity();
     _refreshMyReports();
+    _loadStats();
   }
 
   Future<void> _initConnectivity() async {
@@ -77,6 +84,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _loadStats() async {
+    final userId = SupabaseConfig.client.auth.currentUser?.id;
+    if (userId == null || !_isOnline) return;
+    try {
+      final stats = await _gamificationService.getCitizenStats(userId);
+      if (!mounted) return;
+      setState(() => _stats = stats);
+    } catch (_) {
+      // Non-critical, silently fail
+    }
+  }
+
   Future<void> _syncNow() async {
     final result = await _syncService.syncPendingReports(force: true);
     if (!mounted) return;
@@ -116,6 +135,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Gamification Stats Card
+            if (_stats != null) ...[
+              _buildGamificationCard(_stats!),
+              const SizedBox(height: 16),
+            ],
             Row(
               children: [
                 Expanded(
@@ -421,6 +445,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGamificationCard(CitizenStats stats) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF088395), Color(0xFF05BFDB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF088395).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${stats.totalPoints} pts',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                  if (stats.rank > 0)
+                    Text(
+                      'Rank #${stats.rank}',
+                      style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    ),
+                ],
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${stats.badges.length} badges',
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                  Text(
+                    '${stats.verifiedCount} verified',
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AchievementsScreen()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  child: const Text('Achievements', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  child: const Text('Leaderboard', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -2985,4 +2985,306 @@ COMMENT ON FUNCTION refresh_system_risk_zones IS 'Recompute candidate zones from
 
 -- END MIGRATION: 021_fix_refresh_system_risk_zones_uuid_default_dependency.sql
 
+-- ============================================================================
+-- BEGIN MIGRATION: 022_gamification_system.sql
+-- ============================================================================
+
+-- Civil Alert System - Gamification System
+-- Points, badges, and leaderboard to drive sustained citizen engagement
+
+-- ============================================
+-- 1. BADGE DEFINITIONS TABLE (seeded, read-only)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS badge_definitions (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    points_threshold INT,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE badge_definitions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view badge definitions" ON badge_definitions;
+CREATE POLICY "Anyone can view badge definitions" ON badge_definitions
+    FOR SELECT USING (true);
+
+-- ============================================
+-- 2. CITIZEN POINTS LEDGER
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS citizen_points (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    report_id UUID REFERENCES hazard_reports(id) ON DELETE SET NULL,
+    points INT NOT NULL,
+    reason TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_citizen_points_user ON citizen_points(user_id);
+CREATE INDEX IF NOT EXISTS idx_citizen_points_created ON citizen_points(created_at DESC);
+
+ALTER TABLE citizen_points ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own points" ON citizen_points;
+CREATE POLICY "Users can view own points" ON citizen_points
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- ============================================
+-- 3. CITIZEN EARNED BADGES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS citizen_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    badge_id TEXT NOT NULL REFERENCES badge_definitions(id),
+    earned_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, badge_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_citizen_badges_user ON citizen_badges(user_id);
+
+ALTER TABLE citizen_badges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own badges" ON citizen_badges;
+CREATE POLICY "Users can view own badges" ON citizen_badges
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- ============================================
+-- 4. BADGE-CHECKING FUNCTION
+-- ============================================
+
+CREATE OR REPLACE FUNCTION fn_check_and_award_badges(p_user_id UUID)
+RETURNS VOID AS $$
+DECLARE
+    _total_reports INT;
+    _verified_count INT;
+    _media_count INT;
+    _total_points INT;
+    _today_count INT;
+BEGIN
+    SELECT COUNT(*) INTO _total_reports FROM hazard_reports WHERE user_id = p_user_id;
+    SELECT COUNT(*) INTO _verified_count FROM hazard_reports WHERE user_id = p_user_id AND status = 'verified';
+    SELECT COUNT(*) INTO _media_count FROM hazard_reports WHERE user_id = p_user_id
+        AND media_urls IS NOT NULL AND array_length(media_urls, 1) > 0;
+    SELECT COALESCE(SUM(points), 0) INTO _total_points FROM citizen_points WHERE user_id = p_user_id;
+    SELECT COUNT(*) INTO _today_count FROM hazard_reports WHERE user_id = p_user_id
+        AND created_at >= (NOW() - INTERVAL '24 hours');
+
+    -- First Wave: 1 report
+    IF _total_reports >= 1 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'first_wave') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Active Sensor: 10 reports
+    IF _total_reports >= 10 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'active_sensor') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Verified Guardian: 5 verified
+    IF _verified_count >= 5 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'verified_guardian') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Evidence Collector: 10 with media
+    IF _media_count >= 10 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'evidence_collector') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Rapid Responder: 3 reports in one day
+    IF _today_count >= 3 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'rapid_responder') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Community Champion: 500 points
+    IF _total_points >= 500 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'community_champion') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Elite Reporter: 1000 points
+    IF _total_points >= 1000 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'elite_reporter') ON CONFLICT DO NOTHING;
+    END IF;
+
+    -- Precision Scout: 80%+ verification rate (min 10)
+    IF _total_reports >= 10 AND (_verified_count::FLOAT / _total_reports) >= 0.8 THEN
+        INSERT INTO citizen_badges (user_id, badge_id) VALUES (p_user_id, 'precision_scout') ON CONFLICT DO NOTHING;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- 5. TRIGGER: AWARD POINTS ON REPORT INSERT
+-- ============================================
+
+CREATE OR REPLACE FUNCTION fn_gamification_on_insert()
+RETURNS TRIGGER AS $$
+DECLARE
+    _points INT := 10;
+    _has_media BOOLEAN;
+BEGIN
+    _has_media := (NEW.media_urls IS NOT NULL AND array_length(NEW.media_urls, 1) > 0);
+    IF _has_media THEN _points := _points + 5; END IF;
+
+    INSERT INTO citizen_points (user_id, report_id, points, reason)
+    VALUES (NEW.user_id, NEW.id, _points, 'report_submitted');
+
+    PERFORM fn_check_and_award_badges(NEW.user_id);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_gamification_insert ON hazard_reports;
+CREATE TRIGGER trg_gamification_insert
+    AFTER INSERT ON hazard_reports
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_gamification_on_insert();
+
+-- ============================================
+-- 6. TRIGGER: AWARD POINTS ON STATUS CHANGE
+-- ============================================
+
+CREATE OR REPLACE FUNCTION fn_gamification_on_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    _points INT := 0;
+    _reason TEXT;
+BEGIN
+    IF OLD.status = NEW.status THEN RETURN NEW; END IF;
+
+    IF NEW.status = 'verified' AND OLD.status = 'pending' THEN
+        _points := 25;
+        _reason := 'report_verified';
+        IF NEW.is_high_risk THEN
+            _points := _points + 15;
+            _reason := 'high_risk_verified';
+        END IF;
+    ELSIF NEW.status = 'rejected' AND OLD.status = 'pending' THEN
+        _points := -5;
+        _reason := 'report_rejected';
+    END IF;
+
+    IF _points != 0 THEN
+        INSERT INTO citizen_points (user_id, report_id, points, reason)
+        VALUES (NEW.user_id, NEW.id, _points, _reason);
+    END IF;
+
+    PERFORM fn_check_and_award_badges(NEW.user_id);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_gamification_status ON hazard_reports;
+CREATE TRIGGER trg_gamification_status
+    AFTER UPDATE ON hazard_reports
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_gamification_on_status_change();
+
+-- ============================================
+-- 7. RPC: GET CITIZEN STATS
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_citizen_stats(p_user_id UUID)
+RETURNS JSON AS $$
+    SELECT json_build_object(
+        'total_points', COALESCE((SELECT SUM(points) FROM citizen_points WHERE user_id = p_user_id), 0),
+        'total_reports', (SELECT COUNT(*) FROM hazard_reports WHERE user_id = p_user_id),
+        'verified_count', (SELECT COUNT(*) FROM hazard_reports WHERE user_id = p_user_id AND status = 'verified'),
+        'rejected_count', (SELECT COUNT(*) FROM hazard_reports WHERE user_id = p_user_id AND status = 'rejected'),
+        'rank', COALESCE((
+            SELECT rank FROM (
+                SELECT user_id, RANK() OVER (ORDER BY SUM(points) DESC) as rank
+                FROM citizen_points GROUP BY user_id
+            ) r WHERE r.user_id = p_user_id
+        ), 0),
+        'badges', COALESCE((
+            SELECT json_agg(json_build_object(
+                'badge_id', cb.badge_id,
+                'earned_at', cb.earned_at,
+                'name', bd.name,
+                'description', bd.description,
+                'icon', bd.icon,
+                'category', bd.category
+            ) ORDER BY bd.sort_order)
+            FROM citizen_badges cb JOIN badge_definitions bd ON cb.badge_id = bd.id
+            WHERE cb.user_id = p_user_id
+        ), '[]'::json),
+        'recent_points', COALESCE((
+            SELECT json_agg(json_build_object(
+                'points', points,
+                'reason', reason,
+                'created_at', created_at
+            ))
+            FROM (SELECT points, reason, created_at FROM citizen_points
+                  WHERE user_id = p_user_id ORDER BY created_at DESC LIMIT 10) sub
+        ), '[]'::json)
+    );
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ============================================
+-- 8. RPC: GET LEADERBOARD
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_leaderboard(p_limit INT DEFAULT 20)
+RETURNS JSON AS $$
+    SELECT COALESCE(json_agg(row_data), '[]'::json) FROM (
+        SELECT
+            cp.user_id,
+            COALESCE(hr.user_name, 'Anonymous') as user_name,
+            SUM(cp.points) as total_points,
+            COUNT(DISTINCT hr2.id) as report_count,
+            RANK() OVER (ORDER BY SUM(cp.points) DESC) as rank
+        FROM citizen_points cp
+        LEFT JOIN LATERAL (
+            SELECT user_name FROM hazard_reports WHERE user_id = cp.user_id LIMIT 1
+        ) hr ON true
+        LEFT JOIN hazard_reports hr2 ON hr2.user_id = cp.user_id
+        GROUP BY cp.user_id, hr.user_name
+        ORDER BY total_points DESC
+        LIMIT p_limit
+    ) row_data;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ============================================
+-- 9. RPC: GET ALL BADGE DEFINITIONS
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_all_badges()
+RETURNS JSON AS $$
+    SELECT COALESCE(json_agg(json_build_object(
+        'id', id,
+        'name', name,
+        'description', description,
+        'icon', icon,
+        'category', category,
+        'points_threshold', points_threshold,
+        'sort_order', sort_order
+    ) ORDER BY sort_order), '[]'::json)
+    FROM badge_definitions;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ============================================
+-- 10. SEED BADGE DEFINITIONS
+-- ============================================
+
+INSERT INTO badge_definitions (id, name, description, icon, category, points_threshold, sort_order) VALUES
+    ('first_wave', 'First Wave', 'Submit your first hazard report', 'water_drop', 'milestone', NULL, 1),
+    ('active_sensor', 'Active Sensor', 'Submit 10 hazard reports', 'sensors', 'milestone', NULL, 2),
+    ('verified_guardian', 'Verified Guardian', 'Get 5 reports verified by analysts', 'verified_user', 'quality', NULL, 3),
+    ('evidence_collector', 'Evidence Collector', 'Submit 10 reports with photo/video evidence', 'camera_alt', 'quality', NULL, 4),
+    ('rapid_responder', 'Rapid Responder', 'Submit 3 reports in a single day', 'bolt', 'consistency', NULL, 5),
+    ('community_champion', 'Community Champion', 'Earn 500 total points', 'emoji_events', 'milestone', 500, 6),
+    ('elite_reporter', 'Elite Reporter', 'Earn 1000 total points', 'star', 'milestone', 1000, 7),
+    ('precision_scout', 'Precision Scout', '80%+ verification rate (min 10 reports)', 'gps_fixed', 'quality', NULL, 8),
+    ('streak_master', 'Streak Master', 'Report on 7 consecutive days', 'local_fire_department', 'consistency', NULL, 9),
+    ('area_expert', 'Area Expert', 'Submit from 5+ distinct locations (>1km apart)', 'explore', 'consistency', NULL, 10)
+ON CONFLICT (id) DO NOTHING;
+
+
+-- END MIGRATION: 022_gamification_system.sql
+
 

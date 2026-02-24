@@ -228,7 +228,7 @@ export const Login: React.FC = () => {
 
     const handleInputFocus = () => {
         setIsTyping(true);
-        setError(null); // Clear error on focus
+        setError(null);
     };
 
     const handleInputBlur = () => {
@@ -239,13 +239,11 @@ export const Login: React.FC = () => {
         e.preventDefault();
         setError(null);
 
-        // Basic validation
         if (!email.trim() || !password.trim()) {
             setError('Please enter both email and password.');
             return;
         }
 
-        // Login user via Supabase
         const { error: loginError } = await login(email, password);
 
         if (loginError) {
@@ -254,8 +252,12 @@ export const Login: React.FC = () => {
             return;
         }
 
-        // Navigate to dashboard after successful login
         navigate('/dashboard');
+    };
+
+    const fillCredentials = () => {
+        setEmail('admin@gmail.com');
+        setPassword('123456');
     };
 
     return (
@@ -360,6 +362,48 @@ export const Login: React.FC = () => {
                             >
                                 Login
                             </OceanButton>
+
+                            {/* Demo Credentials */}
+                            <Box
+                                sx={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '12px',
+                                    p: 2,
+                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    mb: 2,
+                                }}
+                            >
+                                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, mb: 1.5, textAlign: 'center' }}>
+                                    Demo Credentials
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 1.5 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8125rem' }}>Email:</Typography>
+                                        <Typography sx={{ color: '#FFFFFF', fontSize: '0.8125rem', fontFamily: 'monospace', fontWeight: 500 }}>admin@gmail.com</Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8125rem' }}>Password:</Typography>
+                                        <Typography sx={{ color: '#FFFFFF', fontSize: '0.8125rem', fontFamily: 'monospace', fontWeight: 500 }}>123456</Typography>
+                                    </Box>
+                                </Box>
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    onClick={fillCredentials}
+                                    sx={{
+                                        color: '#FFFFFF',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        backgroundColor: 'rgba(255,255,255,0.12)',
+                                        borderRadius: '8px',
+                                        py: 0.75,
+                                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
+                                    }}
+                                >
+                                    Auto-fill credentials
+                                </Button>
+                            </Box>
 
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="body2" sx={{ color: 'white' }}>

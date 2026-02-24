@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Chip,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
@@ -18,16 +19,26 @@ import {
   Hub as HubIcon,
   GppMaybe as GppMaybeIcon,
   Schedule as ScheduleIcon,
+  EmojiEvents as EmojiEventsIcon,
 } from '@mui/icons-material';
 import { StatCard } from '../components/ReportCard';
 import { RecentReportsTable } from '../components/RecentReportsTable';
 import { hazardService } from '../services/hazardService';
-import { isSupabaseConfigured } from '../core/supabase_config';
+import { isSupabaseConfigured, supabase } from '../core/supabase_config';
 import type { HazardReport, DashboardStats } from '../types/hazard';
+
+interface LeaderboardEntry {
+  user_id: string;
+  user_name: string;
+  total_points: number;
+  report_count: number;
+  rank: number;
+}
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentReports, setRecentReports] = useState<HazardReport[]>([]);
+  const [topCitizens, setTopCitizens] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +58,16 @@ export function Dashboard() {
 
       setStats(nextStats);
       setRecentReports(recent.data);
+
+      // Fetch top citizens (non-blocking)
+      try {
+        const { data: leaderboard } = await supabase.rpc('get_leaderboard', { p_limit: 5 });
+        if (Array.isArray(leaderboard)) {
+          setTopCitizens(leaderboard);
+        }
+      } catch {
+        // Non-critical, silently fail
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load dashboard data';
       setError(message);
@@ -367,6 +388,67 @@ export function Dashboard() {
             </Box>
           </Grid>
         </Grid>
+
+        {/* Top Citizens */}
+        {topCitizens.length > 0 && (
+          <Box
+            sx={{
+              mb: 3,
+              p: 3,
+              bgcolor: 'white',
+              borderRadius: 3,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <EmojiEventsIcon sx={{ color: '#FFD700', mr: 1 }} />
+              <Typography variant="h6" fontWeight={700}>
+                Top Citizens
+              </Typography>
+            </Box>
+            {topCitizens.map((citizen, i) => (
+              <Box
+                key={citizen.user_id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  py: 1.2,
+                  px: 1,
+                  borderBottom: i < topCitizens.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography
+                  sx={{
+                    width: 28,
+                    fontWeight: 800,
+                    fontSize: citizen.rank <= 3 ? 18 : 14,
+                    color: citizen.rank === 1 ? '#FFD700' : citizen.rank === 2 ? '#C0C0C0' : citizen.rank === 3 ? '#CD7F32' : 'text.secondary',
+                  }}
+                >
+                  {citizen.rank <= 3 ? ['🥇', '🥈', '🥉'][citizen.rank - 1] : `#${citizen.rank}`}
+                </Typography>
+                <Box sx={{ flex: 1, ml: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {citizen.user_name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {citizen.report_count} reports
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${citizen.total_points} pts`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
 
         {/* Recent Reports */}
         <RecentReportsTable

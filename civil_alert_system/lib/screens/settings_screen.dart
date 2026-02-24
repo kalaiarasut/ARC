@@ -15,6 +15,7 @@ import 'language_screen.dart';
 import 'login_screen.dart';
 import 'profile_module_screen.dart';
 import 'privacy_controls_screen.dart';
+import 'achievements_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -106,6 +107,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ProfileModuleScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.emoji_events_outlined, color: AppColors.primaryBlue),
+                  title: const Text('Achievements & Badges'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AchievementsScreen()),
                     );
                   },
                 ),
