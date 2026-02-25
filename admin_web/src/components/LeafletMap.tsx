@@ -210,6 +210,11 @@ export interface MapMethods {
   clearAllMarkers: () => void;
   getMarkerCount: () => number;
   panToLocation: (lat: number, lng: number, zoomLevel?: number) => void;
+  fitToDataBounds: (params: {
+    points?: Array<[number, number]>;
+    circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
+    maxZoom?: number;
+  }) => boolean;
   drawZone: (coordinates: Array<[number, number]>, name: string, color?: string) => L.Polygon | undefined;
 
   // Zone overlays (generated zones / circles)
@@ -626,6 +631,44 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       }
     };
 
+    const fitToDataBounds = (params: {
+      points?: Array<[number, number]>;
+      circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
+      maxZoom?: number;
+    }) => {
+      const map = mapInstanceRef.current;
+      if (!map) return false;
+
+      const bounds = L.latLngBounds([]);
+
+      (params.points ?? []).forEach(([lat, lng]) => {
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          bounds.extend([lat, lng]);
+        }
+      });
+
+      (params.circles ?? []).forEach((circle) => {
+        if (
+          Number.isFinite(circle.lat)
+          && Number.isFinite(circle.lng)
+          && Number.isFinite(circle.radiusMeters)
+          && circle.radiusMeters > 0
+        ) {
+          const circleBounds = L.circle([circle.lat, circle.lng], { radius: circle.radiusMeters }).getBounds();
+          bounds.extend(circleBounds);
+        }
+      });
+
+      if (!bounds.isValid()) return false;
+
+      map.fitBounds(bounds, {
+        padding: [48, 48],
+        maxZoom: params.maxZoom ?? 12,
+      });
+
+      return true;
+    };
+
     /**
      * Draw a zone boundary (polygon or rectangle)
      */
@@ -657,6 +700,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       clearAllMarkers,
       getMarkerCount,
       panToLocation,
+      fitToDataBounds,
       drawZone,
       getBounds,
       addZoneCircle,

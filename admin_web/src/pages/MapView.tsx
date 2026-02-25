@@ -68,6 +68,7 @@ export const MapView: React.FC = () => {
 
     const [nameDialogOpen, setNameDialogOpen] = useState(false);
     const [newZoneName, setNewZoneName] = useState('');
+    const initialAutoFitDoneRef = useRef(false);
     const pendingMonitoringRef = useRef<{
         tempLayerId: number;
         center_lat: number;
@@ -122,6 +123,41 @@ export const MapView: React.FC = () => {
             lng: Number.isFinite(parsedLng as number) ? (parsedLng as number) : null,
         };
     }, [searchParams]);
+
+    const hasExplicitFocus = focus.lat !== null || focus.lng !== null || Boolean(focus.reportId);
+
+    const tryAutoFitOnOpen = (params: {
+        markerPoints?: Array<[number, number]>;
+        monitoringZones?: MonitoringZone[];
+        riskZones?: GeneratedRiskZone[];
+    }) => {
+        if (initialAutoFitDoneRef.current) return;
+        if (hasExplicitFocus) return;
+
+        const points = params.markerPoints ?? [];
+        const circles = [
+            ...(params.monitoringZones ?? []).map((z) => ({
+                lat: z.center_lat,
+                lng: z.center_lng,
+                radiusMeters: z.radius_meters,
+            })),
+            ...(params.riskZones ?? []).map((z) => ({
+                lat: z.center_lat,
+                lng: z.center_lon,
+                radiusMeters: z.radius_meters,
+            })),
+        ];
+
+        const didFit = mapRef.current?.fitToDataBounds({
+            points,
+            circles,
+            maxZoom: 11,
+        });
+
+        if (didFit) {
+            initialAutoFitDoneRef.current = true;
+        }
+    };
 
     const toMarker = (r: HazardReport) => {
         const urgency = (r.urgency_level || 'Medium').toLowerCase();
@@ -179,6 +215,11 @@ export const MapView: React.FC = () => {
             const advisoriesWithLocation = advisories.filter((a) => a.latitude !== null && a.longitude !== null);
             advisoriesWithLocation.forEach((a) => mapRef.current?.addMarker(toAdvisoryMarker(a)));
 
+            const markerPoints: Array<[number, number]> = [
+                ...data.map((r) => [r.latitude, r.longitude] as [number, number]),
+                ...advisoriesWithLocation.map((a) => [a.latitude as number, a.longitude as number] as [number, number]),
+            ];
+
             setMarkerCount(data.length + advisoriesWithLocation.length);
 
             if (showZonesRef.current) {
@@ -192,6 +233,8 @@ export const MapView: React.FC = () => {
                 if (match) {
                     mapRef.current?.panToLocation(match.latitude, match.longitude, 13);
                 }
+            } else {
+                tryAutoFitOnOpen({ markerPoints });
             }
         } catch (e) {
             console.error(e);
@@ -207,6 +250,7 @@ export const MapView: React.FC = () => {
             const zones = await monitoringZoneService.list();
             mapRef.current?.setMonitoringZones(zones);
             setMonitoringZonesCount(zones.length);
+            tryAutoFitOnOpen({ monitoringZones: zones });
         } catch (e) {
             console.error(e);
             setError(`Failed to load monitoring zones: ${formatRpcError(e)}`);
@@ -283,6 +327,7 @@ export const MapView: React.FC = () => {
             });
 
             setZoneCount(visibleZones.length);
+            tryAutoFitOnOpen({ riskZones: visibleZones });
         } catch (e) {
             console.error(e);
             setZonesError('Failed to load risk zones.');
