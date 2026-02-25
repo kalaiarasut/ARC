@@ -15,7 +15,7 @@ class LeaderboardScreen extends ConsumerWidget {
     final currentUserId = SupabaseConfig.client.auth.currentUser?.id;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Leaderboard'),
         backgroundColor: Colors.white,

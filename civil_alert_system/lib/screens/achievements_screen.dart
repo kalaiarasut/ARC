@@ -15,7 +15,7 @@ class AchievementsScreen extends ConsumerWidget {
     final allBadgesAsync = ref.watch(allBadgesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Achievements'),
         backgroundColor: Colors.white,

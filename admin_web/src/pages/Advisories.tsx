@@ -97,7 +97,7 @@ export function Advisories() {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   const [publishing, setPublishing] = useState(false);
 
@@ -286,7 +286,14 @@ export function Advisories() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: alpha(theme.palette.primary.main, 0.02),
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Page Header */}
       <Box
         sx={{
@@ -346,7 +353,18 @@ export function Advisories() {
         </Stack>
       </Box>
 
-      <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1.5, sm: 2.5 } }}>
+      <Container
+        maxWidth="xl"
+        sx={{
+          pt: 2,
+          pb: 0,
+          px: { xs: 1.5, sm: 2.5 },
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         {!supabaseOk && (
           <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
             Supabase is not configured. Publishing and loading updates will not work.
@@ -553,6 +571,10 @@ export function Advisories() {
             overflow: 'hidden',
             border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.04)}`,
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <Box
@@ -581,7 +603,7 @@ export function Advisories() {
             />
           </Box>
 
-          <TableContainer sx={{ maxHeight: publishExpanded ? 'calc(100vh - 520px)' : 'calc(100vh - 220px)' }}>
+          <TableContainer sx={{ flex: 1, minHeight: 0 }}>
             <Table stickyHeader size="small" sx={{
               '& .MuiTableCell-root': { py: 1, px: 1.5 },
               '& .MuiTableCell-head': {
@@ -690,7 +712,7 @@ export function Advisories() {
               setRowsPerPage(parseInt(e.target.value, 10));
               setPage(0);
             }}
-            rowsPerPageOptions={[10, 25, 50]}
+            rowsPerPageOptions={[25, 50, 100]}
             sx={{
               borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
               '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {

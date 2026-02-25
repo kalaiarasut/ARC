@@ -47,54 +47,55 @@ export function StatCard({ title, value, subtitle, color = 'primary', icon }: St
         },
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ p: 2.5 }}>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box flex={1} zIndex={1}>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} gutterBottom textTransform="uppercase" letterSpacing="0.05em">
+          <Box flex={1}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={700}
+              textTransform="uppercase"
+              letterSpacing="0.06em"
+              sx={{ fontSize: 11 }}
+            >
               {title}
             </Typography>
-            <Typography variant="h3" fontWeight={800} sx={{ color: 'text.primary', my: 1, letterSpacing: '-0.02em' }}>
+            <Typography
+              fontWeight={800}
+              sx={{
+                color: 'text.primary',
+                mt: 0.5,
+                mb: 0.5,
+                letterSpacing: '-0.02em',
+                fontSize: { xs: 26, sm: 30, md: 34 },
+                lineHeight: 1.1,
+              }}
+            >
               {value}
             </Typography>
             {subtitle && (
-              <Box display="flex" alignItems="center" gap={0.5}>
-                {/* Simulated trend indicator if needed, for now just text */}
-                <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                  {subtitle}
-                </Typography>
-              </Box>
+              <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: 11.5 }}>
+                {subtitle}
+              </Typography>
             )}
           </Box>
           {icon && (
             <Box
               sx={{
-                p: 1.5,
-                borderRadius: '12px',
-                bgcolor: alpha(mainColor, 0.1),
+                p: 1,
+                borderRadius: '10px',
+                bgcolor: alpha(mainColor, 0.08),
                 color: mainColor,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                '& .MuiSvgIcon-root': { fontSize: 20 },
               }}
             >
               {icon}
             </Box>
           )}
         </Box>
-
-        {/* Decorative background element */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -20,
-            right: -20,
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            bgcolor: alpha(mainColor, 0.05),
-            zIndex: 0,
-          }}
-        />
       </CardContent>
     </Card>
   );

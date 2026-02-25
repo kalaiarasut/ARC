@@ -60,6 +60,7 @@ export const MapView: React.FC = () => {
     const [showMonitoringZones, setShowMonitoringZones] = useState(true);
     const [monitoringEditEnabled, setMonitoringEditEnabled] = useState(false);
     const [monitoringZonesCount, setMonitoringZonesCount] = useState(0);
+    const [zoomOnLoad, setZoomOnLoad] = useState(true);
 
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
     const [mockBusy, setMockBusy] = useState(false);
@@ -133,6 +134,11 @@ export const MapView: React.FC = () => {
     }) => {
         if (initialAutoFitDoneRef.current) return;
         if (hasExplicitFocus) return;
+        // When zoomOnLoad is enabled, skip auto-fit so the map stays zoomed in on the data center
+        if (zoomOnLoad) {
+            initialAutoFitDoneRef.current = true;
+            return;
+        }
 
         const points = params.markerPoints ?? [];
         const circles = [
@@ -427,7 +433,7 @@ export const MapView: React.FC = () => {
     }, [showZones, showCandidateZones, showSuppressedZones]);
 
     const handleRecenter = () => {
-        mapRef.current?.panToLocation(13.08, 80.27, 6);
+        mapRef.current?.panToLocation(13.08, 80.27, zoomOnLoad ? 14 : 6);
     };
 
     return (
@@ -598,7 +604,7 @@ export const MapView: React.FC = () => {
                     <LeafletMap
                         ref={mapRef}
                         height="calc(100vh - 180px)"
-                        zoom={6}
+                        zoom={zoomOnLoad ? 14 : 6}
                         center={[13.08, 80.27]}
                         zoneReviewMode={showZones}
                         showMonitoringZones={showMonitoringZones}
@@ -786,6 +792,26 @@ export const MapView: React.FC = () => {
                                                 >
                                                     Suppressed
                                                 </Typography>
+                                            }
+                                        />
+
+                                        <FormControlLabel
+                                            sx={{ mr: 0 }}
+                                            control={
+                                                <Switch
+                                                    checked={zoomOnLoad}
+                                                    onChange={(_, v) => setZoomOnLoad(v)}
+                                                    size="small"
+                                                    color="warning"
+                                                />
+                                            }
+                                            label={
+                                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                    <MyLocationIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                                    <Typography variant="body2" fontWeight={600}>
+                                                        Zoom on Load
+                                                    </Typography>
+                                                </Stack>
                                             }
                                         />
                                     </Stack>

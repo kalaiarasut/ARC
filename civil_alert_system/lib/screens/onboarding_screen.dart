@@ -16,13 +16,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentIndex = 0;
 
   final List<String> _images = [
-    // Using reliable Unsplash ID for Storm/Ocean
-    "https://images.unsplash.com/photo-1498354136128-58f7901945a9?q=80&w=800&auto=format&fit=crop",
-    // Unsplash ID for Rescue/Safety
-    "https://images.unsplash.com/photo-1558486012-81714731dca9?q=80&w=800&auto=format&fit=crop",
-    // Unsplash ID for Calm Ocean/Tech
-    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=800&auto=format&fit=crop",
+    // Replace this file to change onboarding first image
+    "assets/images/onboarding_1.jpg",
+    "assets/images/onboarding_2.jpg",
+    "assets/images/onboarding_3.jpg",
   ];
+
+  Widget _buildOnboardingImage(String imagePath) {
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: AppColors.primaryBlue.withOpacity(0.1),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: AppColors.primaryBlue.withOpacity(0.2),
+            child: const Center(
+              child: Icon(Icons.image_not_supported, size: 50, color: Colors.white),
+            ),
+          );
+        },
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: AppColors.primaryBlue.withOpacity(0.2),
+          child: const Center(
+            child: Icon(Icons.image_not_supported, size: 50, color: Colors.white),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,25 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 setState(() => _currentIndex = index);
               },
               itemBuilder: (context, index) {
-                return Image.network(
-                  _images[index],
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      child: const Center(
-                         child: CircularProgressIndicator(),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                     return Container(
-                      color: AppColors.primaryBlue.withOpacity(0.2),
-                      child: const Center(child: Icon(Icons.image_not_supported, size: 50, color: Colors.white)),
-                    );
-                  },
-                );
+                return _buildOnboardingImage(_images[index]);
               },
             ),
           ),

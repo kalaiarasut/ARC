@@ -81,7 +81,7 @@ export function Reports() {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -546,8 +546,19 @@ export function Reports() {
   };
 
   return (
-    <Box>
-      <Container maxWidth={false} sx={{ py: 1, px: { xs: 1, sm: 2, md: 2 } }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Container
+        maxWidth={false}
+        sx={{
+          pt: 1,
+          pb: 0,
+          px: { xs: 1, sm: 2, md: 2 },
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         {/* Floating Actions Row */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, gap: 2 }}>
           <Stack direction="row" spacing={2} alignItems="center">
@@ -898,9 +909,13 @@ export function Reports() {
             border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
             bgcolor: 'background.paper',
             boxShadow: `0 4px 24px ${alpha(theme.palette.common.black, 0.06)}`,
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          <TableContainer sx={{ maxHeight: 'calc(100vh - 400px)' }}>
+          <TableContainer sx={{ flex: 1, minHeight: 0 }}>
             <Table
               stickyHeader
               size="small"
@@ -1188,7 +1203,7 @@ export function Reports() {
                 setRowsPerPage(parseInt(e.target.value, 10));
                 setPage(0);
               }}
-              rowsPerPageOptions={[10, 25, 50, 100]}
+              rowsPerPageOptions={[25, 50, 100]}
               sx={{ border: 'none' }}
             />
           </Box>
