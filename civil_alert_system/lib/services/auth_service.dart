@@ -14,6 +14,16 @@ class AuthService {
 
       await _supabase.auth.signInWithOtp(
         phone: formattedPhone,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception(
+            'Connection timed out. Please check:\n'
+            '1. Your internet connection is working\n'
+            '2. Try switching between WiFi and mobile data\n'
+            '3. Your Supabase project is not paused (check app.supabase.com)',
+          );
+        },
       );
     } catch (e) {
       throw Exception('Failed to send OTP: ${e.toString()}');

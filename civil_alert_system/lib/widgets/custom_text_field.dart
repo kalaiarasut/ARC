@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -8,6 +9,9 @@ class CustomTextField extends StatelessWidget {
   final String? prefixText;
   final IconData? prefixIcon;
   final Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool enableSuggestions;
+  final bool autocorrect;
 
   const CustomTextField({
     super.key,
@@ -17,6 +21,9 @@ class CustomTextField extends StatelessWidget {
     this.prefixText,
     this.prefixIcon,
     this.onChanged,
+    this.inputFormatters,
+    this.enableSuggestions = true,
+    this.autocorrect = true,
   });
 
   @override
@@ -25,6 +32,9 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       onChanged: onChanged,
+      inputFormatters: inputFormatters,
+      enableSuggestions: enableSuggestions,
+      autocorrect: autocorrect,
       style: const TextStyle(
         fontSize: 16,
         color: AppColors.textPrimary,

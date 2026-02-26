@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
@@ -72,9 +73,15 @@ class _LoginScreenState extends State<LoginScreen> {
               CustomTextField(
                 hintText: "12345 67890",
                 controller: _mobileController,
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.number,
                 prefixText: "+91",
                 onChanged: (_) => setState(() {}),
+                enableSuggestions: false,
+                autocorrect: false,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
               ),
               
               const Spacer(),
