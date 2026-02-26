@@ -27,6 +27,9 @@
 | 15 | Profile & Sync Dashboard | ✅ Complete | Shows submission history, sync status, pending upload count, manual sync trigger, connectivity indicator |
 | 16 | Multilingual Support (i18n) | ✅ Complete | English and Tamil with localized strings throughout all screens |
 | 17 | Report Detail Screen | ✅ Complete | Full description, media viewer (photo/video/audio), GPS coordinates, timestamp, hazard type |
+| 18 | Gamification System | ✅ Complete | Points, badges, leaderboard. Server-side triggers award points on report submit/verify/reject. 10 badge types. Achievements screen, leaderboard screen, profile stats card. Admin dashboard Top Citizens widget |
+| 19 | Notifications Screen | ✅ Complete | Combined feed of advisory broadcasts and report status changes (verified/rejected), accessible from home header notification icon |
+| 20 | Offline Map Tiles | ✅ Complete | FMTC auto-caches viewed tiles for offline use; dedicated Offline Maps screen to bulk-download regions by radius (5/10/25 km) with progress, manage/delete cached regions |
 
 ### Admin Dashboard (React)
 
@@ -97,21 +100,19 @@
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| 1 | **Gamification System** | 🔴 High | **Zero code exists.** Implement points, badges, leaderboards, and citizen ranking based on verified report count, quality scores, and consistency. Needed for sustained citizen engagement |
-| 2 | **AI/NLP Report Triage** | 🔴 High | Automated severity scoring of report descriptions using NLP. Spam/noise filtering using lightweight ML models (Scikit-learn, HuggingFace). Zero code exists — part of Phase 1 roadmap |
-| 3 | **Python Processing Pipeline** | 🔴 High | Dedicated backend pipeline for asynchronous report analysis, classification, and enrichment. Part of Phase 1 roadmap |
-| 4 | **Institutional Weather API Integration** | 🟠 Medium | Ingest meteorological data feeds (IMD, OpenWeatherMap) to enrich risk zones with weather context. Part of Phase 2 roadmap |
-| 5 | **Dark Mode** | 🟠 Medium | No dark mode implementation exists. Add theme toggle for both mobile (Flutter ThemeMode) and admin web (MUI dark theme) |
-| 6 | **Citizen-to-Citizen Messaging** | 🟡 Low | Allow citizens in the same area to communicate during active events. Could use Supabase Realtime channels |
-| 7 | **iOS Push Notifications** | 🟠 Medium | FCM code only runs on Android (`if (!Platform.isAndroid) return`). APNs integration needed for iOS |
-| 8 | **Geofence Entry/Exit Alerts** | 🟠 Medium | Alert citizens when they enter a high-risk geofenced zone. Requires background location tracking on mobile |
-| 9 | **Report Comments/Threads** | 🟡 Low | Allow analysts to add notes/comments to reports. Citizens could see status update reasons |
-| 10 | **Multi-Tenant / Multi-District** | 🟡 Low | Support multiple districts/agencies with data isolation. Currently single-tenant |
-| 11 | **Photo AI Analysis** | 🟠 Medium | Auto-classify uploaded photos to detect flood water levels, infrastructure damage, etc. using computer vision |
-| 12 | **Offline Map Tiles** | 🟠 Medium | Pre-download map tiles for disaster-prone areas so the map works fully offline |
-| 13 | **Accessibility (a11y)** | 🟠 Medium | Screen reader support, high-contrast mode, and semantic labels throughout the mobile app |
-| 14 | **Export API for Institutions** | 🟡 Low | REST/GraphQL API for external systems (government dashboards, GIS tools) to pull report data |
-| 15 | **User Account Deletion** | 🟠 Medium | GDPR/compliance: allow citizens to delete their account and all associated data |
+| 1 | **AI/NLP Report Triage** | 🔴 High | Automated severity scoring of report descriptions using NLP. Spam/noise filtering using lightweight ML models (Scikit-learn, HuggingFace). Zero code exists — part of Phase 1 roadmap |
+| 2 | **Python Processing Pipeline** | 🔴 High | Dedicated backend pipeline for asynchronous report analysis, classification, and enrichment. Part of Phase 1 roadmap |
+| 3 | **Institutional Weather API Integration** | 🟠 Medium | Ingest meteorological data feeds (IMD, OpenWeatherMap) to enrich risk zones with weather context. Part of Phase 2 roadmap |
+| 4 | **Dark Mode** | 🟠 Medium | No dark mode implementation exists. Add theme toggle for both mobile (Flutter ThemeMode) and admin web (MUI dark theme) |
+| 5 | **Citizen-to-Citizen Messaging** | 🟡 Low | Allow citizens in the same area to communicate during active events. Could use Supabase Realtime channels |
+| 6 | **iOS Push Notifications** | 🟠 Medium | FCM code only runs on Android (`if (!Platform.isAndroid) return`). APNs integration needed for iOS |
+| 7 | **Geofence Entry/Exit Alerts** | 🟠 Medium | Alert citizens when they enter a high-risk geofenced zone. Requires background location tracking on mobile |
+| 8 | **Report Comments/Threads** | 🟡 Low | Allow analysts to add notes/comments to reports. Citizens could see status update reasons |
+| 9 | **Multi-Tenant / Multi-District** | 🟡 Low | Support multiple districts/agencies with data isolation. Currently single-tenant |
+| 10 | **Photo AI Analysis** | 🟠 Medium | Auto-classify uploaded photos to detect flood water levels, infrastructure damage, etc. using computer vision |
+| 11 | **Accessibility (a11y)** | 🟠 Medium | Screen reader support, high-contrast mode, and semantic labels throughout the mobile app |
+| 12 | **Export API for Institutions** | 🟡 Low | REST/GraphQL API for external systems (government dashboards, GIS tools) to pull report data |
+| 13 | **User Account Deletion** | 🟠 Medium | GDPR/compliance: allow citizens to delete their account and all associated data |
 
 ---
 
@@ -119,7 +120,7 @@
 
 | Category | Count |
 |----------|-------|
-| ✅ Fully Completed | 39 features |
+| ✅ Fully Completed | 42 features |
 | 🟡 Partially Implemented | 5 features |
 | 🔵 Can Be Improved | 12 features |
-| 🔴 New to Implement | 15 features |
+| 🔴 New to Implement | 12 features |
