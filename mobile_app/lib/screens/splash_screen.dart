@@ -1,9 +1,7 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/supabase_config.dart';
-import '../l10n/l10n.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
@@ -496,9 +494,6 @@ class PremiumOceanPainter extends CustomPainter {
   void _paintMoonReflection(Canvas canvas, double w, double h, double horizon) {
     final moonX = w * 0.75;
     const reflectWidth = 8.0;
-    final reflectPaint = Paint()
-      ..color = const Color(0x0ACCD5E0)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
     for (double y = horizon; y < h * 0.75; y += 3) {
       final shimmer = math.sin(y * 0.08 + t * math.pi * 6) * 4;

@@ -6,6 +6,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -80,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         { icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Hazard Reports', path: '/reports' },
         { icon: <CampaignOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Official Updates', path: '/advisories' },
         { icon: <HubOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Generated Zones', path: '/generated-zones' },
+        { icon: <HistoryOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Audit Logs', path: '/audit-logs' },
         { icon: <MapOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Live Map', path: '/map' },
     ];
 
@@ -87,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         if (path === '/reports') return location.pathname.startsWith('/reports');
         if (path === '/advisories') return location.pathname.startsWith('/advisories');
         if (path === '/generated-zones') return location.pathname.startsWith('/generated-zones');
+        if (path === '/audit-logs') return location.pathname.startsWith('/audit-logs');
         if (path === '/map') return location.pathname.startsWith('/map');
         return location.pathname.startsWith(path);
     };

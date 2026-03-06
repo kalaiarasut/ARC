@@ -12,10 +12,6 @@ import '../models/official_advisory.dart';
 class MapService {
   final SupabaseClient _supabase = SupabaseConfig.client;
 
-  // Debounce timer for viewport changes
-  Timer? _debounceTimer;
-  static const _debounceDuration = Duration(milliseconds: 500);
-
   // Client-side rate limiting for on-demand calculations
   DateTime? _lastOnDemandCalculation;
   static const _onDemandCooldown = Duration(seconds: 3);
@@ -273,40 +269,6 @@ class MapService {
     }
   }
 
-  /// Debounced viewport update
-  /// Cancels previous pending request and schedules new one after delay
-  Future<List<MapMarkerData>> debouncedGetReportsInBounds({
-    required double minLat,
-    required double maxLat,
-    required double minLon,
-    required double maxLon,
-    int limit = 100,
-    String? currentUserId,
-    required Function(List<MapMarkerData>) onComplete,
-  }) async {
-    // Cancel previous timer
-    _debounceTimer?.cancel();
-
-    // Create completer for async return
-    final completer = Completer<List<MapMarkerData>>();
-
-    // Schedule new request after debounce delay
-    _debounceTimer = Timer(_debounceDuration, () async {
-      final reports = await getReportsInBounds(
-        minLat: minLat,
-        maxLat: maxLat,
-        minLon: minLon,
-        maxLon: maxLon,
-        limit: limit,
-        currentUserId: currentUserId,
-      );
-      onComplete(reports);
-      completer.complete(reports);
-    });
-
-    return completer.future;
-  }
-
   /// Convenience method to refresh all map data at once
   Future<MapData> refreshMapData({
     required double minLat,
@@ -341,10 +303,6 @@ class MapService {
     );
   }
 
-  /// Cancel any pending debounced requests
-  void dispose() {
-    _debounceTimer?.cancel();
-  }
 }
 
 /// Container for map data

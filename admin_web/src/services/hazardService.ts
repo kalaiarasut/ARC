@@ -256,6 +256,74 @@ export const hazardService = {
     return stats;
   },
 
+  async getAuditStats(): Promise<{
+    total: number;
+    toVerified: number;
+    toRejected: number;
+    toResolved: number;
+    toPending: number;
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { total: 0, toVerified: 0, toRejected: 0, toResolved: 0, toPending: 0 };
+    }
+    
+    const { data, error } = await supabase
+      .from('report_status_audit')
+      .select('new_status');
+      
+    if (error || !data) {
+       console.error('Error fetching audit stats:', error);
+       return { total: 0, toVerified: 0, toRejected: 0, toResolved: 0, toPending: 0 };
+    }
+    
+    const stats = { total: data.length, toVerified: 0, toRejected: 0, toResolved: 0, toPending: 0 };
+    data.forEach(log => {
+      if (log.new_status === 'verified') stats.toVerified++;
+      else if (log.new_status === 'rejected') stats.toRejected++;
+      else if (log.new_status === 'resolved') stats.toResolved++;
+      else if (log.new_status === 'pending') stats.toPending++;
+    });
+    
+    return stats;
+  },
+
+  async getAuditLogs(
+    page = 0,
+    limit = 50,
+    filters?: { email?: string; reportId?: string }
+  ): Promise<PagedResult<import('../types/hazard').ReportAuditLog>> {
+    if (!isSupabaseConfigured()) {
+      return { data: [], total: 0 };
+    }
+
+    let query = supabase
+      .from('report_status_audit')
+      .select('*', { count: 'exact' })
+      .order('changed_at', { ascending: false });
+
+    if (filters?.email) {
+      query = query.ilike('admin_email', `%${filters.email}%`);
+    }
+    
+    if (filters?.reportId) {
+      query = query.eq('report_id', filters.reportId);
+    }
+    
+    query = query.range(page * limit, (page + 1) * limit - 1);
+    
+    const { data, error, count } = await query;
+    if (error) {
+      console.error('Error fetching audit logs:', error);
+      throw error;
+    }
+    return { data: data || [], total: count || 0 };
+  },
+
+  async getReportAuditLogs(reportId: string): Promise<import('../types/hazard').ReportAuditLog[]> {
+    const { data } = await this.getAuditLogs(0, 50, { reportId });
+    return data;
+  },
+
   async setReportStatus(reportId: string, status: ReportStatus): Promise<void> {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase not configured');

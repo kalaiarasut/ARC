@@ -7,6 +7,7 @@ class OfficialAdvisory {
   final String category; // food|shelter|medical|rescue|roadblock|warning|evacuation
   final double? latitude;
   final double? longitude;
+  final double? radiusKm;
   final DateTime? startsAt;
   final DateTime? expiresAt;
   final String? contactPhone;
@@ -23,6 +24,7 @@ class OfficialAdvisory {
     required this.category,
     this.latitude,
     this.longitude,
+    this.radiusKm,
     this.startsAt,
     this.expiresAt,
     this.contactPhone,
@@ -34,6 +36,7 @@ class OfficialAdvisory {
   factory OfficialAdvisory.fromJson(Map<String, dynamic> json) {
     final latRaw = json['latitude'];
     final lngRaw = json['longitude'];
+    final radiusRaw = json['radius_km'];
     final startsRaw = json['starts_at'];
     final expiresRaw = json['expires_at'];
 
@@ -46,6 +49,7 @@ class OfficialAdvisory {
       category: (json['category'] as String?) ?? 'warning',
       latitude: latRaw is num ? latRaw.toDouble() : null,
       longitude: lngRaw is num ? lngRaw.toDouble() : null,
+      radiusKm: radiusRaw is num ? radiusRaw.toDouble() : null,
       startsAt: startsRaw is String ? DateTime.tryParse(startsRaw) : null,
       expiresAt: expiresRaw is String ? DateTime.tryParse(expiresRaw) : null,
       contactPhone: json['contact_phone'] as String?,

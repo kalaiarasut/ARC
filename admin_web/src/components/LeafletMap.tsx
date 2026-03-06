@@ -240,6 +240,8 @@ export interface MapMethods {
   clearMonitoringZones: () => void;
   finalizeMonitoringZone: (tempLayerId: number, zone: MonitoringZone) => void;
   discardPendingMonitoringZone: (tempLayerId: number) => void;
+  /** Returns the raw map container DOM element for image capture */
+  getMapContainer: () => HTMLElement | null;
 }
 
 /**
@@ -711,6 +713,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       clearMonitoringZones,
       finalizeMonitoringZone,
       discardPendingMonitoringZone,
+      getMapContainer: () => mapContainerRef.current,
     }));
 
     /**

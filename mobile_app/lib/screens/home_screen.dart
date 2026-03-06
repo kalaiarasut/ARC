@@ -38,6 +38,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<OfficialAdvisory> _liveAdvisories = const [];
 
   _ReportWindow _reportWindow = _ReportWindow.now;
+  String? _selectedHazard;
+  String? _selectedUrgency;
   List<MapMarkerData> _liveReports = const [];
 
   ProviderSubscription<LatLng?>? _locationSub;
@@ -148,6 +150,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       final filtered = items
           .where((r) => r.timestamp.isAfter(since))
+          .where((r) => _selectedHazard == null || r.hazardType == _selectedHazard)
+          .where((r) => _selectedUrgency == null || 
+             (_selectedUrgency == 'High' && (r.urgencyLevel.toLowerCase() == 'high' || r.urgencyLevel.toLowerCase() == 'critical')) ||
+             (_selectedUrgency != 'High' && r.urgencyLevel.toLowerCase() == _selectedUrgency!.toLowerCase())
+          )
           .toList()
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
@@ -410,6 +417,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         _loadLiveReports();
                       },
                     ),
+                    const SizedBox(width: 8),
+                    _buildHazardFilter(),
+                    const SizedBox(width: 8),
+                    _buildUrgencyFilter(),
                   ],
                 ),
               ),
@@ -824,6 +835,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdownFilterChip(String label, bool isSelected) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryBlue : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected ? null : Border.all(color: Colors.transparent),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down, size: 18, color: isSelected ? Colors.white : AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHazardFilter() {
+    return PopupMenuButton<String?>(
+      onSelected: (val) {
+        setState(() => _selectedHazard = val);
+        _loadLiveReports();
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      itemBuilder: (ctx) => [
+        const PopupMenuItem(value: null, child: Text('All Hazards')),
+        const PopupMenuItem(value: 'High Waves', child: Text('High Waves')),
+        const PopupMenuItem(value: 'Tsunami', child: Text('Tsunami')),
+        const PopupMenuItem(value: 'Storm', child: Text('Storm')),
+        const PopupMenuItem(value: 'Flood', child: Text('Flood')),
+        const PopupMenuItem(value: 'Rip Current', child: Text('Rip Current')),
+        const PopupMenuItem(value: 'Pollution', child: Text('Pollution')),
+        const PopupMenuItem(value: 'Earthquake', child: Text('Earthquake')),
+      ],
+      child: _buildDropdownFilterChip(_selectedHazard ?? 'Hazards', _selectedHazard != null),
+    );
+  }
+
+  Widget _buildUrgencyFilter() {
+    return PopupMenuButton<String?>(
+      onSelected: (val) {
+        setState(() => _selectedUrgency = val);
+        _loadLiveReports();
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      itemBuilder: (ctx) => [
+        const PopupMenuItem(value: null, child: Text('All Urgencies')),
+        const PopupMenuItem(value: 'High', child: Text('High (Critical)')),
+        const PopupMenuItem(value: 'Medium', child: Text('Medium')),
+        const PopupMenuItem(value: 'Low', child: Text('Low')),
+      ],
+      child: _buildDropdownFilterChip(_selectedUrgency ?? 'Urgency', _selectedUrgency != null),
     );
   }
 

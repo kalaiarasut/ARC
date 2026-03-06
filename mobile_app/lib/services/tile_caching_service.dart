@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -25,7 +26,7 @@ class TileCachingService {
     final store = FMTCStore(_defaultStoreName);
     final stats = await store.stats.all;
     return (
-      tileCount: stats.tileCount,
+      tileCount: stats.length,
       sizeMB: stats.size / 1024, // size is in KB, convert to MB
     );
   }
@@ -38,7 +39,7 @@ class TileCachingService {
       final stats = await store.stats.all;
       result.add(StoreInfo(
         name: store.storeName,
-        tileCount: stats.tileCount,
+        tileCount: stats.length,
         sizeMB: stats.size / 1024,
       ));
     }
@@ -81,7 +82,10 @@ class TileCachingService {
 
   /// Delete all cached tiles across all stores.
   static Future<void> clearAll() async {
-    await FMTCRoot.external(pathSuffix: '').reset();
+    final stores = await FMTCRoot.stats.storesAvailable;
+    for (final store in stores) {
+      await store.manage.delete();
+    }
     // Recreate default store
     await FMTCStore(_defaultStoreName).manage.create();
   }

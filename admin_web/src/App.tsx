@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { MapView } from './pages/MapView';
 import { Advisories } from './pages/Advisories';
 import { GeneratedZones } from './pages/GeneratedZones';
+import { AuditLogs } from './pages/AuditLogs';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -56,6 +57,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><GeneratedZones /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute>
+                <Layout><AuditLogs /></Layout>
               </ProtectedRoute>
             }
           />

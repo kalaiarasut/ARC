@@ -72,7 +72,7 @@
 | 1 | **Privacy Controls** | 🟡 Partial | `privacy_provider.dart` with `reduceMapPrecision` toggle, `privacy_controls_screen.dart` UI with switch | The toggle stores a preference but coordinate fuzzing is **not applied** during report submission or map display. The setting is saved but has no downstream effect |
 | 2 | **FCM Deep-Linking** | 🟡 Partial | FCM foreground/background/terminated handlers all working. Code comment: `// Future: handle taps to deep-link` | Tapping a notification does NOT navigate to the relevant report or advisory. Only logged in debug mode |
 | 3 | **Admin Quick Verify** | 🟡 Partial | `RecentReportsTable.tsx` has `// TODO: Add quick verify action` | Cannot verify reports directly from the dashboard's recent reports widget — must navigate to full Reports page |
-| 4 | **Map Image/PDF Export** | 🟡 Partial | The README mentioned "Map Exports" but **no code exists** — no `html2canvas`, `leaflet-image`, or PDF library | This was a documentation claim only. Zero implementation |
+| 4 | **Map Image/PDF Export** | ✅ Complete | Export button in Live Map toolbar — PNG (high-res via html2canvas) and A4 landscape PDF (jsPDF with header, timestamp, watermark) |
 | 5 | **Geofencing Page** | 🟡 Partial | Monitoring zones can be drawn via `LeafletMapWithDraw` on the Live Map page | No dedicated "Geofencing" page exists. Geofences are only monitoring-zone circles — no polygon support, no automated alerting when citizens enter/exit zones |
 
 ---
@@ -82,8 +82,8 @@
 | # | Feature | Current State | Suggested Improvement |
 |---|---------|--------------|----------------------|
 | 1 | **Offline Queue Visibility** | Pending count shown in profile and updates screen | Add a dedicated "Queued Reports" list showing each offline report's status, retry count, and error reason. Allow deleting stuck reports |
-| 2 | **Report Filtering** | Mobile: Now/Week/Month. Admin: Full multi-filter | Mobile could benefit from hazard type and urgency filters, not just time windows |
-| 3 | **Advisory Targeting** | Advisories broadcast to all users or by region text match | Implement GPS-radius targeting — only notify users within X km of the advisory's coordinates |
+| 2 | **Report Filtering** | ✅ Complete | Mobile app includes Hazard Type and Urgency drop-down filters alongside time windows. Admin has full multi-filter |
+| 3 | **Advisory Targeting** | ✅ Complete | Advisories can be targeted by GPS radius. Mobile app drops targeted notifications if user is out of bounds |
 | 4 | **Map Performance** | Risk zones fetched on each map pan/zoom | Implement client-side tile caching and debounced fetching to reduce API calls during rapid map interactions |
 | 5 | **Media Compression** | Photos/videos uploaded at original resolution | Add client-side compression (image resize, video transcode) before upload to reduce bandwidth and storage costs |
 | 6 | **Report Detail on Admin** | Full-page dialog with all media inline | Add image zoom/lightbox, video seek preview, and audio waveform visualization for better evidence review |

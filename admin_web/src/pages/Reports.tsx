@@ -53,18 +53,19 @@ import {
   People as PeopleIcon,
   Place as PlaceIcon,
   Download as DownloadIcon,
-  OpenInNew as OpenInNewIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   CalendarMonth as CalendarMonthIcon,
   NavigateBefore as NavigateBeforeIcon,
   NavigateNext as NavigateNextIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
+import { ImageZoom, AudioWaveform, VideoPreview } from '../components/MediaComponents';
 
 import { landmarkService } from '../services/landmarkService';
 import { hazardService } from '../services/hazardService';
 import { isSupabaseConfigured } from '../core/supabase_config';
-import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus } from '../types/hazard';
+import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus, ReportAuditLog } from '../types/hazard';
 import type { Landmark } from '../types/landmark';
 import { LandmarkManager } from '../components/LandmarkManager';
 import { format } from 'date-fns';
@@ -88,14 +89,14 @@ export function Reports() {
   const [selectedReport, setSelectedReport] = useState<HazardReport | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<{ open: boolean; urls: string[]; index: number }>(
-    { open: false, urls: [], index: 0 }
-  );
   const [landmarkManagerOpen, setLandmarkManagerOpen] = useState(false);
   const [landmarks, setLandmarks] = useState<Landmark[]>(landmarkService.getLandmarks());
   const [dayFilterAnchorEl, setDayFilterAnchorEl] = useState<HTMLElement | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   const [showDayCalendar, setShowDayCalendar] = useState(false);
+  
+  const [auditLogs, setAuditLogs] = useState<ReportAuditLog[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
 
   const [filters, setFilters] = useState<Partial<FilterOptions>>({
     hazardTypes: [],
@@ -430,9 +431,19 @@ export function Reports() {
     setLandmarks(landmarkService.getLandmarks());
   };
 
-  const handleRowClick = (report: HazardReport) => {
+  const handleRowClick = async (report: HazardReport) => {
     setSelectedReport(report);
     setDetailDialogOpen(true);
+    setLoadingAudit(true);
+    try {
+      const logs = await hazardService.getReportAuditLogs(report.id);
+      setAuditLogs(logs);
+    } catch (e) {
+      console.error(e);
+      setAuditLogs([]);
+    } finally {
+      setLoadingAudit(false);
+    }
   };
 
   const updateStatus = async (report: HazardReport, nextStatus: ReportStatus) => {
@@ -920,11 +931,13 @@ export function Reports() {
               stickyHeader
               size="small"
               sx={{
+                tableLayout: 'fixed',
                 '& .MuiTableCell-root': {
                   py: 1,
                   px: 1.5,
                   lineHeight: 1.4,
                   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                  overflow: 'hidden',
                 },
                 '& .MuiTableCell-head': {
                   py: 1.5,
@@ -942,23 +955,20 @@ export function Reports() {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Hazard Type</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Risk Level</TableCell>
-                  <TableCell>Urgency</TableCell>
-                  <TableCell>People at Risk</TableCell>
-                  <TableCell>Media</TableCell>
-                  <TableCell>Date & Time</TableCell>
-                  <TableCell>Flags</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ width: 130 }}>Hazard</TableCell>
+                  <TableCell sx={{ width: '30%' }}>Description</TableCell>
+                  <TableCell sx={{ width: 150 }}>Location</TableCell>
+                  <TableCell sx={{ width: 80 }}>Urgency</TableCell>
+                  <TableCell sx={{ width: 70, textAlign: 'center' }}>People</TableCell>
+                  <TableCell sx={{ width: 55, textAlign: 'center' }}>Media</TableCell>
+                  <TableCell sx={{ width: 130 }}>Date & Time</TableCell>
+                  <TableCell sx={{ width: 95, textAlign: 'center' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                       <CircularProgress />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                         Loading reports...
@@ -967,7 +977,7 @@ export function Reports() {
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                       <Stack spacing={1} alignItems="center">
                         <Typography variant="body1" color="text.secondary">
                           No reports found matching your criteria
@@ -987,52 +997,103 @@ export function Reports() {
                   reports.map((report, index) => (
                     (() => {
                       const suspiciousFlags = getSuspiciousFlags(report);
+                      const isVerified = report.status === 'verified';
+                      const isRejected = report.status === 'rejected';
+                      const isResolved = report.status === 'resolved';
+                      const isPending = report.status === 'pending';
                       return (
                     <TableRow
                       key={report.id}
                       onClick={() => handleRowClick(report)}
                       sx={{
                         cursor: 'pointer',
+                        position: 'relative',
                         bgcolor: report.is_high_risk
                           ? alpha(theme.palette.error.main, 0.04)
-                          : index % 2 === 0
-                            ? 'transparent'
-                            : alpha(theme.palette.grey[50], 0.5),
+                          : isVerified
+                            ? alpha(theme.palette.success.main, 0.02)
+                            : isRejected
+                              ? alpha(theme.palette.error.main, 0.015)
+                              : index % 2 === 0
+                                ? 'transparent'
+                                : alpha(theme.palette.grey[50], 0.5),
+                        opacity: (isVerified || isResolved) ? 0.65 : 1,
                         transition: 'all 0.2s ease',
                         '&:hover': {
+                          opacity: 1,
                           bgcolor: alpha(theme.palette.primary.main, 0.06),
-                          transform: 'scale(1.001)',
-                          boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.08)}`,
                         },
-                        ...(report.is_high_risk && {
-                          borderLeft: `3px solid ${theme.palette.error.main}`,
-                        }),
+                        borderLeft: report.is_high_risk
+                          ? `3px solid ${theme.palette.error.main}`
+                          : isVerified
+                            ? `3px solid ${theme.palette.success.main}`
+                            : isRejected
+                              ? `3px solid ${theme.palette.error.light}`
+                              : isResolved
+                                ? `3px solid ${theme.palette.info.main}`
+                                : '3px solid transparent',
                       }}
                     >
+                      {/* Hazard Type + Risk + Status indicator */}
                       <TableCell>
-                        <Chip
-                          label={report.status.toUpperCase()}
-                          color={getStatusColor(report.status)}
-                          size="small"
-                          sx={{ fontWeight: 600, minWidth: 85 }}
-                        />
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Chip
+                              label={report.hazard_type}
+                              color={getHazardColor(report.hazard_type)}
+                              size="small"
+                              sx={{ fontWeight: 600, maxWidth: '100%' }}
+                            />
+                            {report.is_high_risk && (
+                              <Tooltip title="High Risk">
+                                <WarningIcon sx={{ fontSize: '0.9rem', color: theme.palette.error.main }} />
+                              </Tooltip>
+                            )}
+                          </Stack>
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                                bgcolor: isPending ? theme.palette.grey[400]
+                                  : isVerified ? theme.palette.success.main
+                                    : isRejected ? theme.palette.error.main
+                                      : theme.palette.info.main,
+                                boxShadow: isPending ? 'none' : `0 0 4px ${
+                                  isVerified ? alpha(theme.palette.success.main, 0.4)
+                                    : isRejected ? alpha(theme.palette.error.main, 0.4)
+                                      : alpha(theme.palette.info.main, 0.4)
+                                }`,
+                              }}
+                            />
+                            <Typography variant="caption" sx={{
+                              fontSize: '0.625rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
+                              color: isPending ? theme.palette.text.secondary
+                                : isVerified ? theme.palette.success.main
+                                  : isRejected ? theme.palette.error.main
+                                    : theme.palette.info.main,
+                            }}>
+                              {report.status}
+                            </Typography>
+                            {suspiciousFlags.length > 0 && (
+                              <Tooltip title={suspiciousFlags.join(', ')}>
+                                <WarningIcon sx={{ fontSize: '0.75rem', color: theme.palette.warning.main }} />
+                              </Tooltip>
+                            )}
+                          </Stack>
+                        </Stack>
                       </TableCell>
+
+                      {/* Description */}
                       <TableCell>
-                        <Chip
-                          label={report.hazard_type}
-                          color={getHazardColor(report.hazard_type)}
-                          size="small"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 300 }}>
-                        <Typography variant="body2" noWrap>
+                        <Typography variant="body2" noWrap sx={{ fontSize: '0.8125rem' }}>
                           {report.description}
                         </Typography>
                       </TableCell>
+
+                      {/* Location */}
                       <TableCell>
-                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-                          <Typography variant="caption" color="text.secondary">
+                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
                             {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
                           </Typography>
                           <Tooltip title="Open in Live Map">
@@ -1045,24 +1106,13 @@ export function Reports() {
                               }}
                               aria-label="Open in Live Map"
                             >
-                              <PlaceIcon fontSize="small" />
+                              <PlaceIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
                           </Tooltip>
                         </Stack>
                       </TableCell>
-                      <TableCell>
-                        {report.is_high_risk ? (
-                          <Chip
-                            icon={<WarningIcon />}
-                            label="HIGH RISK"
-                            color="error"
-                            size="small"
-                            sx={{ fontWeight: 700 }}
-                          />
-                        ) : (
-                          <Chip label="Normal" size="small" variant="outlined" />
-                        )}
-                      </TableCell>
+
+                      {/* Urgency */}
                       <TableCell>
                         {report.urgency_level ? (
                           <Chip
@@ -1070,44 +1120,51 @@ export function Reports() {
                             color={getUrgencyColor(report.urgency_level)}
                             size="small"
                             variant="outlined"
+                            sx={{ fontWeight: 600, fontSize: '0.6875rem' }}
                           />
                         ) : (
                           <Typography variant="caption" color="text.secondary">—</Typography>
                         )}
                       </TableCell>
+
+                      {/* People at risk */}
                       <TableCell align="center">
                         {report.people_at_risk ? (
                           <Tooltip title="People at Risk">
                             <Chip
-                              icon={<PeopleIcon fontSize="small" />}
+                              icon={<PeopleIcon sx={{ fontSize: '0.85rem !important' }} />}
                               label={report.people_at_risk}
                               color="error"
                               size="small"
                               variant="outlined"
+                              sx={{ fontSize: '0.6875rem' }}
                             />
                           </Tooltip>
                         ) : (
                           <Typography variant="caption" color="text.secondary">—</Typography>
                         )}
                       </TableCell>
+
+                      {/* Media */}
                       <TableCell align="center">
                         {report.media_urls && report.media_urls.length > 0 ? (
                           <Tooltip title="View Media">
                             <IconButton
                               size="small"
                               color="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMediaPreview({ open: true, urls: report.media_urls ?? [], index: 0 });
-                              }}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setSelectedReport(report);
+                                 setDetailDialogOpen(true);
+                               }}
                             >
                               <Badge badgeContent={report.media_urls.length} color="primary">
                                 {report.media_urls.some(looksLikeVideo) ? (
-                                  <VideoIcon />
+                                  <VideoIcon sx={{ fontSize: '1.1rem' }} />
                                 ) : report.media_urls.some(looksLikeAudio) ? (
-                                  <AudioIcon />
+                                  <AudioIcon sx={{ fontSize: '1.1rem' }} />
                                 ) : (
-                                  <ImageIcon />
+                                  <ImageIcon sx={{ fontSize: '1.1rem' }} />
                                 )}
                               </Badge>
                             </IconButton>
@@ -1116,38 +1173,36 @@ export function Reports() {
                           <Typography variant="caption" color="text.secondary">—</Typography>
                         )}
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        <Typography variant="caption" color="text.secondary">
+
+                      {/* Date */}
+                      <TableCell>
+                        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontSize: '0.6875rem' }}>
                           {format(new Date(report.created_at), 'MMM dd, yyyy HH:mm')}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ minWidth: 180 }}>
-                        {suspiciousFlags.length > 0 ? (
-                          <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
-                            {suspiciousFlags.map((flag) => (
-                              <Chip key={flag} size="small" color="warning" label={flag} variant="outlined" />
-                            ))}
-                          </Stack>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">—</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {report.status === 'pending' ? (
-                          <Stack direction="row" spacing={0.75}>
-                            <Tooltip title="Accept (Verify)">
+
+                      {/* Actions */}
+                      <TableCell align="center">
+                        {isPending ? (
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
+                            <Tooltip title="Verify">
                               <span>
                                 <IconButton
                                   size="small"
-                                  color="success"
                                   disabled={statusUpdatingId === report.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     updateStatus(report, 'verified');
                                   }}
-                                  aria-label="Accept report"
+                                  aria-label="Verify report"
+                                  sx={{
+                                    color: theme.palette.success.main,
+                                    bgcolor: alpha(theme.palette.success.main, 0.08),
+                                    '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.16) },
+                                    width: 30, height: 30,
+                                  }}
                                 >
-                                  {statusUpdatingId === report.id ? <CircularProgress size={18} /> : <CheckCircleIcon fontSize="small" />}
+                                  {statusUpdatingId === report.id ? <CircularProgress size={16} /> : <CheckCircleIcon sx={{ fontSize: '1rem' }} />}
                                 </IconButton>
                               </span>
                             </Tooltip>
@@ -1155,21 +1210,39 @@ export function Reports() {
                               <span>
                                 <IconButton
                                   size="small"
-                                  color="error"
                                   disabled={statusUpdatingId === report.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     updateStatus(report, 'rejected');
                                   }}
                                   aria-label="Reject report"
+                                  sx={{
+                                    color: theme.palette.error.main,
+                                    bgcolor: alpha(theme.palette.error.main, 0.08),
+                                    '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.16) },
+                                    width: 30, height: 30,
+                                  }}
                                 >
-                                  {statusUpdatingId === report.id ? <CircularProgress size={18} /> : <CancelIcon fontSize="small" />}
+                                  {statusUpdatingId === report.id ? <CircularProgress size={16} /> : <CancelIcon sx={{ fontSize: '1rem' }} />}
                                 </IconButton>
                               </span>
                             </Tooltip>
                           </Stack>
                         ) : (
-                          <Typography variant="caption" color="text.secondary">—</Typography>
+                          <Chip
+                            label={report.status.toUpperCase()}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              fontWeight: 600, fontSize: '0.5625rem', height: 20,
+                              color: isVerified ? theme.palette.success.main
+                                : isRejected ? theme.palette.error.main
+                                  : theme.palette.info.main,
+                              borderColor: isVerified ? alpha(theme.palette.success.main, 0.3)
+                                : isRejected ? alpha(theme.palette.error.main, 0.3)
+                                  : alpha(theme.palette.info.main, 0.3),
+                            }}
+                          />
                         )}
                       </TableCell>
                     </TableRow>
@@ -1428,7 +1501,7 @@ export function Reports() {
         <Dialog
           open={detailDialogOpen}
           onClose={() => setDetailDialogOpen(false)}
-          maxWidth="md"
+          maxWidth="lg"
           fullWidth
         >
           {selectedReport && (
@@ -1548,21 +1621,61 @@ export function Reports() {
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Media Attachments ({selectedReport.media_urls.length})
                       </Typography>
-                      <Box display="flex" gap={1} flexWrap="wrap">
+                      <Grid container spacing={2}>
                         {selectedReport.media_urls.map((url, idx) => (
-                          <Button
-                            key={idx}
-                            variant="outlined"
-                            size="small"
-                            startIcon={looksLikeVideo(url) ? <VideoIcon /> : looksLikeAudio(url) ? <AudioIcon /> : <ImageIcon />}
-                            onClick={() => setMediaPreview({ open: true, urls: selectedReport.media_urls ?? [], index: idx })}
-                          >
-                            {looksLikeVideo(url) ? 'Video' : looksLikeAudio(url) ? 'Audio' : 'Image'} {idx + 1}
-                          </Button>
+                          <Grid size={{ xs: 12, md: looksLikeAudio(url) ? 12 : 6 }} key={idx}>
+                            <Box sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                Attachment {idx + 1}
+                              </Typography>
+                              {looksLikeVideo(url) ? (
+                                <VideoPreview src={url} />
+                              ) : looksLikeAudio(url) ? (
+                                <AudioWaveform src={url} />
+                              ) : (
+                                <ImageZoom src={url} alt={`Attachment ${idx + 1}`} />
+                              )}
+                            </Box>
+                          </Grid>
                         ))}
-                      </Box>
+                      </Grid>
                     </Box>
                   )}
+
+                  {/* Audit Trail Section */}
+                  <Divider />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <HistoryIcon fontSize="small" /> Audit Trail
+                    </Typography>
+                    {loadingAudit ? (
+                      <CircularProgress size={24} sx={{ mt: 1 }} />
+                    ) : auditLogs.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                        No status changes recorded yet.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1} sx={{ mt: 1 }}>
+                        {auditLogs.map((log) => (
+                          <Paper key={log.id} variant="outlined" sx={{ p: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box>
+                              <Typography variant="body2" fontWeight={600}>
+                                {log.admin_email}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {format(new Date(log.changed_at), 'PPpp')}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip size="small" variant="outlined" label={log.old_status.toUpperCase()} sx={{ fontSize: '0.7rem' }} />
+                              <NavigateNextIcon fontSize="small" color="action" />
+                              <Chip size="small" label={log.new_status.toUpperCase()} color={getStatusColor(log.new_status)} sx={{ fontSize: '0.7rem' }} />
+                            </Box>
+                          </Paper>
+                        ))}
+                      </Stack>
+                    )}
+                  </Box>
                 </Stack>
               </DialogContent>
               <DialogActions>
@@ -1592,105 +1705,6 @@ export function Reports() {
               </DialogActions>
             </>
           )}
-        </Dialog>
-
-        {/* Media Preview Dialog */}
-        <Dialog
-          open={mediaPreview.open}
-          onClose={() => setMediaPreview({ open: false, urls: [], index: 0 })}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6" fontWeight={700}>
-                Media Preview
-              </Typography>
-              <IconButton onClick={() => setMediaPreview({ open: false, urls: [], index: 0 })}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          <DialogContent dividers>
-            {mediaPreview.urls.length > 0 ? (
-              <Stack spacing={2}>
-                <Typography variant="caption" color="text.secondary">
-                  {mediaPreview.index + 1} / {mediaPreview.urls.length}
-                </Typography>
-
-                {looksLikeVideo(mediaPreview.urls[mediaPreview.index]) ? (
-                  <Box
-                    component="video"
-                    src={mediaPreview.urls[mediaPreview.index]}
-                    controls
-                    sx={{ width: '100%', borderRadius: 1 }}
-                  />
-                ) : looksLikeAudio(mediaPreview.urls[mediaPreview.index]) ? (
-                  <Box
-                    component="audio"
-                    src={mediaPreview.urls[mediaPreview.index]}
-                    controls
-                    sx={{ width: '100%' }}
-                  />
-                ) : (
-                  <Box
-                    component="img"
-                    src={mediaPreview.urls[mediaPreview.index]}
-                    alt="Report media"
-                    sx={{ width: '100%', borderRadius: 1 }}
-                  />
-                )}
-
-                {mediaPreview.urls.length > 1 && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={mediaPreview.index === 0}
-                      onClick={() => setMediaPreview((s) => ({ ...s, index: Math.max(0, s.index - 1) }))}
-                    >
-                      Prev
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={mediaPreview.index >= mediaPreview.urls.length - 1}
-                      onClick={() => setMediaPreview((s) => ({ ...s, index: Math.min(s.urls.length - 1, s.index + 1) }))}
-                    >
-                      Next
-                    </Button>
-
-                    <Divider flexItem sx={{ mx: 1 }} />
-
-                    {mediaPreview.urls.map((_, idx) => (
-                      <Button
-                        key={idx}
-                        size="small"
-                        variant={idx === mediaPreview.index ? 'contained' : 'text'}
-                        onClick={() => setMediaPreview((s) => ({ ...s, index: idx }))}
-                      >
-                        {idx + 1}
-                      </Button>
-                    ))}
-                  </Stack>
-                )}
-              </Stack>
-            ) : (
-              <Typography variant="body2" color="text.secondary">No media</Typography>
-            )}
-          </DialogContent>
-          <DialogActions>
-            {mediaPreview.urls.length > 0 && (
-              <Button
-                variant="outlined"
-                startIcon={<OpenInNewIcon />}
-                onClick={() => window.open(mediaPreview.urls[mediaPreview.index], '_blank', 'noopener,noreferrer')}
-              >
-                Open in new tab
-              </Button>
-            )}
-            <Button onClick={() => setMediaPreview({ open: false, urls: [], index: 0 })}>Close</Button>
-          </DialogActions>
         </Dialog>
 
         {/* Landmark Manager Dialog */}

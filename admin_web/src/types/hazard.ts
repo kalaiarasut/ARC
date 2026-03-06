@@ -49,3 +49,13 @@ export interface DashboardStats {
   byUrgency: Record<UrgencyLevel, number>;
   byStatus: Record<ReportStatus, number>;
 }
+
+export interface ReportAuditLog {
+  id: string;
+  report_id: string;
+  admin_id: string;
+  admin_email: string;
+  old_status: ReportStatus;
+  new_status: ReportStatus;
+  changed_at: string;
+}

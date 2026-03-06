@@ -20,6 +20,9 @@ import {
   GppMaybe as GppMaybeIcon,
   Schedule as ScheduleIcon,
   EmojiEvents as EmojiEventsIcon,
+  Thunderstorm as ThunderstormIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+  Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { StatCard } from '../components/ReportCard';
 import { RecentReportsTable } from '../components/RecentReportsTable';
@@ -227,22 +230,32 @@ export function Dashboard() {
                 borderRadius: '16px',
                 bgcolor: 'background.paper',
                 height: '100%',
-                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}, 0 4px 16px ${alpha(theme.palette.common.black, 0.04)}`,
+                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.05)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`,
                 overflow: 'hidden',
                 transition: 'box-shadow 0.3s, transform 0.3s',
+                border: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
                 '&:hover': {
-                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
-                  transform: 'translateY(-3px)',
+                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.08)}`,
+                  transform: 'translateY(-2px)',
                 }
               }}
             >
-              <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 4, height: 20, borderRadius: 2, bgcolor: theme.palette.primary.main }} />
-                <Typography variant="subtitle1" fontWeight={700} color="text.primary" letterSpacing="0.01em">
-                  By Hazard Type
-                </Typography>
+              <Box sx={{ px: 2.5, pt: 2.5, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{
+                    width: 36, height: 36, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.primary.main, 0.05)})`,
+                  }}>
+                    <ThunderstormIcon sx={{ fontSize: '1.15rem', color: theme.palette.primary.main }} />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ fontSize: '0.9375rem' }}>
+                    By Hazard Type
+                  </Typography>
+                </Box>
+                <Chip size="small" label={`${stats.totalReports} total`}
+                  sx={{ height: 24, fontSize: '0.6875rem', fontWeight: 600, bgcolor: alpha(theme.palette.primary.main, 0.08), color: theme.palette.primary.main }} />
               </Box>
-              <Box sx={{ px: 2.5, pb: 2.5 }}>
+              <Box sx={{ px: 2.5, pb: 2 }}>
                 {Object.entries(stats.byHazardType).map(([type, count]) => {
                   const pct = stats.totalReports ? Math.round((count / stats.totalReports) * 100) : 0;
                   const barColor = type === 'Tsunami' ? theme.palette.error.main :
@@ -250,27 +263,42 @@ export function Dashboard() {
                       type === 'Storm' ? theme.palette.info.main :
                         type === 'Flood' ? theme.palette.primary.main : theme.palette.grey[500];
                   return (
-                    <Box key={type} sx={{ py: 1, '&:not(:last-child)': { borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}` } }}>
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Box display="flex" alignItems="center" gap={1.2}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: barColor, flexShrink: 0, boxShadow: `0 0 0 3px ${alpha(barColor, 0.15)}` }} />
-                          <Typography variant="body2" fontWeight={600} color="text.primary">
+                    <Box key={type} sx={{
+                      py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
+                      transition: 'background 0.2s',
+                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                    }}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Box sx={{
+                            width: 8, height: 8, borderRadius: '50%', bgcolor: barColor, flexShrink: 0,
+                            boxShadow: `0 0 0 3px ${alpha(barColor, 0.12)}`,
+                          }} />
+                          <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ fontSize: '0.8125rem' }}>
                             {type}
                           </Typography>
                         </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.7), fontSize: 11 }}>
+                        <Box display="flex" alignItems="center" gap={0.75}>
+                          <Typography variant="caption" fontWeight={500} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.6875rem' }}>
                             {pct}%
                           </Typography>
-                          <Box sx={{ bgcolor: alpha(barColor, 0.1), color: barColor, px: 1.2, py: 0.2, borderRadius: '8px', minWidth: 32, textAlign: 'center' }}>
-                            <Typography variant="caption" fontWeight={800} sx={{ fontSize: 12.5 }}>
+                          <Box sx={{
+                            bgcolor: alpha(barColor, 0.08), color: barColor, px: 1, py: 0.15,
+                            borderRadius: '6px', minWidth: 28, textAlign: 'center',
+                          }}>
+                            <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.75rem' }}>
                               {count}
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ mt: 0.8, height: 5, bgcolor: alpha(theme.palette.grey[300], 0.3), borderRadius: 3, overflow: 'hidden' }}>
-                        <Box sx={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.7)})`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                        <Box sx={{
+                          width: `${pct}%`, height: '100%', borderRadius: 3,
+                          background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
+                          boxShadow: `inset 0 1px 1px ${alpha('#fff', 0.15)}`,
+                          transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
+                        }} />
                       </Box>
                     </Box>
                   );
@@ -287,49 +315,74 @@ export function Dashboard() {
                 borderRadius: '16px',
                 bgcolor: 'background.paper',
                 height: '100%',
-                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}, 0 4px 16px ${alpha(theme.palette.common.black, 0.04)}`,
+                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.05)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`,
                 overflow: 'hidden',
                 transition: 'box-shadow 0.3s, transform 0.3s',
+                border: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
                 '&:hover': {
-                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
-                  transform: 'translateY(-3px)',
+                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.08)}`,
+                  transform: 'translateY(-2px)',
                 }
               }}
             >
-              <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 4, height: 20, borderRadius: 2, bgcolor: theme.palette.info.main }} />
-                <Typography variant="subtitle1" fontWeight={700} color="text.primary" letterSpacing="0.01em">
-                  By Status
-                </Typography>
+              <Box sx={{ px: 2.5, pt: 2.5, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{
+                    width: 36, height: 36, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.1)}, ${alpha(theme.palette.info.main, 0.05)})`,
+                  }}>
+                    <AssignmentTurnedInIcon sx={{ fontSize: '1.15rem', color: theme.palette.info.main }} />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ fontSize: '0.9375rem' }}>
+                    By Status
+                  </Typography>
+                </Box>
+                <Chip size="small" label={`${stats.totalReports} total`}
+                  sx={{ height: 24, fontSize: '0.6875rem', fontWeight: 600, bgcolor: alpha(theme.palette.info.main, 0.08), color: theme.palette.info.main }} />
               </Box>
-              <Box sx={{ px: 2.5, pb: 2.5 }}>
+              <Box sx={{ px: 2.5, pb: 2 }}>
                 {Object.entries(stats.byStatus).map(([status, count]) => {
                   const pct = stats.totalReports ? Math.round((count / stats.totalReports) * 100) : 0;
                   const barColor = status === 'resolved' ? theme.palette.success.main :
                     status === 'verified' ? theme.palette.info.main :
                       status === 'rejected' ? theme.palette.error.main : theme.palette.grey[400];
                   return (
-                    <Box key={status} sx={{ py: 1, '&:not(:last-child)': { borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}` } }}>
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Box display="flex" alignItems="center" gap={1.2}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: barColor, flexShrink: 0, boxShadow: `0 0 0 3px ${alpha(barColor, 0.15)}` }} />
-                          <Typography variant="body2" fontWeight={600} color="text.primary" textTransform="capitalize">
+                    <Box key={status} sx={{
+                      py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
+                      transition: 'background 0.2s',
+                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                    }}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Box sx={{
+                            width: 8, height: 8, borderRadius: '50%', bgcolor: barColor, flexShrink: 0,
+                            boxShadow: `0 0 0 3px ${alpha(barColor, 0.12)}`,
+                          }} />
+                          <Typography variant="body2" fontWeight={600} color="text.primary" textTransform="capitalize" sx={{ fontSize: '0.8125rem' }}>
                             {status}
                           </Typography>
                         </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.7), fontSize: 11 }}>
+                        <Box display="flex" alignItems="center" gap={0.75}>
+                          <Typography variant="caption" fontWeight={500} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.6875rem' }}>
                             {pct}%
                           </Typography>
-                          <Box sx={{ bgcolor: alpha(barColor, 0.1), color: barColor, px: 1.2, py: 0.2, borderRadius: '8px', minWidth: 32, textAlign: 'center' }}>
-                            <Typography variant="caption" fontWeight={800} sx={{ fontSize: 12.5 }}>
+                          <Box sx={{
+                            bgcolor: alpha(barColor, 0.08), color: barColor, px: 1, py: 0.15,
+                            borderRadius: '6px', minWidth: 28, textAlign: 'center',
+                          }}>
+                            <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.75rem' }}>
                               {count}
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ mt: 0.8, height: 5, bgcolor: alpha(theme.palette.grey[300], 0.3), borderRadius: 3, overflow: 'hidden' }}>
-                        <Box sx={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.7)})`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                        <Box sx={{
+                          width: `${pct}%`, height: '100%', borderRadius: 3,
+                          background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
+                          boxShadow: `inset 0 1px 1px ${alpha('#fff', 0.15)}`,
+                          transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
+                        }} />
                       </Box>
                     </Box>
                   );
@@ -346,48 +399,73 @@ export function Dashboard() {
                 borderRadius: '16px',
                 bgcolor: 'background.paper',
                 height: '100%',
-                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}, 0 4px 16px ${alpha(theme.palette.common.black, 0.04)}`,
+                boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.05)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`,
                 overflow: 'hidden',
                 transition: 'box-shadow 0.3s, transform 0.3s',
+                border: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
                 '&:hover': {
-                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
-                  transform: 'translateY(-3px)',
+                  boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.08)}`,
+                  transform: 'translateY(-2px)',
                 }
               }}
             >
-              <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 4, height: 20, borderRadius: 2, bgcolor: theme.palette.warning.main }} />
-                <Typography variant="subtitle1" fontWeight={700} color="text.primary" letterSpacing="0.01em">
-                  By Urgency Level
-                </Typography>
+              <Box sx={{ px: 2.5, pt: 2.5, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{
+                    width: 36, height: 36, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.1)}, ${alpha(theme.palette.warning.main, 0.05)})`,
+                  }}>
+                    <SpeedIcon sx={{ fontSize: '1.15rem', color: theme.palette.warning.main }} />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ fontSize: '0.9375rem' }}>
+                    By Urgency Level
+                  </Typography>
+                </Box>
+                <Chip size="small" label={`${stats.totalReports} total`}
+                  sx={{ height: 24, fontSize: '0.6875rem', fontWeight: 600, bgcolor: alpha(theme.palette.warning.main, 0.08), color: theme.palette.warning.dark }} />
               </Box>
-              <Box sx={{ px: 2.5, pb: 2.5 }}>
+              <Box sx={{ px: 2.5, pb: 2 }}>
                 {Object.entries(stats.byUrgency).map(([level, count]) => {
                   const pct = stats.totalReports ? Math.round((count / stats.totalReports) * 100) : 0;
                   const barColor = level === 'High' ? theme.palette.error.main :
                     level === 'Medium' ? theme.palette.warning.main : theme.palette.success.main;
                   return (
-                    <Box key={level} sx={{ py: 1, '&:not(:last-child)': { borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}` } }}>
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Box display="flex" alignItems="center" gap={1.2}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: barColor, flexShrink: 0, boxShadow: `0 0 0 3px ${alpha(barColor, 0.15)}` }} />
-                          <Typography variant="body2" fontWeight={600} color="text.primary">
+                    <Box key={level} sx={{
+                      py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
+                      transition: 'background 0.2s',
+                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                    }}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Box sx={{
+                            width: 8, height: 8, borderRadius: '50%', bgcolor: barColor, flexShrink: 0,
+                            boxShadow: `0 0 0 3px ${alpha(barColor, 0.12)}`,
+                          }} />
+                          <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ fontSize: '0.8125rem' }}>
                             {level}
                           </Typography>
                         </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.7), fontSize: 11 }}>
+                        <Box display="flex" alignItems="center" gap={0.75}>
+                          <Typography variant="caption" fontWeight={500} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.6875rem' }}>
                             {pct}%
                           </Typography>
-                          <Box sx={{ bgcolor: alpha(barColor, 0.1), color: barColor, px: 1.2, py: 0.2, borderRadius: '8px', minWidth: 32, textAlign: 'center' }}>
-                            <Typography variant="caption" fontWeight={800} sx={{ fontSize: 12.5 }}>
+                          <Box sx={{
+                            bgcolor: alpha(barColor, 0.08), color: barColor, px: 1, py: 0.15,
+                            borderRadius: '6px', minWidth: 28, textAlign: 'center',
+                          }}>
+                            <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.75rem' }}>
                               {count}
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ mt: 0.8, height: 5, bgcolor: alpha(theme.palette.grey[300], 0.3), borderRadius: 3, overflow: 'hidden' }}>
-                        <Box sx={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.7)})`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                        <Box sx={{
+                          width: `${pct}%`, height: '100%', borderRadius: 3,
+                          background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
+                          boxShadow: `inset 0 1px 1px ${alpha('#fff', 0.15)}`,
+                          transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
+                        }} />
                       </Box>
                     </Box>
                   );

@@ -36,6 +36,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   bool _hasPromptedForGps = false;
   bool _hasPromptedForPermissionSettings = false;
   StreamSubscription<ServiceStatus>? _serviceStatusSub;
+  Timer? _debounceTimer;
 
   double _markerScale = 1.0;
   double _lastZoom = -1;
@@ -129,6 +130,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _serviceStatusSub?.cancel();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -339,14 +341,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   void _updateMapData() {
     if (_userLocation == null) return;
 
-    final bounds = _mapController.camera.visibleBounds;
-    final filters = ref.read(mapFiltersProvider);
-    
-    ref.read(mapProvider.notifier).updateViewport(
-      bounds,
-      currentUserId: SupabaseConfig.client.auth.currentUser?.id,
-      filters: filters,
-    );
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      final bounds = _mapController.camera.visibleBounds;
+      final filters = ref.read(mapFiltersProvider);
+      
+      ref.read(mapProvider.notifier).updateViewport(
+        bounds,
+        currentUserId: SupabaseConfig.client.auth.currentUser?.id,
+        filters: filters,
+      );
+    });
   }
 
   void _onMapEvent(MapEvent event) {
@@ -760,9 +766,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                               currentUserId: SupabaseConfig.client.auth.currentUser?.id,
                               filters: nextFilters,
                             );
-
-                            if (!mounted) return;
-
+                            if (!context.mounted) return;
                             // Give users feedback when there are no verified zones available.
                             if (value == true && ref.read(mapProvider).riskZones.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(

@@ -78,6 +78,7 @@ export const advisoryService = {
       category: input.category,
       latitude,
       longitude,
+      radius_km: input.radius_km ?? null,
       location,
       starts_at: input.starts_at ?? null,
       expires_at: input.expires_at ?? null,

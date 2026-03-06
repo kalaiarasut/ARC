@@ -20,6 +20,7 @@ export interface OfficialAdvisory {
   // Optional location
   latitude: number | null;
   longitude: number | null;
+  radius_km: number | null; // target radius in km
   // PostGIS geography column; returned shape may vary by PostgREST settings.
   location?: unknown;
 
@@ -44,6 +45,7 @@ export interface AdvisoryCreateInput {
   category: AdvisoryCategory;
   latitude?: number | null;
   longitude?: number | null;
+  radius_km?: number | null;
   starts_at?: string | null;
   expires_at?: string | null;
   contact_phone?: string | null;

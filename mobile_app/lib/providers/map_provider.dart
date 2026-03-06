@@ -285,14 +285,13 @@ class MapNotifier extends Notifier<MapState> {
     state = state.copyWith(currentBounds: bounds, isLoading: true, clearError: true);
 
     try {
-      // Use debounced fetch for reports
-      final markers = await _mapService.debouncedGetReportsInBounds(
+      // Use direct fetch for reports (debouncing is handled at the UI layer)
+      final markers = await _mapService.getReportsInBounds(
         minLat: bounds.south,
         maxLat: bounds.north,
         minLon: bounds.west,
         maxLon: bounds.east,
         currentUserId: currentUserId,
-        onComplete: (_) {},
       );
 
       // Apply filters

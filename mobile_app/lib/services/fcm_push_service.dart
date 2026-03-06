@@ -3,10 +3,43 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'notification_service.dart';
 import 'notification_settings_service.dart';
 import 'push_token_service.dart';
+
+Future<bool> _shouldShowNotification(RemoteMessage message) async {
+  final radiusStr = message.data['radius_km']?.toString();
+  final latStr = message.data['latitude']?.toString();
+  final lngStr = message.data['longitude']?.toString();
+
+  if (radiusStr == null || latStr == null || lngStr == null) return true;
+  
+  final radiusKm = double.tryParse(radiusStr);
+  final lat = double.tryParse(latStr);
+  final lng = double.tryParse(lngStr);
+
+  if (radiusKm == null || lat == null || lng == null) return true;
+
+  try {
+    final perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      return false; // Hide targeted advisory if we don't know location
+    }
+
+    final pos = await Geolocator.getLastKnownPosition();
+    if (pos == null) return false;
+
+    const distance = Distance();
+    final d = distance.as(LengthUnit.Meter, LatLng(pos.latitude, pos.longitude), LatLng(lat, lng));
+    
+    return d <= (radiusKm * 1000);
+  } catch (_) {
+    return true; 
+  }
+}
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -22,6 +55,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final body = message.notification?.body ?? message.data['body']?.toString();
 
   if (title == null || body == null) return;
+
+  if (!await _shouldShowNotification(message)) return;
 
   // Best-effort local notification.
   await NotificationService.instance.show(
@@ -119,6 +154,8 @@ class FcmPushService {
       final title = message.notification?.title ?? message.data['title']?.toString();
       final body = message.notification?.body ?? message.data['body']?.toString();
       if (title == null || body == null) return;
+
+      if (!await _shouldShowNotification(message)) return;
 
       await NotificationService.instance.show(
         id: DateTime.now().millisecondsSinceEpoch ~/ 1000,

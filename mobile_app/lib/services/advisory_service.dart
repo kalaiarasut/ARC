@@ -27,11 +27,20 @@ class AdvisoryService {
         .map((json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>))
         .toList();
 
+    const distance = Distance();
+
+    // Filter out advisories that are targeted by radius if user is outside it
+    items.removeWhere((a) {
+      if (a.radiusKm == null || a.latitude == null || a.longitude == null) return false;
+      if (userLocation == null) return true; // Hide targeted advisories if location unknown
+      final d = distance.as(LengthUnit.Meter, userLocation, LatLng(a.latitude!, a.longitude!));
+      return d > (a.radiusKm! * 1000);
+    });
+
     if (userLocation == null) {
       return items.take(safeLimit).toList();
     }
 
-    const distance = Distance();
     double distMeters(OfficialAdvisory a) {
       final lat = a.latitude;
       final lon = a.longitude;

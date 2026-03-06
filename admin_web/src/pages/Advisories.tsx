@@ -109,6 +109,7 @@ export function Advisories() {
   const [severity, setSeverity] = useState<AdvisorySeverity>('info');
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
+  const [radius, setRadius] = useState<string>('');
   const [startsAt, setStartsAt] = useState<string>('');
   const [expiresAt, setExpiresAt] = useState<string>('');
   const [phone, setPhone] = useState('');
@@ -190,6 +191,7 @@ export function Advisories() {
     setSeverity('info');
     setLat('');
     setLng('');
+    setRadius('');
     setStartsAt('');
     setExpiresAt('');
     setPhone('');
@@ -214,6 +216,7 @@ export function Advisories() {
 
       const latitude = parseNullableNumber(lat);
       const longitude = parseNullableNumber(lng);
+      const radius_km = parseNullableNumber(radius);
 
       if ((latitude === null) !== (longitude === null)) {
         setError('Please provide both Latitude and Longitude (or leave both empty).');
@@ -228,6 +231,7 @@ export function Advisories() {
         severity,
         latitude,
         longitude,
+        radius_km,
         starts_at: toIsoOrNull(startsAt),
         expires_at: toIsoOrNull(expiresAt),
         contact_phone: phone.trim() || null,
@@ -476,6 +480,16 @@ export function Advisories() {
                       fullWidth
                       size="small"
                       inputProps={{ inputMode: 'decimal' }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                      label="Target Radius (km)"
+                      value={radius}
+                      onChange={(e) => setRadius(e.target.value)}
+                      fullWidth
+                      size="small"
+                      inputProps={{ inputMode: 'decimal' }}
+                      disabled={!lat && !lng}
                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                     />
                   </Stack>

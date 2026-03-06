@@ -18,6 +18,11 @@ import {
     DialogContentText,
     DialogTitle,
     TextField,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    CircularProgress,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -27,6 +32,9 @@ import TuneIcon from '@mui/icons-material/Tune';
 import PlaceIcon from '@mui/icons-material/Place';
 import GridViewIcon from '@mui/icons-material/GridView';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
+import DownloadIcon from '@mui/icons-material/Download';
+import ImageIcon from '@mui/icons-material/Image';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 import LeafletMap, { type MapMethods } from '../components/LeafletMap';
 import { hazardService } from '../services/hazardService';
@@ -34,6 +42,7 @@ import { advisoryService } from '../services/advisoryService';
 import { riskZoneService } from '../services/riskZoneService';
 import { monitoringZoneService } from '../services/monitoringZoneService';
 import { isSupabaseConfigured } from '../core/supabase_config';
+import { exportMap } from '../services/mapExportService';
 import type { HazardReport } from '../types/hazard';
 import type { OfficialAdvisory } from '../types/advisory';
 import type { GeneratedRiskZone } from '../types/riskZone';
@@ -69,6 +78,8 @@ export const MapView: React.FC = () => {
 
     const [nameDialogOpen, setNameDialogOpen] = useState(false);
     const [newZoneName, setNewZoneName] = useState('');
+    const [exportAnchorEl, setExportAnchorEl] = useState<HTMLElement | null>(null);
+    const [exporting, setExporting] = useState(false);
     const initialAutoFitDoneRef = useRef(false);
     const pendingMonitoringRef = useRef<{
         tempLayerId: number;
@@ -437,8 +448,8 @@ export const MapView: React.FC = () => {
     };
 
     return (
-        <Box sx={{ 
-            minHeight: '100vh', 
+        <Box sx={{
+            minHeight: '100vh',
             bgcolor: alpha(theme.palette.primary.main, 0.02),
             position: 'relative',
         }}>
@@ -542,6 +553,85 @@ export const MapView: React.FC = () => {
                                 <MyLocationIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
+
+                        {/* Export Button */}
+                        <Tooltip title="Export map">
+                            <span>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={exporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon />}
+                                    onClick={(e) => setExportAnchorEl(e.currentTarget)}
+                                    disabled={exporting}
+                                    sx={{
+                                        borderRadius: '10px',
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        bgcolor: 'primary.main',
+                                        '&:hover': { bgcolor: 'primary.dark' },
+                                        boxShadow: 'none',
+                                    }}
+                                >
+                                    {exporting ? 'Exporting…' : 'Export'}
+                                </Button>
+                            </span>
+                        </Tooltip>
+
+                        {/* Export Format Menu */}
+                        <Menu
+                            anchorEl={exportAnchorEl}
+                            open={Boolean(exportAnchorEl)}
+                            onClose={() => setExportAnchorEl(null)}
+                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            slotProps={{
+                                paper: {
+                                    elevation: 4,
+                                    sx: { borderRadius: '12px', minWidth: 160, mt: 0.5 },
+                                },
+                            }}
+                        >
+                            <MenuItem
+                                onClick={async () => {
+                                    setExportAnchorEl(null);
+                                    const container = mapRef.current?.getMapContainer();
+                                    if (!container) return;
+                                    setExporting(true);
+                                    try {
+                                        await exportMap(container, {
+                                            format: 'png',
+                                            title: 'ARC – Live Hazard Map',
+                                            filename: `arc_map_${new Date().toISOString().slice(0, 10)}`,
+                                        });
+                                    } finally {
+                                        setExporting(false);
+                                    }
+                                }}
+                            >
+                                <ListItemIcon><ImageIcon fontSize="small" color="primary" /></ListItemIcon>
+                                <ListItemText primary="Save as PNG" secondary="High-res image" />
+                            </MenuItem>
+                            <MenuItem
+                                onClick={async () => {
+                                    setExportAnchorEl(null);
+                                    const container = mapRef.current?.getMapContainer();
+                                    if (!container) return;
+                                    setExporting(true);
+                                    try {
+                                        await exportMap(container, {
+                                            format: 'pdf',
+                                            title: 'ARC – Live Hazard Map Snapshot',
+                                            filename: `arc_map_${new Date().toISOString().slice(0, 10)}`,
+                                        });
+                                    } finally {
+                                        setExporting(false);
+                                    }
+                                }}
+                            >
+                                <ListItemIcon><PictureAsPdfIcon fontSize="small" color="error" /></ListItemIcon>
+                                <ListItemText primary="Save as PDF" secondary="A4 landscape" />
+                            </MenuItem>
+                        </Menu>
 
                         <Button
                             variant="outlined"

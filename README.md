@@ -12,7 +12,7 @@ This repository contains the complete full-stack solution, comprising a citizen-
 
 The system is designed with three primary pillars:
 
-### 1. Citizen Mobile Application (`/civil_alert_system`)
+### 1. Citizen Mobile Application (`/mobile_app`)
 An offline-first, highly accessible mobile app built to capture ground-truth hazard reports from communities.
 *   **Technologies:** Flutter (Dart), Riverpod (State Management), Hive (Offline queueing), Flutter Map.
 *   **Key Features:**
@@ -30,7 +30,9 @@ An offline-first, highly accessible mobile app built to capture ground-truth haz
     *   **Profile & Sync Dashboard:** View personal submission history, sync status (online/offline), pending upload count, and trigger manual sync.
     *   **Multilingual Support (i18n):** English and Tamil.
     *   **Privacy Controls:** Options to reduce location precision on public maps.
-    *   **Gamification:** Users earn points and badges for contributing verified, high-quality reports.
+    *   **Gamification System:** Citizens earn points for submitting reports (+10), attaching media (+5), getting verified (+25), and flagging high-risk situations (+40). 10 badge types awarded automatically via server-side triggers. Includes an Achievements screen (earned/locked badges, points history), a Leaderboard screen (podium for top 3, ranked list), and a profile stats card.
+    *   **Notifications Screen:** Combined feed of advisory broadcasts and report status changes (verified/rejected), accessible from the home header notification icon. Pull-to-refresh, sorted by recency.
+    *   **Offline Map Tiles:** Automatic caching of viewed map tiles for offline use via FMTC. Dedicated Offline Maps screen (Settings → Offline Maps) to bulk-download regions by radius (5/10/25 km) with progress tracking, manage and delete cached regions.
 
 ### 2. Authority & Analyst Dashboard (`/admin_web`)
 A robust web-based command center designed for disaster management agencies and first responders to analyze incoming intelligence and coordinate responses.
@@ -57,6 +59,7 @@ A single, highly scalable backend that serves both frontends, ensuring data cons
     *   **Row Level Security (RLS):** Strict privacy controls ensure citizens can only access their own data, while analysts have restricted, role-based access for verifications.
     *   **Real-time Subscriptions:** Websocket channels push new reports, advisory changes, and zone updates to both frontends instantly.
     *   **Spam & Abuse Protection:** Database-level rate limiting (30-second minimum interval, hourly caps) and duplicate report deduplication logic.
+    *   **Gamification Engine:** `badge_definitions`, `citizen_points`, and `citizen_badges` tables with server-side triggers that auto-award points on report insert/verify/reject and check badge eligibility. RPCs for citizen stats, leaderboard, and badge queries.
 
 ---
 
@@ -75,7 +78,7 @@ Both applications rely on a standardized Supabase database schema.
 ### Step 2: Citizen App Setup (Flutter)
 1. Navigate to the mobile app directory:
    ```bash
-   cd civil_alert_system
+   cd mobile_app
    ```
 2. Install dependencies:
    ```bash
@@ -90,7 +93,7 @@ Both applications rely on a standardized Supabase database schema.
    ```bash
    flutter run
    ```
-   *(For detailed app-specific documentation, see `civil_alert_system/README.md`)*
+   *(For detailed app-specific documentation, see `mobile_app/README.md`)*
 
 ### Step 3: Admin Web Setup (React)
 1. Navigate to the web app directory:
