@@ -456,117 +456,123 @@ export const MapView: React.FC = () => {
             {/* Premium Header */}
             <Box
                 sx={{
-                    px: { xs: 2, sm: 3 },
-                    py: 1.5,
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                    backdropFilter: 'blur(20px)',
+                    px: { xs: 2, sm: 2.5 },
+                    py: 1.25,
+                    background: theme.palette.background.paper,
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
                 }}
             >
-                <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                        {/* Logo/Title */}
+                <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
                         <Box
                             sx={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: '14px',
+                                width: 38,
+                                height: 38,
+                                borderRadius: '11px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                                boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
+                                boxShadow: `0 3px 10px ${alpha(theme.palette.primary.main, 0.3)}`,
                             }}
                         >
-                            <SatelliteAltIcon sx={{ color: 'white', fontSize: 24 }} />
+                            <SatelliteAltIcon sx={{ color: 'white', fontSize: 20 }} />
                         </Box>
                         <Box>
-                            <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2, letterSpacing: -0.5 }}>
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.2, fontSize: '0.95rem' }}>
                                 Live Map
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.3 }}>
+                            <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.5), fontSize: '0.65rem' }}>
                                 Real-time hazard monitoring
                             </Typography>
                         </Box>
-
                     </Stack>
 
-                    {/* Right Actions */}
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={0.75} alignItems="center">
                         {/* Stats Chips */}
                         <Chip
-                            icon={<PlaceIcon sx={{ fontSize: 16 }} />}
+                            icon={<PlaceIcon sx={{ fontSize: 13 }} />}
                             label={`${markerCount} reports`}
                             size="small"
                             sx={{
-                                bgcolor: alpha(theme.palette.error.main, 0.1),
-                                color: theme.palette.error.main,
+                                height: 26,
+                                bgcolor: alpha(theme.palette.error.main, 0.07),
+                                color: alpha(theme.palette.error.main, 0.8),
                                 fontWeight: 600,
-                                fontSize: 11,
+                                fontSize: 10,
                                 '& .MuiChip-icon': { color: 'inherit' },
                             }}
                         />
                         {showZones && (
                             <Chip
-                                icon={<LayersIcon sx={{ fontSize: 16 }} />}
-                                label={`${zoneCount} risk zones`}
+                                icon={<LayersIcon sx={{ fontSize: 13 }} />}
+                                label={`${zoneCount} zones`}
                                 size="small"
                                 sx={{
-                                    bgcolor: alpha(theme.palette.info.main, 0.1),
-                                    color: theme.palette.info.main,
+                                    height: 26,
+                                    bgcolor: alpha(theme.palette.info.main, 0.07),
+                                    color: alpha(theme.palette.info.main, 0.8),
                                     fontWeight: 600,
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     '& .MuiChip-icon': { color: 'inherit' },
                                 }}
                             />
                         )}
                         {showMonitoringZones && (
                             <Chip
-                                icon={<GridViewIcon sx={{ fontSize: 16 }} />}
-                                label={`${monitoringZonesCount} monitoring zones`}
+                                icon={<GridViewIcon sx={{ fontSize: 13 }} />}
+                                label={`${monitoringZonesCount} monitoring`}
                                 size="small"
                                 sx={{
-                                    bgcolor: alpha(theme.palette.success.main, 0.1),
-                                    color: theme.palette.success.main,
+                                    height: 26,
+                                    bgcolor: alpha(theme.palette.success.main, 0.07),
+                                    color: alpha(theme.palette.success.main, 0.8),
                                     fontWeight: 600,
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     '& .MuiChip-icon': { color: 'inherit' },
                                 }}
                             />
                         )}
 
-                        <Tooltip title="Toggle layer controls">
+                        <Tooltip title="Layer controls" arrow>
                             <IconButton
                                 size="small"
                                 onClick={() => setShowFilters(!showFilters)}
                                 sx={{
-                                    bgcolor: showFilters ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                                    color: showFilters ? 'primary.main' : 'text.secondary',
+                                    width: 32, height: 32,
+                                    borderRadius: '9px',
+                                    bgcolor: showFilters ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.grey[100], 0.5),
+                                    color: showFilters ? 'primary.main' : alpha(theme.palette.text.secondary, 0.6),
+                                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' },
                                 }}
                             >
-                                <TuneIcon fontSize="small" />
+                                <TuneIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
                         </Tooltip>
 
-                        <Tooltip title="Recenter map">
-                            <IconButton size="small" onClick={handleRecenter}>
-                                <MyLocationIcon fontSize="small" />
+                        <Tooltip title="Recenter" arrow>
+                            <IconButton size="small" onClick={handleRecenter}
+                                sx={{ width: 32, height: 32, borderRadius: '9px', bgcolor: alpha(theme.palette.grey[100], 0.5), color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: 'primary.main' } }}>
+                                <MyLocationIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
                         </Tooltip>
 
                         {/* Export Button */}
-                        <Tooltip title="Export map">
+                        <Tooltip title="Export map" arrow>
                             <span>
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={exporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon />}
+                                    startIcon={exporting ? <CircularProgress size={12} color="inherit" /> : <DownloadIcon sx={{ fontSize: '0.9rem !important' }} />}
                                     onClick={(e) => setExportAnchorEl(e.currentTarget)}
                                     disabled={exporting}
                                     sx={{
-                                        borderRadius: '10px',
+                                        height: 32,
+                                        borderRadius: '9px',
                                         textTransform: 'none',
-                                        fontWeight: 700,
+                                        fontWeight: 600,
+                                        fontSize: '0.75rem',
+                                        px: 1.5,
                                         bgcolor: 'primary.main',
                                         '&:hover': { bgcolor: 'primary.dark' },
                                         boxShadow: 'none',
@@ -586,8 +592,8 @@ export const MapView: React.FC = () => {
                             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                             slotProps={{
                                 paper: {
-                                    elevation: 4,
-                                    sx: { borderRadius: '12px', minWidth: 160, mt: 0.5 },
+                                    elevation: 0,
+                                    sx: { borderRadius: '12px', minWidth: 160, mt: 0.5, border: `1px solid ${alpha(theme.palette.divider, 0.08)}`, boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.1)}` },
                                 },
                             }}
                         >
@@ -636,17 +642,22 @@ export const MapView: React.FC = () => {
                         <Button
                             variant="outlined"
                             size="small"
-                            startIcon={loading ? null : <RefreshIcon />}
+                            startIcon={loading ? null : <RefreshIcon sx={{ fontSize: '0.9rem !important' }} />}
                             onClick={async () => {
                                 await loadLiveReports();
                                 await loadMonitoringZones();
                             }}
                             disabled={loading}
                             sx={{
-                                borderRadius: '10px',
+                                height: 32,
+                                borderRadius: '9px',
                                 textTransform: 'none',
                                 fontWeight: 600,
-                                borderColor: alpha(theme.palette.divider, 0.3),
+                                fontSize: '0.75rem',
+                                px: 1.5,
+                                borderColor: alpha(theme.palette.grey[300], 0.8),
+                                color: alpha(theme.palette.text.primary, 0.7),
+                                '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.04) },
                             }}
                         >
                             {loading ? 'Loading…' : 'Refresh'}
@@ -657,22 +668,14 @@ export const MapView: React.FC = () => {
 
             {/* Error Alerts */}
             {(error || zonesError) && (
-                <Box sx={{ px: 3, pt: 2 }}>
+                <Box sx={{ px: 2.5, pt: 1.5 }}>
                     {error && (
-                        <Alert
-                            severity="error"
-                            onClose={() => setError(null)}
-                            sx={{ mb: 1, borderRadius: '12px' }}
-                        >
+                        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 1, borderRadius: '10px', fontSize: '0.8125rem' }}>
                             {error}
                         </Alert>
                     )}
                     {zonesError && (
-                        <Alert
-                            severity="warning"
-                            onClose={() => setZonesError(null)}
-                            sx={{ borderRadius: '12px' }}
-                        >
+                        <Alert severity="warning" onClose={() => setZonesError(null)} sx={{ borderRadius: '10px', fontSize: '0.8125rem' }}>
                             {zonesError}
                         </Alert>
                     )}
@@ -680,14 +683,14 @@ export const MapView: React.FC = () => {
             )}
 
             {/* Map Container */}
-            <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, py: 2 }}>
+            <Box sx={{ px: { xs: 1, sm: 2, md: 2.5 }, py: 1.5 }}>
                 <Paper
                     elevation={0}
                     sx={{
-                        borderRadius: '20px',
+                        borderRadius: '16px',
                         overflow: 'hidden',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.08)}`,
+                        border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                        boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.04)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.02)}`,
                         position: 'relative',
                     }}
                 >
@@ -743,236 +746,92 @@ export const MapView: React.FC = () => {
                         <Box
                             sx={{
                                 position: 'absolute',
-                                top: 14,
-                                left: 14,
+                                top: 10,
+                                left: 10,
                                 zIndex: 600,
-                                width: { xs: 'calc(100% - 28px)', sm: 360 },
+                                width: { xs: 'calc(100% - 20px)', sm: 300 },
                                 pointerEvents: 'none',
                             }}
                         >
                             <Paper
                                 elevation={0}
                                 sx={{
-                                    p: 1.5,
-                                    borderRadius: '16px',
-                                    border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                                    bgcolor: alpha(theme.palette.background.paper, 0.92),
-                                    backdropFilter: 'blur(14px)',
-                                    boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.12)}`,
+                                    p: 1.25,
+                                    borderRadius: '12px',
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                                    bgcolor: alpha(theme.palette.background.paper, 0.96),
+                                    backdropFilter: 'blur(20px)',
+                                    boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.06)}`,
                                     pointerEvents: 'auto',
                                 }}
                             >
-                                <Stack spacing={1.2}>
+                                <Stack spacing={0.75}>
                                     <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                        <Typography variant="body2" fontWeight={800} sx={{ letterSpacing: 0.2 }}>
+                                        <Typography variant="caption" fontWeight={700} sx={{ fontSize: '0.625rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: alpha(theme.palette.text.secondary, 0.5) }}>
                                             Layers
                                         </Typography>
                                         <Chip
                                             size="small"
                                             label={showZones ? 'Zone Review' : 'Live Markers'}
                                             sx={{
-                                                height: 22,
-                                                fontSize: 11,
+                                                height: 18,
+                                                fontSize: 8,
                                                 fontWeight: 700,
-                                                bgcolor: showZones ? alpha(theme.palette.info.main, 0.12) : alpha(theme.palette.grey[500], 0.12),
-                                                color: showZones ? theme.palette.info.main : theme.palette.text.secondary,
+                                                bgcolor: showZones ? alpha(theme.palette.info.main, 0.08) : alpha(theme.palette.grey[500], 0.06),
+                                                color: showZones ? alpha(theme.palette.info.main, 0.7) : alpha(theme.palette.text.secondary, 0.5),
                                             }}
                                         />
                                     </Stack>
 
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.5}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.25, '& .MuiFormControlLabel-root': { m: 0, '& .MuiSwitch-root': { mr: 0.25 } } }}>
                                         <FormControlLabel
-                                            sx={{ mr: 1 }}
-                                            control={
-                                                <Switch
-                                                    checked={showZones}
-                                                    onChange={(_, v) => setShowZones(v)}
-                                                    size="small"
-                                                    color="primary"
-                                                />
-                                            }
-                                            label={
-                                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                                    <LayersIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                                    <Typography variant="body2" fontWeight={600}>Risk Zones</Typography>
-                                                </Stack>
-                                            }
+                                            control={<Switch checked={showZones} onChange={(_, v) => setShowZones(v)} size="small" color="primary" />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem' }}>Risk Zones</Typography>}
                                         />
-
                                         <FormControlLabel
-                                            sx={{ mr: 1 }}
-                                            control={
-                                                <Switch
-                                                    checked={showMonitoringZones}
-                                                    onChange={(_, v) => {
-                                                        setShowMonitoringZones(v);
-                                                        if (!v) setMonitoringEditEnabled(false);
-                                                    }}
-                                                    size="small"
-                                                    color="success"
-                                                />
-                                            }
-                                            label={
-                                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                                    <GridViewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                                    <Typography variant="body2" fontWeight={600}>Monitoring</Typography>
-                                                </Stack>
-                                            }
+                                            control={<Switch checked={showMonitoringZones} onChange={(_, v) => { setShowMonitoringZones(v); if (!v) setMonitoringEditEnabled(false); }} size="small" color="success" />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem' }}>Monitoring</Typography>}
                                         />
-                                    </Stack>
-
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.5}>
                                         <FormControlLabel
-                                            sx={{ mr: 1 }}
-                                            control={
-                                                <Switch
-                                                    checked={monitoringEditEnabled}
-                                                    onChange={(_, v) => setMonitoringEditEnabled(v)}
-                                                    size="small"
-                                                    disabled={!showMonitoringZones}
-                                                />
-                                            }
-                                            label={
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight={600}
-                                                    color={!showMonitoringZones ? 'text.disabled' : 'text.primary'}
-                                                >
-                                                    Edit Monitoring
-                                                </Typography>
-                                            }
+                                            control={<Switch checked={monitoringEditEnabled} onChange={(_, v) => setMonitoringEditEnabled(v)} size="small" disabled={!showMonitoringZones} />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem', color: !showMonitoringZones ? 'text.disabled' : 'text.primary' }}>Edit</Typography>}
                                         />
-
                                         <FormControlLabel
-                                            sx={{ mr: 1 }}
-                                            control={
-                                                <Switch
-                                                    checked={showCandidateZones}
-                                                    onChange={(_, v) => setShowCandidateZones(v)}
-                                                    size="small"
-                                                    disabled={!showZones}
-                                                />
-                                            }
-                                            label={
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight={600}
-                                                    color={!showZones ? 'text.disabled' : 'text.primary'}
-                                                >
-                                                    Candidates
-                                                </Typography>
-                                            }
+                                            control={<Switch checked={showCandidateZones} onChange={(_, v) => setShowCandidateZones(v)} size="small" disabled={!showZones} />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem', color: !showZones ? 'text.disabled' : 'text.primary' }}>Candidates</Typography>}
                                         />
-
                                         <FormControlLabel
-                                            sx={{ mr: 0 }}
-                                            control={
-                                                <Switch
-                                                    checked={showSuppressedZones}
-                                                    onChange={(_, v) => setShowSuppressedZones(v)}
-                                                    size="small"
-                                                    disabled={!showZones}
-                                                />
-                                            }
-                                            label={
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight={600}
-                                                    color={!showZones ? 'text.disabled' : 'text.primary'}
-                                                >
-                                                    Suppressed
-                                                </Typography>
-                                            }
+                                            control={<Switch checked={showSuppressedZones} onChange={(_, v) => setShowSuppressedZones(v)} size="small" disabled={!showZones} />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem', color: !showZones ? 'text.disabled' : 'text.primary' }}>Suppressed</Typography>}
                                         />
-
                                         <FormControlLabel
-                                            sx={{ mr: 0 }}
-                                            control={
-                                                <Switch
-                                                    checked={zoomOnLoad}
-                                                    onChange={(_, v) => setZoomOnLoad(v)}
-                                                    size="small"
-                                                    color="warning"
-                                                />
-                                            }
-                                            label={
-                                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                                    <MyLocationIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                                    <Typography variant="body2" fontWeight={600}>
-                                                        Zoom on Load
-                                                    </Typography>
-                                                </Stack>
-                                            }
+                                            control={<Switch checked={zoomOnLoad} onChange={(_, v) => setZoomOnLoad(v)} size="small" color="warning" />}
+                                            label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem' }}>Zoom</Typography>}
                                         />
-                                    </Stack>
+                                    </Box>
 
                                     {/* Legend */}
-                                    <Box
-                                        sx={{
-                                            borderTop: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                                            pt: 1,
-                                        }}
-                                    >
-                                        <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 0.4 }}>
-                                            LEGEND
+                                    <Box sx={{ borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`, pt: 0.5 }}>
+                                        <Typography variant="caption" sx={{ fontSize: '0.575rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: alpha(theme.palette.text.secondary, 0.4), mb: 0.25, display: 'block' }}>
+                                            Legend
                                         </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.75} sx={{ mt: 0.6 }}>
-                                            <Chip
-                                                size="small"
-                                                label="High Risk"
-                                                sx={{
-                                                    height: 22,
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    bgcolor: alpha('#ef4444', 0.12),
-                                                    color: '#ef4444',
-                                                }}
-                                            />
-                                            <Chip
-                                                size="small"
-                                                label="Caution"
-                                                sx={{
-                                                    height: 22,
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    bgcolor: alpha('#eab308', 0.14),
-                                                    color: '#a16207',
-                                                }}
-                                            />
-                                            <Chip
-                                                size="small"
-                                                label="Low"
-                                                sx={{
-                                                    height: 22,
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    bgcolor: alpha('#22c55e', 0.14),
-                                                    color: '#16a34a',
-                                                }}
-                                            />
-                                            <Chip
-                                                size="small"
-                                                label="MANUAL"
-                                                variant="outlined"
-                                                sx={{
-                                                    height: 22,
-                                                    fontSize: 11,
-                                                    fontWeight: 800,
-                                                    borderColor: alpha(theme.palette.success.main, 0.5),
-                                                    color: theme.palette.success.main,
-                                                }}
-                                            />
+                                        <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" gap={0.4}>
+                                            <Chip size="small" label="High Risk"
+                                                sx={{ height: 18, fontSize: 8, fontWeight: 700, bgcolor: alpha('#ef4444', 0.08), color: '#ef4444' }} />
+                                            <Chip size="small" label="Caution"
+                                                sx={{ height: 18, fontSize: 8, fontWeight: 700, bgcolor: alpha('#eab308', 0.1), color: '#a16207' }} />
+                                            <Chip size="small" label="Low"
+                                                sx={{ height: 18, fontSize: 8, fontWeight: 700, bgcolor: alpha('#22c55e', 0.1), color: '#16a34a' }} />
+                                            <Chip size="small" label="Manual" variant="outlined"
+                                                sx={{ height: 18, fontSize: 8, fontWeight: 700, borderColor: alpha(theme.palette.success.main, 0.3), color: alpha(theme.palette.success.main, 0.7) }} />
                                         </Stack>
                                     </Box>
 
                                     {isAdmin && (
                                         <Stack
                                             direction="row"
-                                            spacing={1}
-                                            sx={{
-                                                pt: 0.8,
-                                                borderTop: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                                            }}
+                                            spacing={0.75}
+                                            sx={{ pt: 0.75, borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}` }}
                                         >
                                             <Button
                                                 variant="contained"
@@ -997,7 +856,7 @@ export const MapView: React.FC = () => {
                                                         setMockBusy(false);
                                                     }
                                                 }}
-                                                sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, flex: 1 }}
+                                                sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.7rem', flex: 1, boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
                                             >
                                                 {mockBusy ? 'Seeding…' : 'Seed Mock'}
                                             </Button>
@@ -1018,7 +877,7 @@ export const MapView: React.FC = () => {
                                                         setMockBusy(false);
                                                     }
                                                 }}
-                                                sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, flex: 1 }}
+                                                sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.7rem', flex: 1 }}
                                             >
                                                 Clear
                                             </Button>
@@ -1036,31 +895,36 @@ export const MapView: React.FC = () => {
                 if (pending) mapRef.current?.discardPendingMonitoringZone(pending.tempLayerId);
                 pendingMonitoringRef.current = null;
                 setNameDialogOpen(false);
-            }}>
-                <DialogTitle>Name monitoring zone</DialogTitle>
+            }} PaperProps={{ sx: { borderRadius: '14px' } }}>
+                <DialogTitle sx={{ pb: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>Name monitoring zone</Typography>
+                </DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
-                        Give this manually drawn zone a name. It will be saved and editable.
+                    <DialogContentText sx={{ fontSize: '0.8125rem', color: alpha(theme.palette.text.secondary, 0.7), mb: 1 }}>
+                        Give this zone a descriptive name. It will be saved and editable.
                     </DialogContentText>
                     <TextField
                         autoFocus
                         margin="dense"
                         label="Zone name"
                         fullWidth
+                        size="small"
                         value={newZoneName}
                         onChange={(e) => setNewZoneName(e.target.value)}
                         placeholder="e.g. Marina Beach"
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                     />
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 2.5, pb: 2 }}>
                     <Button onClick={() => {
                         const pending = pendingMonitoringRef.current;
                         if (pending) mapRef.current?.discardPendingMonitoringZone(pending.tempLayerId);
                         pendingMonitoringRef.current = null;
                         setNameDialogOpen(false);
-                    }}>Cancel</Button>
+                    }} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.6) }}>Cancel</Button>
                     <Button
                         variant="contained"
+                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 2.5, boxShadow: 'none' }}
                         onClick={async () => {
                             const pending = pendingMonitoringRef.current;
                             if (!pending) return;
@@ -1092,24 +956,26 @@ export const MapView: React.FC = () => {
                 <Box
                     sx={{
                         position: 'fixed',
-                        bottom: 24,
+                        bottom: 20,
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        bgcolor: 'white',
-                        px: 3,
-                        py: 1.5,
-                        borderRadius: '12px',
-                        boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.15)}`,
+                        bgcolor: alpha(theme.palette.background.paper, 0.95),
+                        backdropFilter: 'blur(12px)',
+                        px: 2.5,
+                        py: 1,
+                        borderRadius: '10px',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                        boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.1)}`,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1.5,
+                        gap: 1,
                         zIndex: 1000,
                     }}
                 >
                     <Box
                         sx={{
-                            width: 8,
-                            height: 8,
+                            width: 6,
+                            height: 6,
                             borderRadius: '50%',
                             bgcolor: 'primary.main',
                             animation: 'pulse 1.5s ease-in-out infinite',
@@ -1119,7 +985,7 @@ export const MapView: React.FC = () => {
                             },
                         }}
                     />
-                    <Typography variant="body2" fontWeight={600} color="text.secondary">
+                    <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.7), fontSize: '0.7rem' }}>
                         {loading ? 'Loading reports…' : 'Loading zones…'}
                     </Typography>
                 </Box>

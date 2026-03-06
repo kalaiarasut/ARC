@@ -111,13 +111,13 @@ export function ReportCard({ report, onClick }: ReportCardProps) {
 
   const getHazardColor = (type: string) => {
     const colors: Record<string, string> = {
-      'Tsunami': 'error',
-      'High Waves': 'secondary',
-      'Storm': 'info',
-      'Flood': 'primary',
-      'Other': 'default',
+      'Tsunami': '#ef4444',
+      'High Waves': '#0891b2',
+      'Storm': '#f59e0b',
+      'Flood': '#088395',
+      'Other': '#6b7280',
     };
-    return colors[type] || 'default';
+    return colors[type] || '#6b7280';
   };
 
   const getUrgencyColor = (level: string | null) => {
@@ -151,9 +151,13 @@ export function ReportCard({ report, onClick }: ReportCardProps) {
           <Box display="flex" gap={1} flexWrap="wrap" flex={1}>
             <Chip
               label={report.hazard_type}
-              color={getHazardColor(report.hazard_type) as any}
               size="small"
-              sx={{ fontWeight: 600, borderRadius: '6px' }}
+              sx={{
+                fontWeight: 600, borderRadius: '6px',
+                bgcolor: alpha(getHazardColor(report.hazard_type), 0.1),
+                color: getHazardColor(report.hazard_type),
+                border: 'none',
+              }}
             />
             {report.urgency_level && report.urgency_level !== 'Low' && (
               <Chip

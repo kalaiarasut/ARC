@@ -152,6 +152,15 @@ const getAdvisoryAbbrev = (category: string) => {
   return (letters.join('') || 'UP').slice(0, 2);
 };
 
+const getHazardTypeClass = (hazardType: string) => {
+  const t = hazardType.trim().toLowerCase();
+  if (t === 'tsunami') return 'tsunami';
+  if (t === 'storm') return 'storm';
+  if (t === 'high waves') return 'highwaves';
+  if (t === 'flood') return 'flood';
+  return 'other';
+};
+
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -185,11 +194,12 @@ const getMarkerIcon = (marker: ReportMarker) => {
   const urgency = marker.urgency ?? 'medium';
   const hazardType = marker.hazardType ?? 'Hazard';
   const variant = getUrgencyVariant(urgency);
+  const typeClass = getHazardTypeClass(hazardType);
   const label = getHazardAbbrev(hazardType);
 
   return L.divIcon({
     html: `
-      <div class="hazard-pin hazard-pin--${variant}" aria-label="${escapeHtml(hazardType)}">
+      <div class="hazard-pin hazard-pin--${typeClass} hazard-pin--urgency-${variant}" aria-label="${escapeHtml(hazardType)}">
         <div class="hazard-pin__pulse"></div>
         <div class="hazard-pin__body">
           <div class="hazard-pin__label">${escapeHtml(label)}</div>

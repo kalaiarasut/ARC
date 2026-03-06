@@ -36,8 +36,7 @@ import {
   Badge,
   Tooltip,
   Divider,
-  Switch,
-  FormControlLabel,
+
   Popover,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
@@ -495,14 +494,14 @@ export function Reports() {
   };
 
   const getHazardColor = (type: HazardType) => {
-    const colors = {
-      'Tsunami': 'error',
-      'High Waves': 'secondary',
-      'Storm': 'info',
-      'Flood': 'primary',
-      'Other': 'default',
+    const colors: Record<string, string> = {
+      'Tsunami': '#ef4444',
+      'High Waves': '#0891b2',
+      'Storm': '#f59e0b',
+      'Flood': '#088395',
+      'Other': '#6b7280',
     };
-    return colors[type] as any;
+    return colors[type] || '#6b7280';
   };
 
   const getUrgencyColor = (level: UrgencyLevel | null) => {
@@ -571,44 +570,64 @@ export function Reports() {
         }}
       >
         {/* Floating Actions Row */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, gap: 2 }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={autoRefreshEnabled}
-                  onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
-                  disabled={!isSupabaseConfigured()}
-                  size="small"
-                />
-              }
-              label={<Typography variant="body2" fontWeight={500} color="text.secondary">Auto-refresh</Typography>}
-              sx={{ mr: 1 }}
-            />
-            <Button
-              variant="text"
-              startIcon={<DownloadIcon />}
-              onClick={handleExportCsv}
-              disabled={loading || exporting || !isSupabaseConfigured()}
-              sx={{
-                color: 'text.secondary',
-                '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08) }
-              }}
-            >
-              Export CSV
-            </Button>
-          </Stack>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.75, gap: 1, alignItems: 'center' }}>
+          <Button
+            variant={autoRefreshEnabled ? 'contained' : 'outlined'}
+            size="small"
+            startIcon={<RefreshIcon sx={{ fontSize: '0.9rem !important', ...(autoRefreshEnabled ? { animation: 'spin 2s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } } : {}) }} />}
+            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+            disabled={!isSupabaseConfigured()}
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 1.5,
+              height: 30,
+              ...(autoRefreshEnabled ? {
+                bgcolor: alpha(theme.palette.success.main, 0.85),
+                color: 'white',
+                boxShadow: 'none',
+                '&:hover': { bgcolor: theme.palette.success.main, boxShadow: 'none' },
+              } : {
+                borderColor: alpha(theme.palette.grey[300], 0.8),
+                color: alpha(theme.palette.text.secondary, 0.7),
+                '&:hover': { borderColor: theme.palette.success.main, color: theme.palette.success.main, bgcolor: alpha(theme.palette.success.main, 0.04) },
+              }),
+            }}
+          >
+            {autoRefreshEnabled ? 'Live' : 'Auto-refresh'}
+          </Button>
+          <Button
+            variant="text"
+            size="small"
+            startIcon={<DownloadIcon sx={{ fontSize: '0.9rem !important' }} />}
+            onClick={handleExportCsv}
+            disabled={loading || exporting || !isSupabaseConfigured()}
+            sx={{
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              color: alpha(theme.palette.text.secondary, 0.6),
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 1.5,
+              height: 30,
+              '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.06) }
+            }}
+          >
+            Export CSV
+          </Button>
         </Box>
 
         {/* Search and Filter Bar */}
         <Box
           sx={{
-            p: 1,
-            mb: 1.5, // Reduced margin
-            borderRadius: '12px',
-            background: alpha(theme.palette.background.paper, 0.8),
-            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-            boxShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.04)}`,
+            p: 1.25,
+            mb: 1.5,
+            borderRadius: '14px',
+            background: theme.palette.background.paper,
+            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.04)}, 0 4px 16px ${alpha(theme.palette.common.black, 0.02)}`,
           }}
         >
           {/* Active Landmark Filter Badge */}
@@ -635,37 +654,37 @@ export function Reports() {
             </Box>
           )}
 
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, md: 8 }}>
+          <Grid container spacing={1.5} alignItems="center">
+            <Grid size={{ xs: 12, md: 'grow' }}>
               <TextField
                 fullWidth
                 placeholder="Search by description, location, or user name..."
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
                 onKeyPress={(e) => {
-                  // Removed Enter key handler for instant search (or you can keep it to force immediate search)
-                  if (e.key === 'Enter') {
-                    // Force refresh or just let debounce handle it? 
-                    // Let's keep it just in case user wants to force it.
-                    loadReports();
-                  }
+                  if (e.key === 'Enter') loadReports();
                 }}
+                size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
-                    bgcolor: alpha(theme.palette.grey[100], 0.5),
+                    borderRadius: '10px',
+                    bgcolor: alpha(theme.palette.grey[100], 0.4),
+                    fontSize: '0.875rem',
+                    '& fieldset': { borderColor: alpha(theme.palette.divider, 0.12) },
                     '&:hover': {
-                      bgcolor: alpha(theme.palette.grey[100], 0.8),
+                      bgcolor: alpha(theme.palette.grey[100], 0.7),
+                      '& fieldset': { borderColor: alpha(theme.palette.divider, 0.25) },
                     },
                     '&.Mui-focused': {
                       bgcolor: 'background.paper',
+                      '& fieldset': { borderColor: theme.palette.primary.main, borderWidth: '1.5px' },
                     },
                   },
                 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary' }} />
+                      <SearchIcon sx={{ color: alpha(theme.palette.text.secondary, 0.5), fontSize: '1.2rem' }} />
                     </InputAdornment>
                   ),
                   endAdornment: filters.searchQuery && (
@@ -673,64 +692,50 @@ export function Reports() {
                       <IconButton
                         size="small"
                         onClick={() => setFilters({ ...filters, searchQuery: '' })}
-                        sx={{
-                          color: 'text.secondary',
-                          '&:hover': { color: 'text.primary' },
-                        }}
+                        sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
                       >
-                        <CloseIcon fontSize="small" />
+                        <CloseIcon sx={{ fontSize: '1rem' }} />
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Stack direction="row" spacing={1.5}>
+            <Grid size="auto">
+              <Stack direction="row" spacing={1}>
                 <IconButton
                   onClick={loadReports}
                   disabled={loading}
                   sx={{
                     bgcolor: theme.palette.primary.main,
                     color: 'white',
-                    borderRadius: '12px',
-                    p: 1, // Smaller padding for lower height
-                    '&:hover': {
-                      bgcolor: theme.palette.primary.dark,
-                    },
-                    '&.Mui-disabled': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.5),
-                      color: 'white',
-                    },
+                    borderRadius: '10px',
+                    width: 38, height: 38,
+                    '&:hover': { bgcolor: theme.palette.primary.dark },
+                    '&.Mui-disabled': { bgcolor: alpha(theme.palette.primary.main, 0.4), color: 'white' },
                   }}
                 >
-                  <RefreshIcon />
+                  <RefreshIcon sx={{ fontSize: '1.2rem' }} />
                 </IconButton>
                 <Badge
                   badgeContent={getActiveFilterCount()}
                   color="error"
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      fontWeight: 700,
-                      fontSize: '0.7rem',
-                    },
-                  }}
+                  sx={{ '& .MuiBadge-badge': { fontWeight: 700, fontSize: '0.65rem', minWidth: 18, height: 18 } }}
                 >
                   <Button
                     variant="outlined"
-                    startIcon={<FilterIcon />}
+                    startIcon={<FilterIcon sx={{ fontSize: '1rem !important' }} />}
                     onClick={() => setFilterDrawerOpen(true)}
                     sx={{
-                      py: 0.75, // Lower height
+                      height: 38,
                       px: 2,
-                      borderRadius: '12px',
-                      borderColor: alpha(theme.palette.grey[400], 0.5),
+                      borderRadius: '10px',
+                      borderColor: alpha(theme.palette.grey[300], 0.8),
                       color: 'text.primary',
                       fontWeight: 600,
-                      '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        bgcolor: alpha(theme.palette.primary.main, 0.04),
-                      },
+                      fontSize: '0.8125rem',
+                      textTransform: 'none',
+                      '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.04) },
                     }}
                   >
                     Filters
@@ -738,16 +743,18 @@ export function Reports() {
                 </Badge>
                 <Button
                   variant={filters.dateFrom && filters.dateTo ? 'contained' : 'outlined'}
-                  startIcon={<CalendarMonthIcon />}
+                  startIcon={<CalendarMonthIcon sx={{ fontSize: '1rem !important' }} />}
                   onClick={openDayFilter}
                   sx={{
-                    py: 0.75,
+                    height: 38,
                     px: 2,
-                    borderRadius: '12px',
-                    borderColor: alpha(theme.palette.grey[400], 0.5),
+                    borderRadius: '10px',
+                    borderColor: alpha(theme.palette.grey[300], 0.8),
                     color: filters.dateFrom && filters.dateTo ? 'white' : 'text.primary',
                     fontWeight: 600,
-                    minWidth: 130,
+                    fontSize: '0.8125rem',
+                    textTransform: 'none',
+                    minWidth: 120,
                     '&:hover': {
                       borderColor: theme.palette.primary.main,
                       bgcolor: filters.dateFrom && filters.dateTo
@@ -771,26 +778,26 @@ export function Reports() {
             PaperProps={{
               sx: {
                 mt: 1,
-                width: 390,
-                borderRadius: '16px',
-                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-                boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.12)}`,
+                width: 380,
+                borderRadius: '14px',
+                border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
                 p: 1.5,
               },
             }}
           >
             <Stack spacing={1.5}>
               <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle1" fontWeight={700}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: '0.95rem' }}>
                   {format(selectedDay, 'MMMM yyyy')}
                 </Typography>
                 <Box display="flex" alignItems="center" gap={0.5}>
                   <IconButton
                     size="small"
                     onClick={() => setSelectedDay((prev) => addDays(prev, -7))}
-                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '10px' }}
+                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.12)}`, borderRadius: '8px', width: 30, height: 30 }}
                   >
-                    <NavigateBeforeIcon fontSize="small" />
+                    <NavigateBeforeIcon sx={{ fontSize: '1rem' }} />
                   </IconButton>
                   <IconButton
                     size="small"
@@ -799,25 +806,26 @@ export function Reports() {
                       setSelectedDay((prev) => addDays(prev, 7));
                     }}
                     disabled={!canGoNextWeek}
-                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '10px' }}
+                    sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.12)}`, borderRadius: '8px', width: 30, height: 30 }}
                   >
-                    <NavigateNextIcon fontSize="small" />
+                    <NavigateNextIcon sx={{ fontSize: '1rem' }} />
                   </IconButton>
                   <IconButton
                     size="small"
                     onClick={() => setShowDayCalendar((prev) => !prev)}
                     sx={{
-                      border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-                      borderRadius: '10px',
-                      color: showDayCalendar ? 'primary.main' : 'text.secondary',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+                      borderRadius: '8px',
+                      width: 30, height: 30,
+                      color: showDayCalendar ? 'primary.main' : alpha(theme.palette.text.secondary, 0.5),
                     }}
                   >
-                    <CalendarMonthIcon fontSize="small" />
+                    <CalendarMonthIcon sx={{ fontSize: '0.95rem' }} />
                   </IconButton>
                 </Box>
               </Box>
 
-              <Stack direction="row" spacing={0.8}>
+              <Stack direction="row" spacing={0.75}>
                 {weekDays.map((day, index) => {
                   const selected = isSameDay(day, selectedDay);
                   const disabled = day.getTime() > endOfDay(today).getTime();
@@ -832,23 +840,23 @@ export function Reports() {
                       sx={{
                         minWidth: 0,
                         flex: 1,
-                        py: 1,
+                        py: 0.75,
                         px: 0,
-                        borderRadius: '12px',
+                        borderRadius: '10px',
                         textTransform: 'none',
-                        border: `1px solid ${selected ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.divider, 0.6)}`,
-                        bgcolor: selected ? alpha(theme.palette.primary.main, 0.12) : 'background.paper',
+                        border: `1px solid ${selected ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.divider, 0.1)}`,
+                        bgcolor: selected ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                         color: selected ? 'primary.main' : 'text.primary',
                         '&:hover': {
-                          bgcolor: selected ? alpha(theme.palette.primary.main, 0.16) : alpha(theme.palette.grey[100], 0.8),
+                          bgcolor: selected ? alpha(theme.palette.primary.main, 0.14) : alpha(theme.palette.grey[100], 0.5),
                         },
                       }}
                     >
-                      <Stack alignItems="center" spacing={0.3}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, color: selected ? 'primary.main' : 'text.secondary' }}>
+                      <Stack alignItems="center" spacing={0.2}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.6rem', color: selected ? 'primary.main' : alpha(theme.palette.text.secondary, 0.6) }}>
                           {shortDayNames[index]}
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
                           {day.getDate()}
                         </Typography>
                       </Stack>
@@ -883,20 +891,22 @@ export function Reports() {
                     setSelectedDay(now);
                     applyDayFilter(now);
                   }}
+                  sx={{ fontSize: '0.75rem', textTransform: 'none', fontWeight: 600 }}
                 >
                   Today
                 </Button>
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={0.75}>
                   <Button
                     size="small"
                     color="inherit"
                     onClick={() => {
                       clearDayFilter();
                     }}
+                    sx={{ fontSize: '0.75rem', textTransform: 'none', fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.6) }}
                   >
                     Clear
                   </Button>
-                  <Button size="small" variant="contained" onClick={closeDayFilter}>
+                  <Button size="small" variant="contained" onClick={closeDayFilter} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 2, boxShadow: 'none' }}>
                     Done
                   </Button>
                 </Stack>
@@ -907,7 +917,7 @@ export function Reports() {
 
         {/* Error Alert */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: '10px', fontSize: '0.8125rem' }} onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
@@ -915,11 +925,11 @@ export function Reports() {
         {/* Data Table */}
         <Box
           sx={{
-            borderRadius: '20px',
+            borderRadius: '16px',
             overflow: 'hidden',
-            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
             bgcolor: 'background.paper',
-            boxShadow: `0 4px 24px ${alpha(theme.palette.common.black, 0.06)}`,
+            boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.04)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.02)}`,
             flex: 1,
             minHeight: 0,
             display: 'flex',
@@ -933,24 +943,24 @@ export function Reports() {
               sx={{
                 tableLayout: 'fixed',
                 '& .MuiTableCell-root': {
-                  py: 1,
+                  py: 1.125,
                   px: 1.5,
                   lineHeight: 1.4,
-                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
                   overflow: 'hidden',
                 },
                 '& .MuiTableCell-head': {
-                  py: 1.5,
-                  fontSize: '0.7rem',
+                  py: 1.25,
+                  fontSize: '0.6875rem',
                   fontWeight: 700,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: theme.palette.text.secondary,
-                  bgcolor: alpha(theme.palette.grey[50], 0.95),
-                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                  letterSpacing: '0.06em',
+                  color: alpha(theme.palette.text.secondary, 0.7),
+                  bgcolor: alpha(theme.palette.grey[50], 0.6),
+                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                 },
-                '& .MuiChip-root': { height: 24 },
-                '& .MuiIconButton-root': { p: 0.5 },
+                '& .MuiChip-root': { height: 22 },
+                '& .MuiIconButton-root': { p: 0.4 },
               }}
             >
               <TableHead>
@@ -968,25 +978,25 @@ export function Reports() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                      <CircularProgress />
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, border: 'none' }}>
+                      <CircularProgress size={28} thickness={3} />
+                      <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: alpha(theme.palette.text.secondary, 0.5) }}>
                         Loading reports...
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                      <Stack spacing={1} alignItems="center">
-                        <Typography variant="body1" color="text.secondary">
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, border: 'none' }}>
+                      <Stack spacing={1.5} alignItems="center">
+                        <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>
                           No reports found matching your criteria
                         </Typography>
                         <Stack direction="row" spacing={1}>
-                          <Button size="small" variant="outlined" onClick={handleResetFilters}>
+                          <Button size="small" variant="outlined" onClick={handleResetFilters} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}>
                             Clear filters
                           </Button>
-                          <Button size="small" variant="contained" onClick={loadReports}>
+                          <Button size="small" variant="contained" onClick={loadReports} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', boxShadow: 'none' }}>
                             Refresh
                           </Button>
                         </Stack>
@@ -1009,74 +1019,73 @@ export function Reports() {
                         cursor: 'pointer',
                         position: 'relative',
                         bgcolor: report.is_high_risk
-                          ? alpha(theme.palette.error.main, 0.04)
+                          ? alpha(theme.palette.error.main, 0.03)
                           : isVerified
-                            ? alpha(theme.palette.success.main, 0.02)
+                            ? alpha(theme.palette.success.main, 0.015)
                             : isRejected
-                              ? alpha(theme.palette.error.main, 0.015)
+                              ? alpha(theme.palette.error.main, 0.012)
                               : index % 2 === 0
                                 ? 'transparent'
-                                : alpha(theme.palette.grey[50], 0.5),
-                        opacity: (isVerified || isResolved) ? 0.65 : 1,
-                        transition: 'all 0.2s ease',
+                                : alpha(theme.palette.grey[50], 0.35),
+                        opacity: (isVerified || isResolved) ? 0.55 : 1,
+                        transition: 'all 0.15s ease',
                         '&:hover': {
                           opacity: 1,
-                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
                         },
                         borderLeft: report.is_high_risk
                           ? `3px solid ${theme.palette.error.main}`
                           : isVerified
-                            ? `3px solid ${theme.palette.success.main}`
+                            ? `3px solid ${alpha(theme.palette.success.main, 0.5)}`
                             : isRejected
-                              ? `3px solid ${theme.palette.error.light}`
+                              ? `3px solid ${alpha(theme.palette.error.main, 0.35)}`
                               : isResolved
-                                ? `3px solid ${theme.palette.info.main}`
+                                ? `3px solid ${alpha(theme.palette.info.main, 0.4)}`
                                 : '3px solid transparent',
                       }}
                     >
                       {/* Hazard Type + Risk + Status indicator */}
                       <TableCell>
-                        <Stack spacing={0.5} alignItems="flex-start">
+                        <Stack spacing={0.4} alignItems="flex-start">
                           <Stack direction="row" spacing={0.5} alignItems="center">
                             <Chip
                               label={report.hazard_type}
-                              color={getHazardColor(report.hazard_type)}
                               size="small"
-                              sx={{ fontWeight: 600, maxWidth: '100%' }}
+                              sx={{
+                                fontWeight: 600, fontSize: '0.6875rem', height: 22,
+                                bgcolor: alpha(getHazardColor(report.hazard_type), 0.1),
+                                color: getHazardColor(report.hazard_type),
+                                border: 'none',
+                              }}
                             />
                             {report.is_high_risk && (
-                              <Tooltip title="High Risk">
-                                <WarningIcon sx={{ fontSize: '0.9rem', color: theme.palette.error.main }} />
+                              <Tooltip title="High Risk" arrow>
+                                <WarningIcon sx={{ fontSize: '0.85rem', color: theme.palette.error.main, opacity: 0.85 }} />
                               </Tooltip>
                             )}
                           </Stack>
-                          <Stack direction="row" spacing={0.5} alignItems="center">
+                          <Stack direction="row" spacing={0.4} alignItems="center">
                             <Box
                               sx={{
-                                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                                bgcolor: isPending ? theme.palette.grey[400]
+                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                bgcolor: isPending ? alpha(theme.palette.grey[500], 0.6)
                                   : isVerified ? theme.palette.success.main
                                     : isRejected ? theme.palette.error.main
                                       : theme.palette.info.main,
-                                boxShadow: isPending ? 'none' : `0 0 4px ${
-                                  isVerified ? alpha(theme.palette.success.main, 0.4)
-                                    : isRejected ? alpha(theme.palette.error.main, 0.4)
-                                      : alpha(theme.palette.info.main, 0.4)
-                                }`,
                               }}
                             />
                             <Typography variant="caption" sx={{
-                              fontSize: '0.625rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
-                              color: isPending ? theme.palette.text.secondary
-                                : isVerified ? theme.palette.success.main
-                                  : isRejected ? theme.palette.error.main
-                                    : theme.palette.info.main,
+                              fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+                              color: isPending ? alpha(theme.palette.text.secondary, 0.6)
+                                : isVerified ? alpha(theme.palette.success.main, 0.8)
+                                  : isRejected ? alpha(theme.palette.error.main, 0.75)
+                                    : alpha(theme.palette.info.main, 0.8),
                             }}>
                               {report.status}
                             </Typography>
                             {suspiciousFlags.length > 0 && (
-                              <Tooltip title={suspiciousFlags.join(', ')}>
-                                <WarningIcon sx={{ fontSize: '0.75rem', color: theme.palette.warning.main }} />
+                              <Tooltip title={suspiciousFlags.join(' · ')} arrow>
+                                <WarningIcon sx={{ fontSize: '0.7rem', color: alpha(theme.palette.warning.main, 0.75) }} />
                               </Tooltip>
                             )}
                           </Stack>
@@ -1085,28 +1094,28 @@ export function Reports() {
 
                       {/* Description */}
                       <TableCell>
-                        <Typography variant="body2" noWrap sx={{ fontSize: '0.8125rem' }}>
+                        <Typography variant="body2" noWrap sx={{ fontSize: '0.8rem', color: alpha(theme.palette.text.primary, 0.85) }}>
                           {report.description}
                         </Typography>
                       </TableCell>
 
                       {/* Location */}
                       <TableCell>
-                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                        <Stack direction="row" spacing={0.4} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.675rem', color: alpha(theme.palette.text.secondary, 0.7), fontFamily: '"JetBrains Mono", "Fira Code", monospace', fontWeight: 500 }}>
                             {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
                           </Typography>
-                          <Tooltip title="Open in Live Map">
+                          <Tooltip title="Open in Live Map" arrow>
                             <IconButton
                               size="small"
-                              color="primary"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openInLiveMap(report);
                               }}
                               aria-label="Open in Live Map"
+                              sx={{ color: alpha(theme.palette.primary.main, 0.6), '&:hover': { color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.06) } }}
                             >
-                              <PlaceIcon sx={{ fontSize: '1rem' }} />
+                              <PlaceIcon sx={{ fontSize: '0.9rem' }} />
                             </IconButton>
                           </Tooltip>
                         </Stack>
@@ -1117,75 +1126,91 @@ export function Reports() {
                         {report.urgency_level ? (
                           <Chip
                             label={report.urgency_level}
-                            color={getUrgencyColor(report.urgency_level)}
                             size="small"
-                            variant="outlined"
-                            sx={{ fontWeight: 600, fontSize: '0.6875rem' }}
+                            sx={{
+                              fontWeight: 600, fontSize: '0.65rem', height: 20,
+                              bgcolor: report.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08)
+                                : report.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08)
+                                  : alpha(theme.palette.success.main, 0.08),
+                              color: report.urgency_level === 'High' ? theme.palette.error.main
+                                : report.urgency_level === 'Medium' ? theme.palette.warning.dark
+                                  : theme.palette.success.dark,
+                              border: 'none',
+                            }}
                           />
                         ) : (
-                          <Typography variant="caption" color="text.secondary">—</Typography>
+                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.4) }}>—</Typography>
                         )}
                       </TableCell>
 
                       {/* People at risk */}
                       <TableCell align="center">
                         {report.people_at_risk ? (
-                          <Tooltip title="People at Risk">
+                          <Tooltip title="People at Risk" arrow>
                             <Chip
-                              icon={<PeopleIcon sx={{ fontSize: '0.85rem !important' }} />}
+                              icon={<PeopleIcon sx={{ fontSize: '0.75rem !important' }} />}
                               label={report.people_at_risk}
-                              color="error"
                               size="small"
-                              variant="outlined"
-                              sx={{ fontSize: '0.6875rem' }}
+                              sx={{
+                                fontSize: '0.65rem', height: 20, fontWeight: 600,
+                                bgcolor: alpha(theme.palette.error.main, 0.06),
+                                color: theme.palette.error.main,
+                                border: 'none',
+                                '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.7) },
+                              }}
                             />
                           </Tooltip>
                         ) : (
-                          <Typography variant="caption" color="text.secondary">—</Typography>
+                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.3) }}>—</Typography>
                         )}
                       </TableCell>
 
                       {/* Media */}
                       <TableCell align="center">
                         {report.media_urls && report.media_urls.length > 0 ? (
-                          <Tooltip title="View Media">
+                          <Tooltip title="View Media" arrow>
                             <IconButton
                               size="small"
-                              color="primary"
                                onClick={(e) => {
                                  e.stopPropagation();
                                  setSelectedReport(report);
                                  setDetailDialogOpen(true);
                                }}
+                               sx={{ color: alpha(theme.palette.primary.main, 0.6), '&:hover': { color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.06) } }}
                             >
-                              <Badge badgeContent={report.media_urls.length} color="primary">
+                              <Badge badgeContent={report.media_urls.length} color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}>
                                 {report.media_urls.some(looksLikeVideo) ? (
-                                  <VideoIcon sx={{ fontSize: '1.1rem' }} />
+                                  <VideoIcon sx={{ fontSize: '1rem' }} />
                                 ) : report.media_urls.some(looksLikeAudio) ? (
-                                  <AudioIcon sx={{ fontSize: '1.1rem' }} />
+                                  <AudioIcon sx={{ fontSize: '1rem' }} />
                                 ) : (
-                                  <ImageIcon sx={{ fontSize: '1.1rem' }} />
+                                  <ImageIcon sx={{ fontSize: '1rem' }} />
                                 )}
                               </Badge>
                             </IconButton>
                           </Tooltip>
                         ) : (
-                          <Typography variant="caption" color="text.secondary">—</Typography>
+                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.3) }}>—</Typography>
                         )}
                       </TableCell>
 
                       {/* Date */}
                       <TableCell>
-                        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', fontSize: '0.6875rem' }}>
-                          {format(new Date(report.created_at), 'MMM dd, yyyy HH:mm')}
-                        </Typography>
+                        <Stack spacing={0}>
+                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.6875rem', color: alpha(theme.palette.text.primary, 0.75), fontWeight: 500 }}>
+                            {format(new Date(report.created_at), 'MMM dd, yyyy')}
+                          </Typography>
+                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.6rem', color: alpha(theme.palette.text.secondary, 0.5) }}>
+                            {format(new Date(report.created_at), 'HH:mm')}
+                          </Typography>
+                        </Stack>
                       </TableCell>
 
                       {/* Actions */}
                       <TableCell align="center">
                         {isPending ? (
                           <Stack direction="row" spacing={0.5} justifyContent="center">
-                            <Tooltip title="Verify">
+                            <Tooltip title="Verify" arrow>
                               <span>
                                 <IconButton
                                   size="small"
@@ -1197,16 +1222,18 @@ export function Reports() {
                                   aria-label="Verify report"
                                   sx={{
                                     color: theme.palette.success.main,
-                                    bgcolor: alpha(theme.palette.success.main, 0.08),
-                                    '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.16) },
-                                    width: 30, height: 30,
+                                    bgcolor: alpha(theme.palette.success.main, 0.06),
+                                    border: `1px solid ${alpha(theme.palette.success.main, 0.15)}`,
+                                    '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.14), borderColor: alpha(theme.palette.success.main, 0.3) },
+                                    width: 28, height: 28,
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
-                                  {statusUpdatingId === report.id ? <CircularProgress size={16} /> : <CheckCircleIcon sx={{ fontSize: '1rem' }} />}
+                                  {statusUpdatingId === report.id ? <CircularProgress size={14} /> : <CheckCircleIcon sx={{ fontSize: '0.9rem' }} />}
                                 </IconButton>
                               </span>
                             </Tooltip>
-                            <Tooltip title="Reject">
+                            <Tooltip title="Reject" arrow>
                               <span>
                                 <IconButton
                                   size="small"
@@ -1217,13 +1244,15 @@ export function Reports() {
                                   }}
                                   aria-label="Reject report"
                                   sx={{
-                                    color: theme.palette.error.main,
-                                    bgcolor: alpha(theme.palette.error.main, 0.08),
-                                    '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.16) },
-                                    width: 30, height: 30,
+                                    color: alpha(theme.palette.error.main, 0.7),
+                                    bgcolor: alpha(theme.palette.error.main, 0.04),
+                                    border: `1px solid ${alpha(theme.palette.error.main, 0.1)}`,
+                                    '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), borderColor: alpha(theme.palette.error.main, 0.25), color: theme.palette.error.main },
+                                    width: 28, height: 28,
+                                    transition: 'all 0.15s ease',
                                   }}
                                 >
-                                  {statusUpdatingId === report.id ? <CircularProgress size={16} /> : <CancelIcon sx={{ fontSize: '1rem' }} />}
+                                  {statusUpdatingId === report.id ? <CircularProgress size={14} /> : <CancelIcon sx={{ fontSize: '0.9rem' }} />}
                                 </IconButton>
                               </span>
                             </Tooltip>
@@ -1232,15 +1261,15 @@ export function Reports() {
                           <Chip
                             label={report.status.toUpperCase()}
                             size="small"
-                            variant="outlined"
                             sx={{
-                              fontWeight: 600, fontSize: '0.5625rem', height: 20,
-                              color: isVerified ? theme.palette.success.main
-                                : isRejected ? theme.palette.error.main
-                                  : theme.palette.info.main,
-                              borderColor: isVerified ? alpha(theme.palette.success.main, 0.3)
-                                : isRejected ? alpha(theme.palette.error.main, 0.3)
-                                  : alpha(theme.palette.info.main, 0.3),
+                              fontWeight: 600, fontSize: '0.55rem', height: 18,
+                              bgcolor: isVerified ? alpha(theme.palette.success.main, 0.08)
+                                : isRejected ? alpha(theme.palette.error.main, 0.06)
+                                  : alpha(theme.palette.info.main, 0.08),
+                              color: isVerified ? alpha(theme.palette.success.main, 0.8)
+                                : isRejected ? alpha(theme.palette.error.main, 0.65)
+                                  : alpha(theme.palette.info.main, 0.8),
+                              border: 'none',
                             }}
                           />
                         )}
@@ -1259,12 +1288,13 @@ export function Reports() {
               justifyContent: 'space-between',
               alignItems: 'center',
               px: 2,
-              py: 1,
-              borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`
+              py: 0.75,
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
+              bgcolor: alpha(theme.palette.grey[50], 0.3),
             }}
           >
-            <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-              Total: {totalCount.toLocaleString()} Reports
+            <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.75rem' }}>
+              {totalCount.toLocaleString()} reports
             </Typography>
             <TablePagination
               component="div"
@@ -1277,7 +1307,7 @@ export function Reports() {
                 setPage(0);
               }}
               rowsPerPageOptions={[25, 50, 100]}
-              sx={{ border: 'none' }}
+              sx={{ border: 'none', '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', color: alpha(theme.palette.text.secondary, 0.7) } }}
             />
           </Box>
         </Box>
@@ -1287,98 +1317,106 @@ export function Reports() {
           anchor="right"
           open={filterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          PaperProps={{ sx: { width: 400 } }}
+          PaperProps={{ sx: { width: 380, borderRadius: '16px 0 0 16px', border: 'none', boxShadow: `0 8px 40px ${alpha(theme.palette.common.black, 0.12)}` } }}
         >
           <Box sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h6" fontWeight={700}>
-                Advanced Filters
-              </Typography>
-              <IconButton onClick={() => setFilterDrawerOpen(false)}>
-                <CloseIcon />
+              <Box>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.05rem' }}>
+                  Filters
+                </Typography>
+                <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.6) }}>
+                  Narrow down your reports
+                </Typography>
+              </Box>
+              <IconButton onClick={() => setFilterDrawerOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) } }}>
+                <CloseIcon sx={{ fontSize: '1.1rem' }} />
               </IconButton>
             </Box>
 
-            <Stack spacing={3}>
+            <Stack spacing={2.5}>
               {/* Hazard Types */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Hazard Types</InputLabel>
                 <Select
                   multiple
                   value={filters.hazardTypes || []}
                   onChange={(e) => setFilters({ ...filters, hazardTypes: e.target.value as HazardType[] })}
                   input={<OutlinedInput label="Hazard Types" />}
+                  sx={{ borderRadius: '10px' }}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
+                        <Chip key={value} label={value} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
                       ))}
                     </Box>
                   )}
                 >
                   {HAZARD_TYPES.map((type) => (
                     <MenuItem key={type} value={type}>
-                      <Checkbox checked={(filters.hazardTypes || []).indexOf(type) > -1} />
-                      <ListItemText primary={type} />
+                      <Checkbox checked={(filters.hazardTypes || []).indexOf(type) > -1} size="small" />
+                      <ListItemText primary={type} primaryTypographyProps={{ fontSize: '0.8125rem' }} />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
               {/* Statuses */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
                   multiple
                   value={filters.statuses || []}
                   onChange={(e) => setFilters({ ...filters, statuses: e.target.value as ReportStatus[] })}
                   input={<OutlinedInput label="Status" />}
+                  sx={{ borderRadius: '10px' }}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
-                        <Chip key={value} label={value.toUpperCase()} size="small" />
+                        <Chip key={value} label={value.toUpperCase()} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
                       ))}
                     </Box>
                   )}
                 >
                   {STATUSES.map((status) => (
                     <MenuItem key={status} value={status}>
-                      <Checkbox checked={(filters.statuses || []).indexOf(status) > -1} />
-                      <ListItemText primary={status.toUpperCase()} />
+                      <Checkbox checked={(filters.statuses || []).indexOf(status) > -1} size="small" />
+                      <ListItemText primary={status.toUpperCase()} primaryTypographyProps={{ fontSize: '0.8125rem' }} />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
               {/* Urgency Levels */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Urgency Level</InputLabel>
                 <Select
                   multiple
                   value={filters.urgencyLevels || []}
                   onChange={(e) => setFilters({ ...filters, urgencyLevels: e.target.value as UrgencyLevel[] })}
                   input={<OutlinedInput label="Urgency Level" />}
+                  sx={{ borderRadius: '10px' }}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
+                        <Chip key={value} label={value} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
                       ))}
                     </Box>
                   )}
                 >
                   {URGENCY_LEVELS.map((level) => (
                     <MenuItem key={level} value={level}>
-                      <Checkbox checked={(filters.urgencyLevels || []).indexOf(level) > -1} />
-                      <ListItemText primary={level} />
+                      <Checkbox checked={(filters.urgencyLevels || []).indexOf(level) > -1} size="small" />
+                      <ListItemText primary={level} primaryTypographyProps={{ fontSize: '0.8125rem' }} />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
-              <Divider />
+              <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.06) }} />
 
               {/* Risk Level */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Risk Level</InputLabel>
                 <Select
                   value={filters.isHighRisk === null ? 'all' : filters.isHighRisk ? 'high' : 'normal'}
@@ -1390,6 +1428,7 @@ export function Reports() {
                     });
                   }}
                   label="Risk Level"
+                  sx={{ borderRadius: '10px' }}
                 >
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="high">High Risk Only</MenuItem>
@@ -1398,7 +1437,7 @@ export function Reports() {
               </FormControl>
 
               {/* Media Filter */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Media Attachment</InputLabel>
                 <Select
                   value={filters.hasMedia === null ? 'all' : filters.hasMedia ? 'with' : 'without'}
@@ -1410,6 +1449,7 @@ export function Reports() {
                     });
                   }}
                   label="Media Attachment"
+                  sx={{ borderRadius: '10px' }}
                 >
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="with">With Media Only</MenuItem>
@@ -1417,15 +1457,16 @@ export function Reports() {
                 </Select>
               </FormControl>
 
-              <Divider />
+              <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.06) }} />
 
               {/* Landmark Filter */}
-              <FormControl fullWidth>
+              <FormControl fullWidth size="small">
                 <InputLabel>Filter by Landmark</InputLabel>
                 <Select
                   value={filters.landmarkId || ''}
                   onChange={(e) => setFilters({ ...filters, landmarkId: e.target.value || null })}
                   label="Filter by Landmark"
+                  sx={{ borderRadius: '10px' }}
                 >
                   <MenuItem value="">
                     <em>All Locations</em>
@@ -1433,7 +1474,7 @@ export function Reports() {
                   {landmarks.map((landmark) => (
                     <MenuItem key={landmark.id} value={landmark.id}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        <PlaceIcon fontSize="small" />
+                        <PlaceIcon sx={{ fontSize: '1rem' }} />
                         {landmark.name}
                       </Box>
                     </MenuItem>
@@ -1444,26 +1485,30 @@ export function Reports() {
               {filters.landmarkId && (
                 <TextField
                   fullWidth
+                  size="small"
                   label="Search Radius"
                   type="number"
                   value={filters.landmarkRadius || 5000}
                   onChange={(e) => setFilters({ ...filters, landmarkRadius: parseInt(e.target.value) })}
                   inputProps={{ min: 100, step: 100 }}
                   helperText="Radius in meters from the landmark"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                   InputProps={{
-                    endAdornment: <InputAdornment position="end">meters</InputAdornment>,
+                    endAdornment: <InputAdornment position="end"><Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.5) }}>meters</Typography></InputAdornment>,
                   }}
                 />
               )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   size="small"
-                  startIcon={<PlaceIcon fontSize="small" />}
+                  startIcon={<PlaceIcon sx={{ fontSize: '0.85rem !important' }} />}
                   onClick={() => setLandmarkManagerOpen(true)}
                   sx={{
-                    fontSize: '0.8125rem',
-                    color: 'text.secondary',
+                    fontSize: '0.75rem',
+                    color: alpha(theme.palette.text.secondary, 0.6),
+                    textTransform: 'none',
+                    fontWeight: 600,
                     '&:hover': { color: 'primary.main', bgcolor: 'transparent' }
                   }}
                 >
@@ -1471,18 +1516,19 @@ export function Reports() {
                 </Button>
               </Box>
 
-              <Divider />
+              <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.06) }} />
 
-              <Alert severity="info" sx={{ borderRadius: 2 }}>
+              <Alert severity="info" sx={{ borderRadius: '10px', fontSize: '0.75rem', '& .MuiAlert-icon': { fontSize: '1.1rem' } }}>
                 Day-based date filtering is available from the <strong>Day Filter</strong> button in the top bar.
               </Alert>
             </Stack>
 
-            <Box mt={4} display="flex" gap={2}>
+            <Box mt={3} display="flex" gap={1.5}>
               <Button
                 fullWidth
                 variant="outlined"
                 onClick={handleResetFilters}
+                sx={{ borderRadius: '10px', borderColor: alpha(theme.palette.grey[300], 0.8), color: 'text.secondary', textTransform: 'none', fontWeight: 600, py: 1 }}
               >
                 Reset All
               </Button>
@@ -1490,6 +1536,7 @@ export function Reports() {
                 fullWidth
                 variant="contained"
                 onClick={handleApplyFilters}
+                sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, py: 1, boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
               >
                 Apply Filters
               </Button>
@@ -1503,58 +1550,59 @@ export function Reports() {
           onClose={() => setDetailDialogOpen(false)}
           maxWidth="lg"
           fullWidth
+          PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden' } }}
         >
           {selectedReport && (
             <>
-              <DialogTitle>
+              <DialogTitle sx={{ pb: 1.5 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.05rem' }}>
                     Report Details
                   </Typography>
-                  <IconButton onClick={() => setDetailDialogOpen(false)}>
-                    <CloseIcon />
+                  <IconButton onClick={() => setDetailDialogOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) } }}>
+                    <CloseIcon sx={{ fontSize: '1.1rem' }} />
                   </IconButton>
                 </Box>
               </DialogTitle>
-              <DialogContent dividers>
-                <Stack spacing={3}>
+              <DialogContent dividers sx={{ borderColor: alpha(theme.palette.divider, 0.08) }}>
+                <Stack spacing={2.5}>
                   {/* Status and Risk Badges */}
-                  <Box display="flex" gap={1} flexWrap="wrap">
-                    <Chip label={selectedReport.status.toUpperCase()} color={getStatusColor(selectedReport.status)} />
-                    <Chip label={selectedReport.hazard_type} color={getHazardColor(selectedReport.hazard_type)} />
+                  <Box display="flex" gap={0.75} flexWrap="wrap">
+                    <Chip label={selectedReport.status.toUpperCase()} color={getStatusColor(selectedReport.status)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Chip label={selectedReport.hazard_type} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', bgcolor: alpha(getHazardColor(selectedReport.hazard_type), 0.1), color: getHazardColor(selectedReport.hazard_type), border: 'none' }} />
                     {selectedReport.is_high_risk && (
-                      <Chip icon={<WarningIcon />} label="HIGH RISK" color="error" sx={{ fontWeight: 700 }} />
+                      <Chip icon={<WarningIcon sx={{ fontSize: '0.85rem !important' }} />} label="HIGH RISK" color="error" size="small" sx={{ fontWeight: 700, fontSize: '0.7rem' }} />
                     )}
                     {selectedReport.urgency_level && (
-                      <Chip label={selectedReport.urgency_level} color={getUrgencyColor(selectedReport.urgency_level)} variant="outlined" />
+                      <Chip label={selectedReport.urgency_level} color={getUrgencyColor(selectedReport.urgency_level)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', bgcolor: 'transparent' }} variant="outlined" />
                     )}
                   </Box>
 
                   {/* Description */}
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                       Description
                     </Typography>
-                    <Paper variant="outlined" sx={{ p: 2 }}>
-                      <Typography variant="body1">{selectedReport.description}</Typography>
+                    <Paper variant="outlined" sx={{ p: 2, mt: 0.5, borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>{selectedReport.description}</Typography>
                     </Paper>
                   </Box>
 
                   {/* Location */}
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Latitude
                       </Typography>
-                      <Typography variant="body1" fontWeight={600}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
                         {selectedReport.latitude.toFixed(6)}°N
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Longitude
                       </Typography>
-                      <Typography variant="body1" fontWeight={600}>
+                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
                         {selectedReport.longitude.toFixed(6)}°E
                       </Typography>
                     </Grid>
@@ -1563,33 +1611,35 @@ export function Reports() {
                   {/* Risk Info */}
                   {selectedReport.people_at_risk && selectedReport.people_at_risk > 0 && (
                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         People at Risk
                       </Typography>
-                      <Chip
-                        icon={<PeopleIcon />}
-                        label={`${selectedReport.people_at_risk} people`}
-                        color="error"
-                        variant="outlined"
-                      />
+                      <Box sx={{ mt: 0.5 }}>
+                        <Chip
+                          icon={<PeopleIcon sx={{ fontSize: '0.9rem !important' }} />}
+                          label={`${selectedReport.people_at_risk} people`}
+                          size="small"
+                          sx={{ fontWeight: 600, bgcolor: alpha(theme.palette.error.main, 0.06), color: theme.palette.error.main, border: 'none', '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.7) } }}
+                        />
+                      </Box>
                     </Box>
                   )}
 
                   {/* User Info */}
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Reporter Name
                       </Typography>
-                      <Typography variant="body1">
+                      <Typography variant="body2" sx={{ mt: 0.25 }}>
                         {selectedReport.user_name || 'Anonymous'}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Phone Number
                       </Typography>
-                      <Typography variant="body1" fontFamily="monospace">
+                      <Typography variant="body2" sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
                         {safeMaskPhone(selectedReport.user_phone)}
                       </Typography>
                     </Grid>
@@ -1598,18 +1648,18 @@ export function Reports() {
                   {/* Timestamps */}
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Event Time
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ mt: 0.25 }}>
                         {format(new Date(selectedReport.event_time), 'PPpp')}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Reported At
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ mt: 0.25 }}>
                         {format(new Date(selectedReport.created_at), 'PPpp')}
                       </Typography>
                     </Grid>
@@ -1618,14 +1668,14 @@ export function Reports() {
                   {/* Media */}
                   {selectedReport.media_urls && selectedReport.media_urls.length > 0 && (
                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
                         Media Attachments ({selectedReport.media_urls.length})
                       </Typography>
-                      <Grid container spacing={2}>
+                      <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                         {selectedReport.media_urls.map((url, idx) => (
                           <Grid size={{ xs: 12, md: looksLikeAudio(url) ? 12 : 6 }} key={idx}>
-                            <Box sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                            <Box sx={{ p: 1.5, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: '10px', bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
+                              <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.5), mb: 1, display: 'block', fontSize: '0.65rem' }}>
                                 Attachment {idx + 1}
                               </Typography>
                               {looksLikeVideo(url) ? (
@@ -1643,33 +1693,33 @@ export function Reports() {
                   )}
 
                   {/* Audit Trail Section */}
-                  <Divider />
+                  <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.06) }} />
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <HistoryIcon fontSize="small" /> Audit Trail
+                    <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <HistoryIcon sx={{ fontSize: '0.85rem' }} /> Audit Trail
                     </Typography>
                     {loadingAudit ? (
-                      <CircularProgress size={24} sx={{ mt: 1 }} />
+                      <CircularProgress size={20} sx={{ mt: 1 }} />
                     ) : auditLogs.length === 0 ? (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', fontStyle: 'italic', color: alpha(theme.palette.text.secondary, 0.5) }}>
                         No status changes recorded yet.
                       </Typography>
                     ) : (
-                      <Stack spacing={1} sx={{ mt: 1 }}>
+                      <Stack spacing={0.75} sx={{ mt: 1 }}>
                         {auditLogs.map((log) => (
-                          <Paper key={log.id} variant="outlined" sx={{ p: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Paper key={log.id} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.grey[50], 0.2) }}>
                             <Box>
-                              <Typography variant="body2" fontWeight={600}>
+                              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>
                                 {log.admin_email}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" sx={{ display: 'block', color: alpha(theme.palette.text.secondary, 0.5), fontSize: '0.65rem' }}>
                                 {format(new Date(log.changed_at), 'PPpp')}
                               </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Chip size="small" variant="outlined" label={log.old_status.toUpperCase()} sx={{ fontSize: '0.7rem' }} />
-                              <NavigateNextIcon fontSize="small" color="action" />
-                              <Chip size="small" label={log.new_status.toUpperCase()} color={getStatusColor(log.new_status)} sx={{ fontSize: '0.7rem' }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Chip size="small" variant="outlined" label={log.old_status.toUpperCase()} sx={{ fontSize: '0.6rem', height: 20, borderColor: alpha(theme.palette.divider, 0.2) }} />
+                              <NavigateNextIcon sx={{ fontSize: '0.85rem', color: alpha(theme.palette.text.secondary, 0.35) }} />
+                              <Chip size="small" label={log.new_status.toUpperCase()} color={getStatusColor(log.new_status)} sx={{ fontSize: '0.6rem', height: 20 }} />
                             </Box>
                           </Paper>
                         ))}
@@ -1678,30 +1728,34 @@ export function Reports() {
                   </Box>
                 </Stack>
               </DialogContent>
-              <DialogActions>
+              <DialogActions sx={{ px: 2.5, py: 1.5, borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}` }}>
                 {selectedReport.status === 'pending' && (
-                  <Stack direction="row" spacing={1} sx={{ mr: 'auto', pl: 1 }}>
+                  <Stack direction="row" spacing={1} sx={{ mr: 'auto' }}>
                     <Button
                       variant="contained"
                       color="success"
-                      startIcon={<CheckCircleIcon />}
+                      size="small"
+                      startIcon={<CheckCircleIcon sx={{ fontSize: '1rem !important' }} />}
                       disabled={statusUpdatingId === selectedReport.id}
                       onClick={() => updateStatus(selectedReport, 'verified')}
+                      sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 2 }}
                     >
                       Accept
                     </Button>
                     <Button
                       variant="outlined"
                       color="error"
-                      startIcon={<CancelIcon />}
+                      size="small"
+                      startIcon={<CancelIcon sx={{ fontSize: '1rem !important' }} />}
                       disabled={statusUpdatingId === selectedReport.id}
                       onClick={() => updateStatus(selectedReport, 'rejected')}
+                      sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 2 }}
                     >
                       Reject
                     </Button>
                   </Stack>
                 )}
-                <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
+                <Button onClick={() => setDetailDialogOpen(false)} sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}>Close</Button>
               </DialogActions>
             </>
           )}

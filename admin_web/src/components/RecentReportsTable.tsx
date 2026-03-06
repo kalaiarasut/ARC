@@ -60,8 +60,8 @@ const getHazardColor = (type: string) => {
   const colors: Record<string, string> = {
     'Tsunami': '#ef4444',
     'High Waves': '#0891b2',
-    'Storm': '#3b82f6',
-    'Flood': '#6366f1',
+    'Storm': '#f59e0b',
+    'Flood': '#088395',
     'Other': '#64748b',
   };
   return colors[type] || '#64748b';

@@ -183,13 +183,13 @@ button:focus-visible {
   width: 28px;
   height: 28px;
   margin-left: -14px;
-  background: var(--pin, #f59e0b);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 14px 14px 14px 0;
   transform: rotate(-45deg);
   box-shadow:
-    0 6px 12px rgba(2, 6, 23, 0.14),
-    0 1px 3px rgba(2, 6, 23, 0.10);
-  border: 2px solid rgba(255, 255, 255, 0.95);
+    0 3px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 2.5px solid var(--pin, #f59e0b);
 }
 
 .hazard-pin__label {
@@ -200,14 +200,14 @@ button:focus-visible {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--pinTint, rgba(245, 158, 11, 0.1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.98);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  color: var(--pin, #f59e0b);
+  text-shadow: none;
   letter-spacing: 0.02em;
 }
 
@@ -229,37 +229,60 @@ button:focus-visible {
   filter: brightness(1.03);
 }
 
-.hazard-pin--low {
-  --pin: #eab308;
-  --pinGlow: rgba(234, 179, 8, 0.25);
-}
-
-.hazard-pin--medium {
-  --pin: #f59e0b;
-  --pinGlow: rgba(245, 158, 11, 0.28);
-}
-
-.hazard-pin--high {
-  --pin: #f97316;
-  --pinGlow: rgba(249, 115, 22, 0.35);
-}
-
-.hazard-pin--critical {
+/* Hazard type colors */
+.hazard-pin--tsunami {
   --pin: #ef4444;
-  --pinGlow: rgba(239, 68, 68, 0.4);
+  --pinTint: rgba(239, 68, 68, 0.1);
+  --pinGlow: rgba(239, 68, 68, 0.2);
 }
 
-.hazard-pin--high .hazard-pin__pulse,
-.hazard-pin--critical .hazard-pin__pulse {
+.hazard-pin--storm {
+  --pin: #f59e0b;
+  --pinTint: rgba(245, 158, 11, 0.1);
+  --pinGlow: rgba(245, 158, 11, 0.2);
+}
+
+.hazard-pin--highwaves {
+  --pin: #0891b2;
+  --pinTint: rgba(8, 145, 178, 0.1);
+  --pinGlow: rgba(8, 145, 178, 0.2);
+}
+
+.hazard-pin--flood {
+  --pin: #088395;
+  --pinTint: rgba(8, 131, 149, 0.1);
+  --pinGlow: rgba(8, 131, 149, 0.2);
+}
+
+.hazard-pin--other {
+  --pin: #6b7280;
+  --pinTint: rgba(107, 114, 128, 0.08);
+  --pinGlow: rgba(107, 114, 128, 0.12);
+}
+
+/* Urgency pulse animations */
+.hazard-pin--urgency-high .hazard-pin__pulse,
+.hazard-pin--urgency-critical .hazard-pin__pulse {
   animation: hazardPulse 1.6s ease-out infinite;
 }
 
-.hazard-pin--critical .hazard-pin__pulse {
+.hazard-pin--urgency-critical .hazard-pin__pulse {
   animation-duration: 1.25s;
 }
 
-/* Advisory category pins */
+/* Advisory category pins – solid style for advisories */
+.hazard-pin--advisory .hazard-pin__body {
+  background: var(--pin, #0ea5e9);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+.hazard-pin--advisory .hazard-pin__label {
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-size: 11px;
+}
 .hazard-pin--advisory {
+  --pin: #0ea5e9;
   --pinGlow: rgba(14, 165, 233, 0.28);
 }
 
