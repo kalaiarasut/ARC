@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/fcm_push_service.dart';
 import '../services/notification_settings_service.dart';
 import '../services/notification_service.dart';
@@ -26,7 +27,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final NotificationSettingsService _notificationSettings = NotificationSettingsService();
+  final NotificationSettingsService _notificationSettings =
+      NotificationSettingsService();
   bool? _notificationsEnabled;
 
   @override
@@ -43,41 +45,141 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent =
+        isDark ? AppColors.darkSecondaryCyan : AppColors.primaryBlue;
+    final textColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final currentMode = ref.watch(themeModeProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.settings,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _card(
+          // ── Appearance ──
+          Container(
+            padding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: isDark
+                  ? Border.all(
+                      color: AppColors.darkOutline.withOpacity(0.5),
+                      width: 0.5)
+                  : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.palette_outlined, color: accent, size: 22),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Appearance',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // 3-option selector
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.darkBackground
+                        : AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    children: [
+                      _themeBtn(
+                        icon: Icons.light_mode_rounded,
+                        label: 'Light',
+                        selected: currentMode == ThemeMode.light,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: () => ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(ThemeMode.light),
+                      ),
+                      const SizedBox(width: 4),
+                      _themeBtn(
+                        icon: Icons.dark_mode_rounded,
+                        label: 'Dark',
+                        selected: currentMode == ThemeMode.dark,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: () => ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(ThemeMode.dark),
+                      ),
+                      const SizedBox(width: 4),
+                      _themeBtn(
+                        icon: Icons.settings_suggest_rounded,
+                        label: 'System',
+                        selected: currentMode == ThemeMode.system,
+                        isDark: isDark,
+                        accent: accent,
+                        onTap: () => ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(ThemeMode.system),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Main settings ──
+          Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: isDark
+                  ? Border.all(
+                      color: AppColors.darkOutline.withOpacity(0.5),
+                      width: 0.5)
+                  : null,
+            ),
             child: Column(
               children: [
                 SwitchListTile(
                   value: _notificationsEnabled ?? true,
-                  secondary: const Icon(Icons.notifications_outlined, color: AppColors.primaryBlue),
+                  secondary:
+                      Icon(Icons.notifications_outlined, color: accent),
                   title: const Text('Notifications'),
-                  subtitle: const Text('Advisories and report status updates'),
+                  subtitle: const Text(
+                      'Advisories and report status updates'),
                   onChanged: _notificationsEnabled == null
                       ? null
                       : (v) async {
                           setState(() => _notificationsEnabled = v);
                           await _notificationSettings.setEnabled(v);
-
                           if (v) {
                             await NotificationService.instance.initialize();
-                            await NotificationService.instance.requestPermissionIfNeeded();
-
+                            await NotificationService.instance
+                                .requestPermissionIfNeeded();
                             var fcmStarted = false;
                             try {
                               await FcmPushService.instance.enable();
@@ -85,160 +187,106 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             } catch (_) {
                               fcmStarted = false;
                             }
-
                             if (!fcmStarted) {
-                              await RealtimeNotificationService.instance.start();
+                              await RealtimeNotificationService.instance
+                                  .start();
                             } else {
-                              await RealtimeNotificationService.instance.stop();
+                              await RealtimeNotificationService.instance
+                                  .stop();
                             }
                           } else {
-                            // Best-effort: disable true push and stop realtime.
-                            // ignore: discarded_futures
                             FcmPushService.instance.disable();
                             await RealtimeNotificationService.instance.stop();
                           }
                         },
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.person_outline, color: AppColors.primaryBlue),
-                  title: Text(context.l10n.profile),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileModuleScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.person_outline, context.l10n.profile, accent,
+                    () => _push(const ProfileModuleScreen())),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.emoji_events_outlined, color: AppColors.primaryBlue),
-                  title: const Text('Achievements & Badges'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AchievementsScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.emoji_events_outlined, 'Achievements & Badges',
+                    accent, () => _push(const AchievementsScreen())),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.download_for_offline_outlined, color: AppColors.primaryBlue),
-                  title: const Text('Offline Maps'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const OfflineMapsScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.download_for_offline_outlined, 'Offline Maps',
+                    accent, () => _push(const OfflineMapsScreen())),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.help_outline, color: AppColors.primaryBlue),
-                  title: Text(context.l10n.helpFaq),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HelpFaqScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.help_outline, context.l10n.helpFaq, accent,
+                    () => _push(const HelpFaqScreen())),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
-                  title: Text(context.l10n.aboutTransparency),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AboutTransparencyScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.info_outline, context.l10n.aboutTransparency,
+                    accent,
+                    () => _push(const AboutTransparencyScreen())),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.language, color: AppColors.primaryBlue),
-                  title: Text(context.l10n.language),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LanguageScreen(fromSettings: true)),
-                    );
-                  },
-                ),
+                _tile(
+                    Icons.language,
+                    context.l10n.language,
+                    accent,
+                    () => _push(
+                        const LanguageScreen(fromSettings: true))),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryBlue),
-                  title: Text(context.l10n.privacyControls),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PrivacyControlsScreen()),
-                    );
-                  },
-                ),
+                _tile(Icons.privacy_tip_outlined,
+                    context.l10n.privacyControls, accent,
+                    () => _push(const PrivacyControlsScreen())),
               ],
             ),
           ),
-
           const SizedBox(height: 14),
 
-          _card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.logout, color: AppColors.error),
-                  title: const Text('Log out', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
-                  onTap: () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Log out?'),
-                          content: const Text('You will need to verify your phone again to sign back in.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(context.l10n.cancel),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.error,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                              ),
-                              child: const Text('Log out'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-
-                    if (ok != true) return;
-
-                    // Sign out of Supabase
-                    await ref.read(authStateProvider.notifier).signOut();
-
-                    // Optional: keep onboarding complete but ensure Splash routes to login if signed out.
-                    // We still clear any cached phone number in preferences to avoid confusion in UI.
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.remove('user_phone');
-
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (_) => false,
-                    );
-                  },
+          // ── Logout ──
+          Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: isDark
+                  ? Border.all(
+                      color: AppColors.darkOutline.withOpacity(0.5),
+                      width: 0.5)
+                  : null,
+            ),
+            child: ListTile(
+              leading: Icon(Icons.logout,
+                  color: isDark ? AppColors.darkError : AppColors.error),
+              title: Text(
+                'Log out',
+                style: TextStyle(
+                  color: isDark ? AppColors.darkError : AppColors.error,
+                  fontWeight: FontWeight.w700,
                 ),
-              ],
+              ),
+              onTap: () async {
+                final ok = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Log out?'),
+                    content: const Text(
+                        'You will need to verify your phone again to sign back in.'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(context.l10n.cancel)),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark
+                              ? AppColors.darkError
+                              : AppColors.error,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                        child: const Text('Log out'),
+                      ),
+                    ],
+                  ),
+                );
+                if (ok != true) return;
+                await ref.read(authStateProvider.notifier).signOut();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('user_phone');
+                if (!context.mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (_) => false);
+              },
             ),
           ),
         ],
@@ -246,13 +294,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _card({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+  // ── helpers ──
+
+  void _push(Widget screen) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+
+  Widget _tile(IconData icon, String title, Color iconColor,
+      VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+
+  Widget _themeBtn({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required bool isDark,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    final selBg = isDark ? AppColors.darkElevated : Colors.white;
+    final selTxt = accent;
+    final unTxt = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? selBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                        color: accent.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2))
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Icon(icon,
+                  size: 20,
+                  color: selected ? selTxt : unTxt),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? selTxt : unTxt,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: child,
     );
   }
 }

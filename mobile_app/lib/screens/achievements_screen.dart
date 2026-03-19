@@ -13,13 +13,14 @@ class AchievementsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(citizenStatsProvider);
     final allBadgesAsync = ref.watch(allBadgesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Achievements'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Colors.transparent,
+        foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -48,20 +49,22 @@ class AchievementsScreen extends ConsumerWidget {
               children: [
                 _buildStatsCard(stats),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Earned Badges', stats.badges.length),
+                _buildSectionTitle(context, 'Earned Badges', stats.badges.length, isDark),
                 const SizedBox(height: 12),
-                _buildEarnedBadges(stats.badges),
+                _buildEarnedBadges(context, stats.badges),
                 const SizedBox(height: 24),
                 _buildSectionTitle(
+                  context,
                   'Locked Badges',
                   allBadges.length - stats.badges.length,
+                  isDark,
                 ),
                 const SizedBox(height: 12),
-                _buildLockedBadges(allBadges, stats.badges),
+                _buildLockedBadges(context, allBadges, stats.badges),
                 const SizedBox(height: 24),
-                _buildSectionTitle('Points History', stats.recentPoints.length),
+                _buildSectionTitle(context, 'Points History', stats.recentPoints.length, isDark),
                 const SizedBox(height: 12),
-                _buildPointsHistory(stats.recentPoints),
+                _buildPointsHistory(context, stats.recentPoints),
                 const SizedBox(height: 32),
               ],
             ),
@@ -186,15 +189,15 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, int count) {
+  Widget _buildSectionTitle(BuildContext context, String title, int count, bool isDark) {
     return Row(
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
         const SizedBox(width: 8),
@@ -206,7 +209,7 @@ class AchievementsScreen extends ConsumerWidget {
           ),
           child: Text(
             '$count',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: AppColors.primaryBlue,
@@ -217,12 +220,12 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEarnedBadges(List<EarnedBadge> badges) {
+  Widget _buildEarnedBadges(BuildContext context, List<EarnedBadge> badges) {
     if (badges.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
@@ -262,7 +265,7 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLockedBadges(List<BadgeDefinition> all, List<EarnedBadge> earned) {
+  Widget _buildLockedBadges(BuildContext context, List<BadgeDefinition> all, List<EarnedBadge> earned) {
     final earnedIds = earned.map((e) => e.badgeId).toSet();
     final locked = all.where((b) => !earnedIds.contains(b.id)).toList();
 
@@ -270,7 +273,7 @@ class AchievementsScreen extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
@@ -304,12 +307,12 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPointsHistory(List<PointEntry> entries) {
+  Widget _buildPointsHistory(BuildContext context, List<PointEntry> entries) {
     if (entries.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
@@ -320,7 +323,7 @@ class AchievementsScreen extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListView.separated(
@@ -431,11 +434,12 @@ class _BadgeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: isEarned
               ? Border.all(color: const Color(0xFF088395), width: 1.5)
@@ -450,7 +454,7 @@ class _BadgeTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isEarned
                     ? const Color(0xFF088395).withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
+                    : Colors.grey.withOpacity(isDark ? 0.3 : 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -470,7 +474,7 @@ class _BadgeTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isEarned ? AppColors.textPrimary : Colors.grey,
+                  color: isEarned ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary) : Colors.grey,
                 ),
               ),
             ),

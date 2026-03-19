@@ -76,7 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       body: Stack(
         children: [
           // 1. Full Screen Background Images with PageView
@@ -101,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.45,
                 width: double.infinity,
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 padding: const EdgeInsets.fromLTRB(24, 60, 24, 24), // Top padding for curve
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

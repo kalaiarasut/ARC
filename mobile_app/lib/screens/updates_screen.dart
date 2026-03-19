@@ -35,17 +35,17 @@ class UpdatesScreen extends ConsumerWidget {
     final advisories = ref.watch(advisoriesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.updates,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         actions: [
           ValueListenableBuilder(
@@ -80,7 +80,7 @@ class UpdatesScreen extends ConsumerWidget {
           data: (items) {
             if (items.isEmpty) {
               return Center(
-                child: Text(context.l10n.noUpdatesYet, style: const TextStyle(color: AppColors.textSecondary)),
+                child: Text(context.l10n.noUpdatesYet, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
               );
             }
 
@@ -99,7 +99,7 @@ class UpdatesScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -125,7 +125,7 @@ class UpdatesScreen extends ConsumerWidget {
                             const Spacer(),
                             Text(
                               '${a.publishedAt.toLocal()}'.split('.').first,
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -138,13 +138,13 @@ class UpdatesScreen extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             a.region!,
-                            style: const TextStyle(color: AppColors.textSecondary),
+                            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                           ),
                         ],
                         const SizedBox(height: 10),
                         Text(
                           a.body,
-                          style: const TextStyle(color: AppColors.textSecondary, height: 1.3),
+                          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, height: 1.3),
                         ),
                       ],
                     ),

@@ -101,17 +101,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
       body: _loading
@@ -123,9 +123,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Icon(Icons.notifications_off_outlined, size: 56, color: Colors.grey[400]),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'No notifications yet',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 16),
                       ),
                     ],
                   ),
@@ -141,7 +141,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -165,10 +165,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     item.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
-                                      color: AppColors.textPrimary,
+                                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -176,9 +176,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     item.body,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12.5,
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -187,7 +187,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             const SizedBox(width: 8),
                             Text(
                               _timeAgo(item.time),
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              style: TextStyle(fontSize: 11, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             ),
                           ],
                         ),

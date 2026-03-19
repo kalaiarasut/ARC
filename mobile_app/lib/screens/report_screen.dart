@@ -712,10 +712,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Your upload timeline has been completed and saved.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -754,17 +754,17 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.reportHazard,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -778,13 +778,13 @@ class _ReportScreenState extends State<ReportScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               context.l10n.reportHelpsKeepSafe,
-              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
             
             const SizedBox(height: 24),
@@ -826,7 +826,7 @@ class _ReportScreenState extends State<ReportScreen> {
               decoration: InputDecoration(
                 hintText: context.l10n.describeWhatYouSeeHint,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -965,7 +965,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                                            style: TextStyle(fontSize: 10, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                           ),
                                         ),
                                       ],
@@ -1001,7 +1001,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -1034,7 +1034,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       decoration: InputDecoration(
                         labelText: context.l10n.peopleAtRiskEstimate,
                         filled: true,
-                        fillColor: const Color(0xFFF7F9FB),
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide.none,
@@ -1054,7 +1054,7 @@ class _ReportScreenState extends State<ReportScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.error : const Color(0xFFF7F9FB),
+                                  color: isSelected ? AppColors.error : Theme.of(context).scaffoldBackgroundColor,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -1103,7 +1103,7 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Colors.white,
+          color: isSelected ? AppColors.primaryBlue : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primaryBlue : AppColors.greyOutline,
@@ -1130,7 +1130,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1140,7 +1140,7 @@ class _ReportScreenState extends State<ReportScreen> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1164,7 +1164,7 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           Icon(icon, color: AppColors.primaryBlue),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: AppColors.textPrimary)),
+          Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
         ],
       ),
     );

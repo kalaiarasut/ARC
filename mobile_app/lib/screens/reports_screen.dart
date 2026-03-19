@@ -135,7 +135,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.greyOutline.withOpacity(0.35)),
       ),
@@ -146,21 +146,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             onTap: () => setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
             child: Row(
               children: [
-                const Icon(Icons.view_week_outlined, color: AppColors.textSecondary, size: 18),
+                Icon(Icons.view_week_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Week',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 Icon(
                   _showWeekDaysDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ],
             ),
@@ -172,7 +172,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+                  icon: Icon(Icons.chevron_left, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                   onPressed: () {
                     setState(() => _selectedFilterDate = _selectedFilterDate.subtract(const Duration(days: 7)));
                     _load();
@@ -181,17 +181,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 Expanded(
                   child: Text(
                     _fullMonthLabel(_selectedFilterDate),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 19),
+                  icon: Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 19),
                   onPressed: _pickWeekDate,
                 ),
                 IconButton(
@@ -284,7 +284,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
@@ -292,21 +292,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         onTap: () => setState(() => _showInlineCalendar = !_showInlineCalendar),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 18),
+            Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Date: ${_formatFilterDate(_selectedFilterDate)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
             ),
             Icon(
               _showInlineCalendar ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ],
         ),
@@ -319,7 +319,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: CalendarDatePicker(
@@ -483,7 +483,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: AppColors.greyOutline.withOpacity(0.22),
-              child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
+              child: Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
           ),
         ),
@@ -498,7 +498,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         color: AppColors.greyOutline.withOpacity(0.22),
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: AppColors.textPrimary.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.7),
           size: 36,
         ),
       ),
@@ -508,21 +508,21 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.profileAndReports,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
+            icon: Icon(Icons.refresh, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -612,7 +612,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   child: Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
               )
@@ -621,7 +621,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: Center(
                   child: Text(
                     'No reports yet',
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
               )
@@ -630,7 +630,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: Center(
                   child: Text(
                     'No submitted reports yet',
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
               )
@@ -674,7 +674,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               borderRadius: BorderRadius.circular(18),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                                 child: Column(
@@ -720,7 +720,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                               shortDescription,
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(color: AppColors.textSecondary),
+                                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                             ),
                                           ],
                                           const SizedBox(height: 8),
@@ -728,13 +728,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                             children: [
                                               Text(
                                                 r.timeAgo,
-                                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                               ),
                                               const Spacer(),
                                               if (distanceText.isNotEmpty)
                                                 Text(
                                                   distanceText,
-                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                                 ),
                                             ],
                                           ),
@@ -776,7 +776,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
@@ -812,12 +812,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                       report.description,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.textSecondary),
+                                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
                                       '${report.createdAt.toLocal()}'.split('.').first,
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                     ),
                                   ],
                                 ),
@@ -916,7 +916,7 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                     child: Icon(
                       Icons.videocam,
                       size: 44,
-                      color: AppColors.textPrimary.withOpacity(0.8),
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
                     ),
                   ),
                 ),
@@ -928,7 +928,7 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   child: Icon(
                     Icons.videocam,
                     size: 44,
-                    color: AppColors.textPrimary.withOpacity(0.8),
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
                   ),
                 ),
               ),

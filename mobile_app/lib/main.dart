@@ -14,6 +14,7 @@ import 'services/realtime_notification_service.dart';
 import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'services/tile_caching_service.dart';
+import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'widgets/upload_progress_overlay.dart';
@@ -81,10 +82,13 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp(
       title: 'ARC',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: [

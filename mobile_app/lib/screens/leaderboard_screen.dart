@@ -13,13 +13,14 @@ class LeaderboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final leaderboardAsync = ref.watch(leaderboardProvider);
     final currentUserId = SupabaseConfig.client.auth.currentUser?.id;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Leaderboard'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Colors.transparent,
+        foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         elevation: 0,
       ),
       body: leaderboardAsync.when(
@@ -56,7 +57,7 @@ class LeaderboardScreen extends ConsumerWidget {
                   _buildPodium(entries.take(3).toList(), currentUserId),
                   const SizedBox(height: 20),
                 ],
-                _buildRankList(entries, currentUserId),
+                _buildRankList(context, entries, currentUserId),
               ],
             ),
           );
@@ -166,10 +167,11 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRankList(List<LeaderboardEntry> entries, String? currentUserId) {
+  Widget _buildRankList(BuildContext context, List<LeaderboardEntry> entries, String? currentUserId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListView.separated(
@@ -210,7 +212,7 @@ class LeaderboardScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: isMe ? FontWeight.bold : FontWeight.w500,
-                        color: isMe ? AppColors.primaryBlue : AppColors.textPrimary,
+                        color: isMe ? AppColors.primaryBlue : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                       ),
                     ),
                   ),
@@ -241,7 +243,7 @@ class LeaderboardScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isMe ? AppColors.primaryBlue : AppColors.textPrimary,
+                  color: isMe ? AppColors.primaryBlue : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                 ),
               ),
             ),

@@ -31,7 +31,7 @@ class UploadProgressOverlay extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 460),
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
@@ -66,7 +66,7 @@ class UploadProgressOverlay extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       progress.subtitle,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                     const SizedBox(height: 14),
                     ClipRRect(
@@ -81,14 +81,14 @@ class UploadProgressOverlay extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       '${(progress.progress * 100).toStringAsFixed(0)}% · ${progress.completedSteps}/${progress.totalSteps}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       constraints: const BoxConstraints(maxHeight: 170),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF7F9FB),
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ListView.separated(
@@ -120,7 +120,7 @@ class UploadProgressOverlay extends StatelessWidget {
                               const SizedBox(width: 8),
                               Text(
                                 _fmtTime(event.at),
-                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                style: TextStyle(fontSize: 11, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                               ),
                             ],
                           );

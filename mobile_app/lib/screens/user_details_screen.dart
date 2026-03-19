@@ -76,17 +76,17 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   Widget build(BuildContext context) {
     if (!widget.isOnboarding) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF7F9FB),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             context.l10n.whatsYourName,
-            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
           ),
         ),
         body: Padding(
@@ -96,7 +96,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             children: [
               Text(
                 context.l10n.personalizeExperience,
-                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -104,9 +104,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   hintText: context.l10n.enterYourName,
-                  prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
+                  prefixIcon: Icon(Icons.person, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -145,7 +145,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             top: 50,
             left: 16,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Theme.of(context).cardColor.withOpacity(0.2),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                 onPressed: () => Navigator.pop(context),
@@ -159,8 +159,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -190,7 +190,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -199,7 +199,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -210,9 +210,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
                         hintText: context.l10n.enterYourName,
-                        prefixIcon: const Icon(Icons.person, color: AppColors.textSecondary),
+                        prefixIcon: Icon(Icons.person, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                         filled: true,
-                        fillColor: const Color(0xFFF7F9FB),
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,

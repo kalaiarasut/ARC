@@ -117,17 +117,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.profileAndReports,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
@@ -172,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Center(
                       child: Text(
                         context.l10n.noPendingReports,
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                       ),
                     );
                   }
@@ -231,7 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Column(
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 Text(
                                   context.l10n.attemptsLabel(attempts),
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                 ),
                               ],
                             ),
@@ -256,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               description,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             ),
                             if (lastError != null && lastError.trim().isNotEmpty) ...[
                               const SizedBox(height: 8),
@@ -280,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'Next retry: ${nextAttemptAt.toLocal()}'.split('.').first,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                               ),
                             ],
                             const SizedBox(height: 10),
@@ -337,12 +337,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               context.l10n.youreOffline,
-                              style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               context.l10n.connectToInternetToLoadMyReports,
-                              style: const TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 10),
@@ -358,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Center(
                       child: Text(
                         '${context.l10n.failedToLoadReports}: ${snapshot.error}',
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                       ),
                     );
                   }
@@ -366,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Center(
                       child: Text(
                         context.l10n.noUploadedReportsYet,
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                       ),
                     );
                   }
@@ -399,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
@@ -418,7 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       '${createdAt.toLocal()}'.split('.').first,
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                     ),
                                   ],
                                 ),

@@ -107,21 +107,21 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: widget.fromSettings ? kToolbarHeight : 0,
         leading: widget.fromSettings
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+                icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: widget.fromSettings
             ? Text(
                 context.l10n.language,
-                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
               )
             : null,
       ),
@@ -138,7 +138,7 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -147,7 +147,7 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : Colors.black,
                     ),
                   ),
                 ],

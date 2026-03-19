@@ -42,7 +42,7 @@ class _OtpScreenState extends State<OtpScreen> {
         color: Color(0xFF1E1E1E),
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(50), // Circular inputs
         border: Border.all(color: const Color(0xFFE0E0E0)),
         boxShadow: [
@@ -68,7 +68,7 @@ class _OtpScreenState extends State<OtpScreen> {
             top: 50,
             left: 16,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Theme.of(context).cardColor.withOpacity(0.2),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                 onPressed: () => Navigator.pop(context),
@@ -82,8 +82,8 @@ class _OtpScreenState extends State<OtpScreen> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),

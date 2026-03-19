@@ -190,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB), // Light greyish-blue bg
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Light greyish-blue bg
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -214,17 +214,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           context.l10n.hiWelcome,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           ),
                         ),
                         Text(
                           _userName.isEmpty ? context.l10n.user : _userName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -248,10 +248,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             context.l10n.pendingCount(count),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -361,10 +361,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       context.l10n.unusualActivity,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -377,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     child: Text(
                       context.l10n.seeAll,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -433,7 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     'No reports yet',
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 )
               else
@@ -474,7 +474,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Container(
                           width: 285,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -516,10 +516,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             r.hazardType,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 13.5,
                                               fontWeight: FontWeight.bold,
-                                              color: AppColors.textPrimary,
+                                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                             ),
                                           ),
                                         ),
@@ -531,7 +531,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         _shortDescription(r.description),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                                        style: TextStyle(fontSize: 12.5, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                       ),
                                     if (_shortDescription(r.description).isNotEmpty)
                                       const SizedBox(height: 10),
@@ -539,13 +539,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       children: [
                                         Text(
                                           _timeAgo(r.timestamp),
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                         ),
                                         const Spacer(),
                                         if (distanceText.isNotEmpty)
                                           Text(
                                             distanceText,
-                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                            style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                           ),
                                       ],
                                     ),
@@ -571,10 +571,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       context.l10n.liveNews,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -587,7 +587,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     child: Text(
                       context.l10n.seeAll,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -598,7 +598,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     context.l10n.noUpdatesYet,
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 )
               else
@@ -621,7 +621,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           width: 220,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -654,10 +654,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 a.title,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -666,12 +666,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   a.region!,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                 ),
                               const Spacer(),
                               Text(
                                 _timeAgo(a.publishedAt),
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                               ),
                             ],
                           ),
@@ -724,13 +724,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildHeaderIcon(IconData icon, {bool hasBadge = false}) {
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         shape: BoxShape.circle,
       ),
       child: Stack(
         children: [
-          Icon(icon, color: AppColors.textPrimary, size: 24),
+          Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, size: 24),
           if (hasBadge)
             Positioned(
               right: 0,
@@ -738,7 +738,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.error,
                   shape: BoxShape.circle,
                 ),
@@ -783,7 +783,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: AppColors.greyOutline.withOpacity(0.22),
-              child: const Icon(Icons.broken_image, color: AppColors.textSecondary),
+              child: Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
           ),
         ),
@@ -798,7 +798,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         color: AppColors.greyOutline.withOpacity(0.22),
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: AppColors.textPrimary.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.7),
           size: 34,
         ),
       ),
@@ -821,7 +821,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             children: [
               if (isSelected) ...[
-                const Icon(Icons.notifications_active, color: Colors.white, size: 16),
+                Icon(Icons.notifications_active, color: Theme.of(context).cardColor, size: 16),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -844,7 +844,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Colors.white,
+          color: isSelected ? AppColors.primaryBlue : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: isSelected ? null : Border.all(color: Colors.transparent),
         ),
@@ -1031,7 +1031,7 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   child: Icon(
                     Icons.videocam,
                     size: 34,
-                    color: AppColors.textPrimary.withOpacity(0.8),
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
                   ),
                 ),
               ),

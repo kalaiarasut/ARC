@@ -8,24 +8,26 @@ class AboutTransparencyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.aboutTitle,
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _section(
+            context: context,
             title: context.l10n.aboutTransparency,
             body:
                 'This app helps citizens report ocean hazards and helps authorities understand real-time conditions.\n\n'
@@ -33,6 +35,7 @@ class AboutTransparencyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _section(
+            context: context,
             title: context.l10n.privacy,
             body:
                 'What we collect: your phone (for login), your report description, time, and location.\n\n'
@@ -43,19 +46,20 @@ class AboutTransparencyScreen extends StatelessWidget {
     );
   }
 
-  Widget _section({required String title, required String body}) {
+  Widget _section({required BuildContext context, required String title, required String body}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
           const SizedBox(height: 8),
-          Text(body, style: const TextStyle(color: AppColors.textSecondary, height: 1.35)),
+          Text(body, style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, height: 1.35)),
         ],
       ),
     );

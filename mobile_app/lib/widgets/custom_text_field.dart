@@ -35,23 +35,23 @@ class CustomTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       enableSuggestions: enableSuggestions,
       autocorrect: autocorrect,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
-        color: AppColors.textPrimary,
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.textSecondary)
+            ? Icon(prefixIcon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)
             : null,
         prefix: prefixText != null
             ? Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Text(
                   prefixText!,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),

@@ -61,9 +61,9 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Downloads map tiles around your current location for offline use.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -96,7 +96,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
               const SizedBox(height: 12),
               Text(
                 _estimateTiles(selectedRadius),
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
             ],
           ),
@@ -109,7 +109,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
               onPressed: () => Navigator.pop(ctx, (name: nameController.text.trim(), radius: selectedRadius)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
+                foregroundColor: Theme.of(context).cardColor,
               ),
               child: const Text('Download'),
             ),
@@ -207,17 +207,17 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Offline Maps',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -236,7 +236,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
@@ -257,7 +257,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                             const Spacer(),
                             Text(
                               '$_downloadedTiles / $_totalTiles',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -271,7 +271,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                         const SizedBox(height: 6),
                         Text(
                           '${(_downloadProgress * 100).toStringAsFixed(1)}%',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -308,14 +308,14 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                             children: [
                               Icon(Icons.map_outlined, size: 56, color: Colors.grey[400]),
                               const SizedBox(height: 12),
-                              const Text(
+                              Text(
                                 'No offline regions yet',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+                                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 16),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 'Tap + to download a region',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 13),
                               ),
                             ],
                           ),
@@ -329,7 +329,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                             return Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(
@@ -355,7 +355,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                                         const SizedBox(height: 2),
                                         Text(
                                           '${region.tileCount} tiles · ${region.sizeMB.toStringAsFixed(1)} MB',
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                                         ),
                                       ],
                                     ),

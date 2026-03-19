@@ -17,7 +17,7 @@ class SuccessScreen extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -38,7 +38,7 @@ class SuccessScreen extends StatelessWidget {
                     color: AppColors.success.withOpacity(0.1), // Keep Success green or make sea? User said "buttons... sea color". Keeping Check green usually makes sense for Success, but let's make it Sea for consistent "Sea" theme as requested "sea color NOT the green".
                   ),
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.secondaryCyan, // Sea Cyan
                       boxShadow: [
