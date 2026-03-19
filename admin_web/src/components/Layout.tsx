@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Box, CssBaseline, ThemeProvider, IconButton, Drawer } from '@mui/material';
+import { Box, IconButton, Drawer } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import { theme } from '../theme';
 import { Sidebar, DRAWER_WIDTH } from './Sidebar';
 
 interface LayoutProps {
@@ -16,9 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box
+        <Box
                 sx={{
                     display: 'flex',
                     width: '100vw',
@@ -79,9 +76,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <MenuIcon />
                         </IconButton>
                         {children}
-                    </Box>
                 </Box>
             </Box>
-        </ThemeProvider>
+        </Box>
     );
 };

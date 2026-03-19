@@ -10,6 +10,7 @@ import {
     IconButton,
     InputAdornment,
     CircularProgress,
+    useTheme,
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -106,7 +107,9 @@ const HeroPanel = styled(Box)(({ theme }) => ({
     flexDirection: 'column',
     padding: '40px 48px 0',
     overflow: 'hidden',
-    background: 'linear-gradient(160deg, #020A0E 0%, #041E2B 30%, #083344 65%, #0a3352 100%)',
+    background: theme.palette.mode === 'dark'
+        ? 'linear-gradient(160deg, #020A0E 0%, #041E2B 30%, #00ffd110 65%, #0a3352 100%)'
+        : 'linear-gradient(160deg, #020A0E 0%, #041E2B 30%, #083344 65%, #0a3352 100%)',
     backgroundSize: '200% 200%',
     animation: `${gradientShift} 20s ease infinite`,
     [theme.breakpoints.down('md')]: {
@@ -121,9 +124,10 @@ const FormPanel = styled(Box)(({ theme }) => ({
     justifyContent: 'center',
     alignItems: 'center',
     padding: '32px 48px',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.palette.mode === 'dark' ? '#0a192f' : theme.palette.background.paper,
     overflow: 'auto',
     position: 'relative',
+    boxShadow: theme.palette.mode === 'dark' ? '-20px 0 40px rgba(0, 255, 209, 0.05)' : 'none',
     [theme.breakpoints.down('sm')]: {
         padding: '32px 24px',
     },
@@ -136,29 +140,29 @@ const FormWrapper = styled(Box)({
     flexDirection: 'column',
 });
 
-const FieldLabel = styled(Typography)({
+const FieldLabel = styled(Typography)(({ theme }) => ({
     fontSize: '0.8125rem',
     fontWeight: 600,
-    color: '#334155',
+    color: theme.palette.text.secondary,
     marginBottom: '6px',
-});
+}));
 
-const StyledInput = styled(TextField)({
+const StyledInput = styled(TextField)(({ theme }) => ({
     '& .MuiOutlinedInput-root': {
         borderRadius: '10px',
-        backgroundColor: '#f8fafc',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 255, 209, 0.02)' : '#f8fafc',
         transition: 'all 0.2s ease',
         '& fieldset': {
             borderColor: '#e2e8f0',
             borderWidth: '1.5px',
         },
         '&:hover': {
-            backgroundColor: '#f1f5f9',
-            '& fieldset': { borderColor: '#cbd5e1' },
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 255, 209, 0.05)' : '#f1f5f9',
+            '& fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(0, 255, 209, 0.3)' : '#cbd5e1' },
         },
         '&.Mui-focused': {
-            backgroundColor: '#ffffff',
-            boxShadow: '0 0 0 3px rgba(8, 131, 149, 0.08)',
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 255, 209, 0.08)' : theme.palette.background.paper,
+            boxShadow: theme.palette.mode === 'dark' ? '0 0 0 3px rgba(0, 255, 209, 0.15)' : '0 0 0 3px rgba(8, 131, 149, 0.08)',
             '& fieldset': {
                 borderColor: '#088395',
                 borderWidth: '1.5px',
@@ -168,36 +172,36 @@ const StyledInput = styled(TextField)({
     '& .MuiOutlinedInput-input': {
         padding: '12px 14px',
         fontSize: '0.9375rem',
-        color: '#1e293b',
+        color: theme.palette.text.primary,
         fontWeight: 500,
-        '&::placeholder': { color: '#94a3b8', opacity: 1, fontWeight: 400 },
+        '&::placeholder': { color: theme.palette.text.secondary, opacity: 1, fontWeight: 400 },
     },
-});
+}));
 
-const SubmitButton = styled(Button)({
+const SubmitButton = styled(Button)(({ theme }) => ({
     padding: '12px 24px',
     fontSize: '0.9375rem',
     fontWeight: 600,
     borderRadius: '10px',
     textTransform: 'none',
-    background: 'linear-gradient(135deg, #088395 0%, #0a6b7a 100%)',
-    color: '#ffffff',
-    boxShadow: '0 2px 8px rgba(8,131,149,0.3)',
+    background: theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)' : 'linear-gradient(135deg, #088395 0%, #0a6b7a 100%)',
+    color: theme.palette.mode === 'dark' ? '#040b16' : '#ffffff',
+    boxShadow: theme.palette.mode === 'dark' ? '0 2px 8px rgba(0,255,209,0.3)' : '0 2px 8px rgba(8,131,149,0.3)',
     transition: 'all 0.2s ease',
     '&:hover': {
-        background: 'linear-gradient(135deg, #07758a 0%, #095d6d 100%)',
-        boxShadow: '0 6px 20px rgba(8,131,149,0.35)',
+        background: theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #00e6bc 0%, #00b392 100%)' : 'linear-gradient(135deg, #07758a 0%, #095d6d 100%)',
+        boxShadow: theme.palette.mode === 'dark' ? '0 6px 20px rgba(0,255,209,0.4)' : '0 6px 20px rgba(8,131,149,0.35)',
         transform: 'translateY(-1px)',
     },
     '&:active': {
         transform: 'translateY(0)',
     },
     '&.Mui-disabled': {
-        background: '#cbd5e1',
-        color: '#ffffff',
+        background: theme.palette.mode === 'dark' ? 'rgba(0,255,209,0.2)' : '#cbd5e1',
+        color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : '#ffffff',
         boxShadow: 'none',
     },
-});
+}));
 
 // ── Ocean Waves (real water-like SVG animation) ─────────────
 
@@ -290,12 +294,12 @@ const BrandMark: React.FC<{ size?: number; light?: boolean }> = ({ size = 32, li
     <Box component="svg" viewBox="0 0 32 32" sx={{ width: size, height: size, flexShrink: 0 }}>
         <defs>
             <linearGradient id="wgr1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#05bfdb" />
-                <stop offset="100%" stopColor="#088395" />
+                <stop offset="0%" stopColor={light ? "#00ffd1" : "#05bfdb"} />
+                <stop offset="100%" stopColor={light ? "#00ccA7" : "#088395"} />
             </linearGradient>
             <linearGradient id="wgr2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#088395" />
-                <stop offset="100%" stopColor="#0a4d68" />
+                <stop offset="0%" stopColor={light ? "#00ccA7" : "#088395"} />
+                <stop offset="100%" stopColor={light ? "#00997d" : "#0a4d68"} />
             </linearGradient>
         </defs>
         <circle cx="16" cy="16" r="15"
@@ -342,6 +346,8 @@ export const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const muiTheme = useTheme();
+    const isDark = muiTheme.palette.mode === 'dark';
 
     const stars = useMemo(
         () =>
@@ -447,7 +453,9 @@ export const Login: React.FC = () => {
                         }}>
                             Coastal Safety{' '}
                             <Box component="span" sx={{
-                                background: 'linear-gradient(135deg, #05bfdb, #088395)',
+                                background: isDark 
+                                    ? 'linear-gradient(135deg, #00ffd1, #00ccA7)' 
+                                    : 'linear-gradient(135deg, #05bfdb, #088395)',
                                 backgroundClip: 'text', WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                             }}>
@@ -466,13 +474,13 @@ export const Login: React.FC = () => {
                             {STATS.map((s) => (
                                 <StatCard key={s.label}>
                                     <Typography sx={{
-                                        color: '#05bfdb', fontSize: '1.35rem',
+                                        color: isDark ? '#00ffd1' : '#05bfdb', fontSize: '1.35rem',
                                         fontWeight: 800, letterSpacing: '-0.02em', mb: 0.25,
                                     }}>
                                         {s.value}
                                     </Typography>
                                     <Typography sx={{
-                                        color: 'rgba(255,255,255,0.55)', fontSize: '0.7rem',
+                                        color: isDark ? '#e2f1f8' : 'rgba(255,255,255,0.55)', fontSize: '0.7rem',
                                         fontWeight: 500,
                                     }}>
                                         {s.label}
@@ -493,7 +501,7 @@ export const Login: React.FC = () => {
                     {/* Mobile brand */}
                     <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1.5, mb: 4 }}>
                         <BrandMark size={28} />
-                        <Typography sx={{ color: '#1e293b', fontSize: '1rem', fontWeight: 700, letterSpacing: '0.04em' }}>
+                        <Typography sx={{ color: muiTheme.palette.text.primary, fontSize: '1rem', fontWeight: 700, letterSpacing: '0.04em' }}>
                             OCEAN
                         </Typography>
                     </Box>
@@ -511,7 +519,7 @@ export const Login: React.FC = () => {
 
                     {/* Heading */}
                     <Typography sx={{
-                        fontSize: '1.6rem', fontWeight: 800, color: '#0f172a',
+                        fontSize: '1.6rem', fontWeight: 800, color: muiTheme.palette.text.primary,
                         letterSpacing: '-0.03em', mb: 0.25,
                         animation: `${fadeInUp} 0.45s ease-out 0.05s both`,
                     }}>
@@ -584,24 +592,24 @@ export const Login: React.FC = () => {
 
                     {/* Divider */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2.5, mb: 2, animation: `${fadeInUp} 0.65s ease-out 0.25s both` }}>
-                        <Box sx={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
-                        <Typography sx={{ fontSize: '0.625rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <Box sx={{ flex: 1, height: '1px', backgroundColor: muiTheme.palette.divider }} />
+                        <Typography sx={{ fontSize: '0.625rem', color: muiTheme.palette.text.secondary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                             Demo
                         </Typography>
-                        <Box sx={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+                        <Box sx={{ flex: 1, height: '1px', backgroundColor: muiTheme.palette.divider }} />
                     </Box>
 
                     {/* Demo creds */}
-                    <Box sx={{ p: 1.5, borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9', animation: `${fadeInUp} 0.7s ease-out 0.3s both` }}>
+                    <Box sx={{ p: 1.5, borderRadius: '10px', backgroundColor: isDark ? 'rgba(0, 255, 209, 0.03)' : '#f8fafc', border: `1px solid ${muiTheme.palette.divider}`, animation: `${fadeInUp} 0.7s ease-out 0.3s both` }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.25 }}>
                             {[{ label: 'Email', value: 'admin@gmail.com' }, { label: 'Password', value: '123456' }].map((item) => (
                                 <Box key={item.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>{item.label}</Typography>
+                                    <Typography sx={{ color: muiTheme.palette.text.secondary, fontSize: '0.75rem' }}>{item.label}</Typography>
                                     <Typography sx={{
-                                        color: '#475569', fontSize: '0.75rem',
+                                        color: muiTheme.palette.text.primary, fontSize: '0.75rem',
                                         fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                                        fontWeight: 500, backgroundColor: '#fff',
-                                        padding: '1px 8px', borderRadius: '5px', border: '1px solid #e2e8f0',
+                                        fontWeight: 500, backgroundColor: muiTheme.palette.background.paper,
+                                        padding: '1px 8px', borderRadius: '5px', border: `1px solid ${muiTheme.palette.divider}`,
                                     }}>
                                         {item.value}
                                     </Typography>

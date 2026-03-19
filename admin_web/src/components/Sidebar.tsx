@@ -8,23 +8,32 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import { IconButton } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { useThemeContext } from '../contexts/ThemeContext';
 
 export const DRAWER_WIDTH = 240;
 
 // Ocean Gradient matching Login
 const OCEAN_GRADIENT = 'linear-gradient(135deg, #0a4d68 0%, #088395 50%, #05bfdb 100%)';
-const ACTIVE_SHADOW = '0 4px 12px rgba(8, 131, 149, 0.35)';
+const ACTIVE_SHADOW_LIGHT = '0 4px 12px rgba(8, 131, 149, 0.35)';
+
+// Bioluminescent Gradient for Dark Mode
+const BIO_GRADIENT = 'linear-gradient(135deg, rgba(0, 255, 209, 0.15) 0%, transparent 100%)';
+const BIO_SHADOW = '0 0 15px rgba(0, 255, 209, 0.2)';
 
 interface NavItemProps {
     icon: React.ReactNode;
     label: string;
     path: string;
     isActive: boolean;
+    isDark: boolean;
     onClick: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, isDark, onClick }) => (
     <Box
         onClick={onClick}
         sx={{
@@ -37,10 +46,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
             borderRadius: '10px',
             cursor: 'pointer',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            background: isActive ? OCEAN_GRADIENT : 'transparent',
-            boxShadow: isActive ? ACTIVE_SHADOW : 'none',
+            background: isActive ? (isDark ? BIO_GRADIENT : OCEAN_GRADIENT) : 'transparent',
+            boxShadow: isActive ? (isDark ? BIO_SHADOW : ACTIVE_SHADOW_LIGHT) : 'none',
+            border: isActive && isDark ? '1px solid rgba(0, 255, 209, 0.1)' : '1px solid transparent',
             '&:hover': {
-                backgroundColor: isActive ? 'transparent' : 'rgba(8, 131, 149, 0.08)',
+                backgroundColor: isActive ? 'transparent' : (isDark ? 'rgba(0, 255, 209, 0.05)' : 'rgba(8, 131, 149, 0.08)'),
                 transform: isActive ? 'none' : 'translateX(4px)',
             },
         }}
@@ -48,7 +58,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
         <Box sx={{
             display: 'flex',
             alignItems: 'center',
-            color: isActive ? '#FFFFFF' : '#64748b',
+            color: isActive ? (isDark ? '#00ffd1' : '#FFFFFF') : (isDark ? '#8892b0' : '#64748b'),
             transition: 'color 0.2s ease',
         }}>
             {icon}
@@ -57,7 +67,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick }) => 
             sx={{
                 fontSize: '0.875rem',
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#FFFFFF' : '#475569',
+                color: isActive ? (isDark ? '#00ffd1' : '#FFFFFF') : (isDark ? '#e2f1f8' : '#475569'),
                 letterSpacing: '-0.01em',
             }}
         >
@@ -74,6 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { isAuthenticated, logout, user } = useAuth();
+    const { mode, toggleColorMode } = useThemeContext();
+    const isDark = mode === 'dark';
     const [loggingOut, setLoggingOut] = useState(false);
 
     const navItems = [
@@ -118,10 +130,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                 width: DRAWER_WIDTH,
                 flexShrink: 0,
                 height: '100vh',
-                background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                background: isDark ? 'linear-gradient(180deg, #0a192f 0%, #040b16 100%)' : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
                 display: 'flex',
                 flexDirection: 'column',
-                borderRight: '1px solid rgba(226, 232, 240, 0.8)',
+                borderRight: `1px solid ${isDark ? 'rgba(0, 255, 209, 0.1)' : 'rgba(226, 232, 240, 0.8)'}`,
                 zIndex: 1200,
             }}
         >
@@ -132,16 +144,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                         width: 40,
                         height: 40,
                         borderRadius: '12px',
-                        background: OCEAN_GRADIENT,
+                        background: isDark ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)' : OCEAN_GRADIENT,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(8, 131, 149, 0.3)',
+                        boxShadow: isDark ? '0 0 15px rgba(0, 255, 209, 0.3)' : '0 4px 12px rgba(8, 131, 149, 0.3)',
                     }}
                 >
-                    <Typography sx={{ color: '#FFFFFF', fontWeight: 700, fontSize: '1rem' }}>C</Typography>
+                    <Typography sx={{ color: isDark ? '#040b16' : '#FFFFFF', fontWeight: 800, fontSize: '1rem' }}>C</Typography>
                 </Box>
-                <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: '#1e293b', letterSpacing: '-0.02em' }}>
+                <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: isDark ? '#e2f1f8' : '#1e293b', letterSpacing: '-0.02em' }}>
                     CoastSafe
                 </Typography>
             </Box>
@@ -155,17 +167,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                         label={item.label}
                         path={item.path}
                         isActive={isActive(item.path)}
+                        isDark={isDark}
                         onClick={() => handleNavClick(item.path)}
                     />
                 ))}
             </Box>
 
             {/* Bottom Actions */}
-            {/* Bottom Profile & Logout */}
-            {isAuthenticated && user && (
-                <Box sx={{ p: 2, pt: 1.5 }}>
-                    <Divider sx={{ mb: 1.5, opacity: 0.7 }} />
-                    <Box
+            <Box sx={{ p: 2, pt: 0 }}>
+                {/* Theme Toggle */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: isAuthenticated && user ? 2 : 0 }}>
+                    <IconButton 
+                        onClick={toggleColorMode} 
+                        sx={{ 
+                            color: isDark ? '#00ffd1' : '#475569',
+                            backgroundColor: isDark ? 'rgba(0, 255, 209, 0.05)' : 'rgba(0,0,0,0.04)',
+                            '&:hover': {
+                                backgroundColor: isDark ? 'rgba(0, 255, 209, 0.15)' : 'rgba(0,0,0,0.08)'
+                            }
+                        }}
+                    >
+                        {isDark ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
+                    </IconButton>
+                </Box>
+
+                {/* Bottom Profile & Logout */}
+                {isAuthenticated && user && (
+                    <>
+                        <Divider sx={{ mb: 1.5, opacity: 0.7, borderColor: isDark ? '#334155' : undefined }} />
+                        <Box
                         onClick={handleLogout}
                         sx={{
                             display: 'flex',
@@ -183,14 +213,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                             }
                         }}
                     >
-                        <Avatar sx={{ width: 34, height: 34, background: OCEAN_GRADIENT, fontSize: '0.85rem', fontWeight: 600 }}>
+                        <Avatar sx={{ width: 34, height: 34, background: isDark ? '#040b16' : OCEAN_GRADIENT, border: isDark ? '1px solid rgba(0,255,209,0.2)' : 'none', color: isDark ? '#00ffd1' : '#fff', fontSize: '0.85rem', fontWeight: 600 }}>
                             {user.name?.charAt(0).toUpperCase()}
                         </Avatar>
                         <Box sx={{ minWidth: 0, flex: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.85rem' }} noWrap>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: isDark ? '#e2f1f8' : '#0F172A', fontSize: '0.85rem' }} noWrap>
                                 {user.name}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.7rem' }} noWrap>
+                            <Typography variant="caption" sx={{ color: isDark ? '#8892b0' : '#64748B', fontSize: '0.7rem' }} noWrap>
                                 {loggingOut ? 'Logging out...' : 'Admin'}
                             </Typography>
                         </Box>
@@ -205,8 +235,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                             }}
                         />
                     </Box>
-                </Box>
-            )}
+                    </>
+                )}
+            </Box>
         </Box>
     );
 };

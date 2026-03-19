@@ -86,22 +86,22 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/logo.jpg"
+  image_path: "assets/logo_full.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
   adaptive_icon_background: "#081018" # Deep blue background to match splash
-  adaptive_icon_foreground: "assets/logo.jpg"
+  adaptive_icon_foreground: "assets/logo_full.png"
   web:
     generate: true
-    image_path: "assets/logo.jpg"
+    image_path: "assets/logo_full.png"
     background_color: "#081018"
     theme_color: "#081018"
   windows:
     generate: true
-    image_path: "assets/logo.jpg"
+    image_path: "assets/logo_full.png"
     icon_size: 48 # min:48, max:256, default: 48
   macos:
     generate: true
-    image_path: "assets/logo.jpg"
+    image_path: "assets/logo_full.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -119,7 +119,7 @@ flutter:
 
 
   assets:
-    - assets/logo.jpg
+    - assets/logo_full.png
     - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see

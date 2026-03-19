@@ -9,10 +9,12 @@ import { GeneratedZones } from './pages/GeneratedZones';
 import { AuditLogs } from './pages/AuditLogs';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { CustomThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   return (
-    <AuthProvider>
+    <CustomThemeProvider>
+      <AuthProvider>
       <Router>
         <Routes>
           {/* Login route without Layout - Default landing page */}
@@ -72,6 +74,7 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
+    </CustomThemeProvider>
   );
 }
 

@@ -1,4 +1,4 @@
-import { createTheme, alpha } from '@mui/material/styles';
+import { createTheme, alpha, type PaletteMode } from '@mui/material/styles';
 
 // Premium Ocean-themed palette matching Login page
 const PRIMARY_MAIN = '#088395'; // Ocean Teal
@@ -12,16 +12,35 @@ const WARNING_MAIN = '#f59e0b'; // Amber 500
 const ERROR_MAIN = '#ef4444'; // Red 500
 const INFO_MAIN = '#3b82f6'; // Blue 500
 
-const TEXT_PRIMARY = '#1e293b'; // Slate 800
-const TEXT_SECONDARY = '#64748b'; // Slate 500
+const TEXT_PRIMARY_LIGHT = '#1e293b'; // Slate 800
+const TEXT_SECONDARY_LIGHT = '#64748b'; // Slate 500
 
-export const theme = createTheme({
-    palette: {
+const TEXT_PRIMARY_DARK = '#e2f1f8'; // Ice White
+const TEXT_SECONDARY_DARK = '#8892b0'; // Muted Ice
+
+const BG_DEFAULT_LIGHT = '#f1f5f9'; // Slate 100
+const BG_PAPER_LIGHT = '#ffffff';
+
+const BG_DEFAULT_DARK = '#040b16'; // Midnight Trench
+const BG_PAPER_DARK = '#0a192f'; // Deep Navy
+
+const DIVIDER_LIGHT = '#e2e8f0'; // Slate 200
+const DIVIDER_DARK = 'rgba(0, 255, 209, 0.1)'; // Glowing Cyan Subtlety
+
+export const getTheme = (mode: PaletteMode) => {
+    const isDark = mode === 'dark';
+    const TEXT_PRIMARY = isDark ? TEXT_PRIMARY_DARK : TEXT_PRIMARY_LIGHT;
+    const TEXT_SECONDARY = isDark ? TEXT_SECONDARY_DARK : TEXT_SECONDARY_LIGHT;
+    const DIVIDER = isDark ? DIVIDER_DARK : DIVIDER_LIGHT;
+
+    return createTheme({
+        palette: {
+            mode,
         primary: {
-            main: PRIMARY_MAIN,
-            light: PRIMARY_LIGHT,
-            dark: PRIMARY_DARK,
-            contrastText: '#ffffff',
+            main: isDark ? '#00ffd1' : PRIMARY_MAIN, // Glowing Cyan in dark mode
+            light: isDark ? alpha('#00ffd1', 0.2) : PRIMARY_LIGHT,
+            dark: isDark ? '#00ccA7' : PRIMARY_DARK,
+            contrastText: isDark ? '#040b16' : '#ffffff',
         },
         secondary: {
             main: SECONDARY_MAIN,
@@ -42,16 +61,16 @@ export const theme = createTheme({
             main: INFO_MAIN,
             light: alpha(INFO_MAIN, 0.1),
         },
-        background: {
-            default: '#f1f5f9', // Slate 100
-            paper: '#ffffff',
+            background: {
+                default: isDark ? BG_DEFAULT_DARK : BG_DEFAULT_LIGHT,
+                paper: isDark ? BG_PAPER_DARK : BG_PAPER_LIGHT,
+            },
+            text: {
+                primary: TEXT_PRIMARY,
+                secondary: TEXT_SECONDARY,
+            },
+            divider: DIVIDER,
         },
-        text: {
-            primary: TEXT_PRIMARY,
-            secondary: TEXT_SECONDARY,
-        },
-        divider: '#e2e8f0',
-    },
     typography: {
         fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
         h1: { fontWeight: 700 },
@@ -91,14 +110,14 @@ export const theme = createTheme({
         MuiCssBaseline: {
             styleOverrides: {
                 body: {
-                    backgroundColor: '#f1f5f9',
+                    backgroundColor: isDark ? BG_DEFAULT_DARK : BG_DEFAULT_LIGHT,
                     scrollbarWidth: 'thin',
                     '&::-webkit-scrollbar': {
                         width: '8px',
                         height: '8px',
                     },
                     '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: '#cbd5e1',
+                        backgroundColor: isDark ? 'rgba(0, 255, 209, 0.2)' : '#cbd5e1',
                         borderRadius: '4px',
                     },
                 },
@@ -108,8 +127,10 @@ export const theme = createTheme({
             styleOverrides: {
                 root: {
                     borderRadius: '16px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-                    border: '1px solid #f1f5f9',
+                    boxShadow: isDark 
+                        ? '0 10px 30px -10px rgba(0, 255, 209, 0.05)'
+                        : '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
+                    border: `1px solid ${isDark ? DIVIDER_DARK : DIVIDER_LIGHT}`,
                     backgroundImage: 'none',
                 },
             },
@@ -117,13 +138,19 @@ export const theme = createTheme({
         MuiPaper: {
             styleOverrides: {
                 elevation1: {
-                    boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+                    boxShadow: isDark 
+                        ? '0 4px 12px rgba(0, 255, 209, 0.03)'
+                        : '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
                 },
                 elevation2: {
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                    boxShadow: isDark
+                        ? '0 8px 24px rgba(0, 255, 209, 0.05)'
+                        : '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
                 },
                 elevation3: {
-                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                    boxShadow: isDark
+                        ? '0 16px 32px rgba(0, 255, 209, 0.08)'
+                        : '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
                 },
             },
         },
@@ -132,15 +159,18 @@ export const theme = createTheme({
                 root: {
                     borderRadius: '10px',
                     padding: '8px 16px',
-                    boxShadow: 'none',
+                    boxShadow: isDark ? '0 0 10px rgba(0, 255, 209, 0.1)' : 'none',
                     '&:hover': {
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                        boxShadow: isDark ? '0 0 15px rgba(0, 255, 209, 0.3)' : '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
                         transform: 'translateY(-1px)',
                     },
                     transition: 'all 0.2s ease-in-out',
                 },
                 containedPrimary: {
-                    background: `linear-gradient(135deg, ${PRIMARY_MAIN} 0%, ${PRIMARY_DARK} 100%)`,
+                    background: isDark 
+                        ? `linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)`
+                        : `linear-gradient(135deg, ${PRIMARY_MAIN} 0%, ${PRIMARY_DARK} 100%)`,
+                    color: isDark ? '#040b16' : '#ffffff',
                 },
             },
         },
@@ -159,14 +189,14 @@ export const theme = createTheme({
         MuiTableCell: {
             styleOverrides: {
                 root: {
-                    borderBottom: '1px solid #f1f5f9',
+                    borderBottom: `1px solid ${DIVIDER}`,
                     padding: '16px',
                 },
                 head: {
                     fontWeight: 600,
                     color: TEXT_SECONDARY,
-                    backgroundColor: '#f8fafc',
-                    borderBottom: '1px solid #e2e8f0',
+                    backgroundColor: isDark ? alpha(BG_PAPER_DARK, 0.8) : '#f8fafc',
+                    borderBottom: `1px solid ${DIVIDER}`,
                     textTransform: 'uppercase',
                     fontSize: '0.75rem',
                     letterSpacing: '0.05em',
@@ -177,20 +207,23 @@ export const theme = createTheme({
             styleOverrides: {
                 root: {
                     borderRadius: '10px',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: isDark ? alpha(BG_PAPER_DARK, 0.5) : '#ffffff',
                     '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#e2e8f0',
+                        borderColor: DIVIDER,
                     },
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#94a3b8',
+                        borderColor: isDark ? TEXT_SECONDARY : '#94a3b8',
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: PRIMARY_MAIN,
+                        borderColor: isDark ? '#00ffd1' : PRIMARY_MAIN,
                         borderWidth: 1,
-                        boxShadow: `0 0 0 3px ${alpha(PRIMARY_MAIN, 0.1)}`,
+                        boxShadow: isDark 
+                            ? `0 0 10px ${alpha('#00ffd1', 0.15)}`
+                            : `0 0 0 3px ${alpha(PRIMARY_MAIN, 0.1)}`,
                     },
                 },
             },
         },
     },
 });
+};

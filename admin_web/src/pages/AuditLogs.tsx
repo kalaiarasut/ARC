@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
+  Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, TextField, InputAdornment,
   CircularProgress, IconButton, Chip, useTheme, alpha, Tooltip, Stack,
 } from '@mui/material';
