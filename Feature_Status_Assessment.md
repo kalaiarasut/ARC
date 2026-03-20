@@ -70,8 +70,8 @@
 | # | Feature | Status | What Exists | What's Missing |
 |---|---------|--------|-------------|----------------|
 | 1 | **Privacy Controls** | 🟡 Partial | `privacy_provider.dart` with `reduceMapPrecision` toggle, `privacy_controls_screen.dart` UI with switch | The toggle stores a preference but coordinate fuzzing is **not applied** during report submission or map display. The setting is saved but has no downstream effect |
-| 2 | **FCM Deep-Linking** | 🟡 Partial | FCM foreground/background/terminated handlers all working. Code comment: `// Future: handle taps to deep-link` | Tapping a notification does NOT navigate to the relevant report or advisory. Only logged in debug mode |
-| 3 | **Admin Quick Verify** | 🟡 Partial | `RecentReportsTable.tsx` has `// TODO: Add quick verify action` | Cannot verify reports directly from the dashboard's recent reports widget — must navigate to full Reports page |
+| 2 | **FCM Deep-Linking** | ✅ Complete | Implemented notification tap deep-links for foreground/background/terminated flows. Taps route to `ReportDetailsScreen` (`report_id`) or `AdvisoryDetailsScreen` (`advisory_id`) via app navigator and notification payload parsing | � |
+| 3 | **Admin Quick Verify** | ✅ Complete | Added quick-verify action in `RecentReportsTable.tsx` wired to `hazardService.verifyReport` from Dashboard, with loading state and optimistic status updates | � |
 | 4 | **Map Image/PDF Export** | ✅ Complete | Export button in Live Map toolbar — PNG (high-res via html2canvas) and A4 landscape PDF (jsPDF with header, timestamp, watermark) |
 | 5 | **Geofencing Page** | 🟡 Partial | Monitoring zones can be drawn via `LeafletMapWithDraw` on the Live Map page | No dedicated "Geofencing" page exists. Geofences are only monitoring-zone circles — no polygon support, no automated alerting when citizens enter/exit zones |
 
@@ -120,7 +120,8 @@
 
 | Category | Count |
 |----------|-------|
-| ✅ Fully Completed | 42 features |
-| 🟡 Partially Implemented | 5 features |
+| ✅ Fully Completed | 44 features |
+| 🟡 Partially Implemented | 3 features |
 | 🔵 Can Be Improved | 12 features |
 | 🔴 New to Implement | 12 features |
+

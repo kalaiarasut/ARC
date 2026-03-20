@@ -3,20 +3,20 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../core/supabase_config.dart';
 import '../models/hazard_report.dart';
 import '../models/citizen_stats.dart';
-import '../services/offline_report_queue_service.dart';
 import '../services/report_sync_service.dart';
 import '../services/report_service.dart';
 import '../services/gamification_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
+import '../widgets/queued_reports_list.dart';
 import 'report_details_screen.dart';
 import 'achievements_screen.dart';
 import 'leaderboard_screen.dart';
+import 'queued_reports_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -163,151 +163,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               context.l10n.offlineReports,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ValueListenableBuilder(
-                valueListenable: Hive.box(OfflineReportQueueService.boxName).listenable(),
-                builder: (context, box, _) {
-                  if (box.isEmpty) {
-                    return Center(
-                      child: Text(
-                        context.l10n.noPendingReports,
-                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                      ),
-                    );
-                  }
-
-                  final keys = box.keys.toList();
-                  return ListView.builder(
-                    itemCount: keys.length,
-                    itemBuilder: (context, index) {
-                      final key = keys[index];
-                      final job = box.get(key);
-                      if (job is! Map) return const SizedBox.shrink();
-
-                      Map<String, dynamic> asStringKeyedMap(dynamic value) {
-                        if (value is Map) {
-                          return value.map(
-                            (k, v) => MapEntry(k.toString(), v),
-                          );
-                        }
-                        return <String, dynamic>{};
-                      }
-
-                      final jobMap = asStringKeyedMap(job);
-                      final report = asStringKeyedMap(jobMap['report']);
-
-                      final hazardType = report['hazardType']?.toString() ?? 'Unknown';
-                      final description = report['description']?.toString() ?? '';
-                      final attempts = (jobMap['attempts'] as num?)?.toInt() ?? 0;
-                      final lastError = jobMap['lastError']?.toString();
-                      final lastErrorCode = jobMap['lastErrorCode']?.toString();
-                      final nextAttemptAtRaw = jobMap['nextAttemptAt']?.toString();
-                      final nextAttemptAt = nextAttemptAtRaw == null ? null : DateTime.tryParse(nextAttemptAtRaw);
-
-                      String friendlyReason(String? code) {
-                        switch (code) {
-                          case 'network':
-                            return "Network error";
-                          case 'timeout':
-                            return "Request timed out";
-                          case 'auth':
-                            return "Login required";
-                          case 'permission':
-                            return "Permission denied";
-                          case 'file_missing':
-                            return "Missing media file";
-                          case 'rate_limited':
-                            return "Too many reports (rate limited)";
-                          case 'duplicate':
-                            return "Duplicate report detected";
-                          case 'unknown':
-                          default:
-                            return "Upload failed";
-                        }
-                      }
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    hazardType,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                Text(
-                                  context.l10n.attemptsLabel(attempts),
-                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                            ),
-                            if (lastError != null && lastError.trim().isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              if (lastErrorCode != null && lastErrorCode.trim().isNotEmpty)
-                                Text(
-                                  friendlyReason(lastErrorCode),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w700),
-                                ),
-                              Text(
-                                lastError,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppColors.error, fontSize: 12),
-                              ),
-                            ],
-                            if (nextAttemptAt != null) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                'Next retry: ${nextAttemptAt.toLocal()}'.split('.').first,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                TextButton.icon(
-                                  onPressed: _syncNow,
-                                  icon: const Icon(Icons.sync, size: 18),
-                                  label: Text(context.l10n.retry),
-                                ),
-                                const Spacer(),
-                                TextButton.icon(
-                                  onPressed: () async {
-                                    await OfflineReportQueueService.remove(key.toString());
-                                  },
-                                  icon: const Icon(Icons.delete_outline, size: 18),
-                                  label: Text(context.l10n.remove),
-                                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QueuedReportsScreen()),
                   );
                 },
+                icon: const Icon(Icons.arrow_forward, size: 18),
+                label: const Text('View queue'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: QueuedReportsList(
+                onSyncRequested: _syncNow,
+                isSyncing: _syncService.isSyncing,
               ),
             ),
             const SizedBox(height: 16),

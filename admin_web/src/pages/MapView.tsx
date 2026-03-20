@@ -48,6 +48,7 @@ import type { OfficialAdvisory } from '../types/advisory';
 import type { GeneratedRiskZone } from '../types/riskZone';
 import type { MonitoringZone } from '../types/monitoringZone';
 import { useSearchParams } from 'react-router-dom';
+import type { MonitoringZoneCoordinate } from '../types/monitoringZone';
 
 /**
  * MapView Page - World-Class Live Map Experience
@@ -83,9 +84,11 @@ export const MapView: React.FC = () => {
     const initialAutoFitDoneRef = useRef(false);
     const pendingMonitoringRef = useRef<{
         tempLayerId: number;
+        shape: 'circle' | 'polygon';
         center_lat: number;
         center_lng: number;
         radius_meters: number;
+        polygon_points?: MonitoringZoneCoordinate[] | null;
     } | null>(null);
 
     const formatRpcError = (e: unknown) => {
@@ -164,10 +167,14 @@ export const MapView: React.FC = () => {
                 radiusMeters: z.radius_meters,
             })),
         ];
+        const polygons = (params.monitoringZones ?? [])
+            .filter((z) => z.shape === 'polygon' && (z.polygon_points?.length ?? 0) >= 3)
+            .map((z) => z.polygon_points ?? []);
 
         const didFit = mapRef.current?.fitToDataBounds({
             points,
             circles,
+            polygons,
             maxZoom: 11,
         });
 
@@ -710,9 +717,11 @@ export const MapView: React.FC = () => {
                         onMonitoringZoneEdited={async (params) => {
                             try {
                                 await monitoringZoneService.update(params.zoneId, {
+                                    shape: params.shape,
                                     center_lat: params.center_lat,
                                     center_lng: params.center_lng,
                                     radius_meters: params.radius_meters,
+                                    polygon_points: params.polygon_points ?? null,
                                 });
                             } catch (e) {
                                 console.error(e);
@@ -897,11 +906,13 @@ export const MapView: React.FC = () => {
                 setNameDialogOpen(false);
             }} PaperProps={{ sx: { borderRadius: '14px' } }}>
                 <DialogTitle sx={{ pb: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>Name monitoring zone</Typography>
+                    <Typography component="span" variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>
+                        {pendingMonitoringRef.current?.shape === 'polygon' ? 'Name polygon zone' : 'Name monitoring zone'}
+                    </Typography>
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText sx={{ fontSize: '0.8125rem', color: alpha(theme.palette.text.secondary, 0.7), mb: 1 }}>
-                        Give this zone a descriptive name. It will be saved and editable.
+                        Give this zone a descriptive name. It will be saved and editable on the live map.
                     </DialogContentText>
                     <TextField
                         autoFocus
@@ -911,7 +922,7 @@ export const MapView: React.FC = () => {
                         size="small"
                         value={newZoneName}
                         onChange={(e) => setNewZoneName(e.target.value)}
-                        placeholder="e.g. Marina Beach"
+                        placeholder={pendingMonitoringRef.current?.shape === 'polygon' ? 'e.g. Marina evacuation boundary' : 'e.g. Marina Beach'}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                     />
                 </DialogContent>
@@ -928,13 +939,16 @@ export const MapView: React.FC = () => {
                         onClick={async () => {
                             const pending = pendingMonitoringRef.current;
                             if (!pending) return;
-                            const name = newZoneName.trim() || 'Monitoring Zone';
+                            const fallbackName = pending.shape === 'polygon' ? 'Polygon Zone' : 'Monitoring Zone';
+                            const name = newZoneName.trim() || fallbackName;
                             try {
                                 const created = await monitoringZoneService.create({
                                     name,
+                                    shape: pending.shape,
                                     center_lat: pending.center_lat,
                                     center_lng: pending.center_lng,
                                     radius_meters: pending.radius_meters,
+                                    polygon_points: pending.polygon_points ?? null,
                                 });
                                 mapRef.current?.finalizeMonitoringZone(pending.tempLayerId, created as MonitoringZone);
                                 pendingMonitoringRef.current = null;

@@ -10,7 +10,7 @@
  * - Batch processing of historical location data
  */
 
-import type { MonitoringZone } from '../components/GoogleMapDashboard';
+import type { MonitoringZone, MonitoringZoneCoordinate } from '../types/monitoringZone';
 
 export interface GeoPoint {
     lat: number;
@@ -37,6 +37,10 @@ export interface GeoPoint {
  * }
  */
 export function isPointInZone(point: GeoPoint, zone: MonitoringZone): boolean {
+    if (zone.shape === 'polygon') {
+        return isPointInPolygon(point, zone.polygon_points ?? []);
+    }
+
     // Use Haversine formula for accurate distance calculation
     const distance = calculateDistance(
         point.lat,
@@ -46,6 +50,26 @@ export function isPointInZone(point: GeoPoint, zone: MonitoringZone): boolean {
     );
 
     return distance <= zone.radius_meters;
+}
+
+function isPointInPolygon(point: GeoPoint, polygon: MonitoringZoneCoordinate[]): boolean {
+    if (polygon.length < 3) return false;
+
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lng;
+        const yi = polygon[i].lat;
+        const xj = polygon[j].lng;
+        const yj = polygon[j].lat;
+
+        const intersects =
+            (yi > point.lat) !== (yj > point.lat) &&
+            point.lng < ((xj - xi) * (point.lat - yi)) / ((yj - yi) || Number.EPSILON) + xi;
+
+        if (intersects) inside = !inside;
+    }
+
+    return inside;
 }
 
 /**

@@ -6,7 +6,70 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
-import type { MonitoringZone } from '../types/monitoringZone';
+import type {
+  MonitoringZone,
+  MonitoringZoneCoordinate,
+  MonitoringZoneShape,
+} from '../types/monitoringZone';
+
+const patchLeafletDrawReadableAreaBug = () => {
+  const geometryUtil = (L as typeof L & {
+    GeometryUtil?: {
+      formattedNumber?: (value: number, precision?: number) => string;
+      readableArea?: (area: number, isMetric: boolean | string | string[], precision?: Record<string, number>) => string;
+    };
+    Util: typeof L.Util;
+  }).GeometryUtil;
+
+  if (!geometryUtil?.formattedNumber) return;
+
+  geometryUtil.readableArea = (
+    area: number,
+    isMetric: boolean | string | string[],
+    precision?: Record<string, number>
+  ) => {
+    const defaultPrecision = {
+      km: 2,
+      ha: 2,
+      m: 0,
+      mi: 2,
+      ac: 2,
+      yd: 0,
+      ft: 0,
+      nm: 2,
+    };
+    const resolvedPrecision = L.Util.extend({}, defaultPrecision, precision ?? {});
+
+    if (isMetric) {
+      let units: string[] = ['ha', 'm'];
+      const metricMode = typeof isMetric;
+      if (metricMode === 'string') {
+        units = [isMetric];
+      } else if (metricMode !== 'boolean') {
+        units = isMetric;
+      }
+
+      if (area >= 1000000 && units.includes('km')) {
+        return `${geometryUtil.formattedNumber!(area * 0.000001, resolvedPrecision.km)} km²`;
+      }
+      if (area >= 10000 && units.includes('ha')) {
+        return `${geometryUtil.formattedNumber!(area * 0.0001, resolvedPrecision.ha)} ha`;
+      }
+      return `${geometryUtil.formattedNumber!(area, resolvedPrecision.m)} m²`;
+    }
+
+    const squareYards = area / 0.836127;
+    if (squareYards >= 3097600) {
+      return `${geometryUtil.formattedNumber!(squareYards / 3097600, resolvedPrecision.mi)} mi²`;
+    }
+    if (squareYards >= 4840) {
+      return `${geometryUtil.formattedNumber!(squareYards / 4840, resolvedPrecision.ac)} acres`;
+    }
+    return `${geometryUtil.formattedNumber!(squareYards, resolvedPrecision.yd)} yd²`;
+  };
+};
+
+patchLeafletDrawReadableAreaBug();
 
 const computePinScale = (zoomLevel: number) => {
   // Scale gently with zoom so hitboxes stay reasonable.
@@ -71,16 +134,20 @@ interface LeafletMapProps {
 
   onMonitoringZoneCreateRequested?: (params: {
     tempLayerId: number;
+    shape: MonitoringZoneShape;
     center_lat: number;
     center_lng: number;
     radius_meters: number;
+    polygon_points?: MonitoringZoneCoordinate[] | null;
   }) => void;
 
   onMonitoringZoneEdited?: (params: {
     zoneId: string;
+    shape: MonitoringZoneShape;
     center_lat: number;
     center_lng: number;
     radius_meters: number;
+    polygon_points?: MonitoringZoneCoordinate[] | null;
   }) => void;
 
   onMonitoringZoneDeleted?: (params: { zoneId: string }) => void;
@@ -223,6 +290,7 @@ export interface MapMethods {
   fitToDataBounds: (params: {
     points?: Array<[number, number]>;
     circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
+    polygons?: MonitoringZoneCoordinate[][];
     maxZoom?: number;
   }) => boolean;
   drawZone: (coordinates: Array<[number, number]>, name: string, color?: string) => L.Polygon | undefined;
@@ -282,8 +350,8 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
     // Monitoring zones live in a separate FeatureGroup so refreshing generated zones doesn't wipe them.
     const monitoringGroupRef = useRef<L.FeatureGroup>(L.featureGroup());
-    const monitoringZonesRef = useRef<Map<string, L.Circle>>(new Map());
-    const pendingMonitoringRef = useRef<Map<number, L.Circle>>(new Map());
+    const monitoringZonesRef = useRef<Map<string, L.Circle | L.Polygon>>(new Map());
+    const pendingMonitoringRef = useRef<Map<number, L.Circle | L.Polygon>>(new Map());
     const drawControlRef = useRef<any | null>(null);
 
     const onMapReadyRef = useRef<LeafletMapProps['onMapReady']>(onMapReady);
@@ -326,6 +394,92 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       if (peopleCount >= 30) return '#f44336';
       if (peopleCount >= 20) return '#ffc107';
       return '#4caf50';
+    };
+
+    const normalizePolygonLatLngs = (latLngs: L.LatLng[] | L.LatLng[][] | L.LatLng[][][]): L.LatLng[] => {
+      if (!Array.isArray(latLngs) || latLngs.length === 0) return [];
+      if (latLngs[0] instanceof L.LatLng) {
+        return latLngs as L.LatLng[];
+      }
+      return normalizePolygonLatLngs(latLngs[0] as L.LatLng[] | L.LatLng[][]);
+    };
+
+    const toPolygonPoints = (latLngs: L.LatLng[]): MonitoringZoneCoordinate[] =>
+      latLngs.map((point) => ({ lat: point.lat, lng: point.lng }));
+
+    const summarizePolygon = (points: MonitoringZoneCoordinate[]) => {
+      if (points.length < 3) {
+        return {
+          center_lat: 0,
+          center_lng: 0,
+          radius_meters: 0,
+        };
+      }
+
+      const bounds = L.latLngBounds(points.map((point) => [point.lat, point.lng] as [number, number]));
+      const center = bounds.getCenter();
+      let radiusMeters = 0;
+
+      points.forEach((point) => {
+        const distance = center.distanceTo(L.latLng(point.lat, point.lng));
+        if (distance > radiusMeters) radiusMeters = distance;
+      });
+
+      return {
+        center_lat: center.lat,
+        center_lng: center.lng,
+        radius_meters: Math.ceil(radiusMeters),
+      };
+    };
+
+    const getLayerPolygonPoints = (layer: L.Circle | L.Polygon): MonitoringZoneCoordinate[] | null => {
+      if (!(layer instanceof L.Polygon) || layer instanceof L.Circle) return null;
+      const points = toPolygonPoints(normalizePolygonLatLngs(layer.getLatLngs() as L.LatLng[] | L.LatLng[][] | L.LatLng[][][]));
+      return points.length >= 3 ? points : null;
+    };
+
+    const getMonitoringLayerPayload = (layer: L.Circle | L.Polygon) => {
+      if (layer instanceof L.Circle) {
+        const center = layer.getLatLng();
+        return {
+          shape: 'circle' as const,
+          center_lat: center.lat,
+          center_lng: center.lng,
+          radius_meters: layer.getRadius(),
+          polygon_points: null,
+        };
+      }
+
+      const polygonPoints = getLayerPolygonPoints(layer) ?? [];
+      const summary = summarizePolygon(polygonPoints);
+
+      return {
+        shape: 'polygon' as const,
+        center_lat: summary.center_lat,
+        center_lng: summary.center_lng,
+        radius_meters: summary.radius_meters,
+        polygon_points: polygonPoints,
+      };
+    };
+
+    const buildMonitoringZonePopup = (zone: MonitoringZone, zoneColor: string) => {
+      const shapeLabel = zone.shape === 'polygon' ? 'POLYGON' : 'CIRCLE';
+      const coverageLabel = zone.shape === 'polygon'
+        ? `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Vertices</span> <strong>${zone.polygon_points?.length ?? 0}</strong></div>`
+        : `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(zone.radius_meters) || 0)} m</strong></div>`;
+
+      return `
+        <div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom: 1px solid #e2e8f0;">
+            <strong style="font-size: 13px; color: #0f172a;">Monitoring Zone</strong>
+            <span style="padding: 2px 8px; border-radius: 999px; background: ${zoneColor}15; color: ${zoneColor}; font-weight: 700; font-size: 10px; letter-spacing: 0.4px;">${shapeLabel}</span>
+          </div>
+          <div style="color:#334155; display:grid; gap:6px;">
+            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Name</span> <strong>${escapeHtml(zone.name || 'Unnamed')}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(zone.people_count ?? 0)}</strong></div>
+            ${coverageLabel}
+          </div>
+        </div>`;
     };
 
     const ensureMonitoringGroupOnMap = (visible: boolean) => {
@@ -487,56 +641,56 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
     const setMonitoringZones = (zones: MonitoringZone[]) => {
       // Preserve any pending (unsaved) circle the admin is currently naming.
-      monitoringZonesRef.current.forEach((circle) => circle.remove());
+      monitoringZonesRef.current.forEach((layer) => layer.remove());
       monitoringZonesRef.current.clear();
       monitoringGroupRef.current.clearLayers();
 
-      pendingMonitoringRef.current.forEach((circle) => {
-        monitoringGroupRef.current.addLayer(circle);
+      pendingMonitoringRef.current.forEach((layer) => {
+        monitoringGroupRef.current.addLayer(layer);
       });
 
       zones.forEach((z) => {
         const zoneColor = getMonitoringZoneColor(Number(z.people_count ?? 0));
-        const circle = L.circle([z.center_lat, z.center_lng], {
-          radius: Number(z.radius_meters) || 0,
-          color: zoneColor,
-          weight: 3,
-          opacity: 0.85,
-          fillColor: zoneColor,
-          fillOpacity: 0.18,
-        });
+        const layer =
+          z.shape === 'polygon' && (z.polygon_points?.length ?? 0) >= 3
+            ? L.polygon(
+                (z.polygon_points ?? []).map((point) => [point.lat, point.lng] as [number, number]),
+                {
+                  color: zoneColor,
+                  weight: 3,
+                  opacity: 0.85,
+                  fillColor: zoneColor,
+                  fillOpacity: 0.18,
+                }
+              )
+            : L.circle([z.center_lat, z.center_lng], {
+                radius: Number(z.radius_meters) || 0,
+                color: zoneColor,
+                weight: 3,
+                opacity: 0.85,
+                fillColor: zoneColor,
+                fillOpacity: 0.18,
+              });
 
-        (circle as any)._monitoringZoneId = z.id;
-        circle.bindPopup(
-          `<div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom: 1px solid #e2e8f0;">
-              <strong style="font-size: 13px; color: #0f172a;">Monitoring Zone</strong>
-              <span style="padding: 2px 8px; border-radius: 999px; background: ${zoneColor}15; color: ${zoneColor}; font-weight: 700; font-size: 10px; letter-spacing: 0.4px;">MANUAL</span>
-            </div>
-            <div style="color:#334155; display:grid; gap:6px;">
-              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Name</span> <strong>${escapeHtml(z.name || 'Unnamed')}</strong></div>
-              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(z.people_count ?? 0)}</strong></div>
-              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(z.radius_meters) || 0)} m</strong></div>
-            </div>
-          </div>`
-        );
+        (layer as any)._monitoringZoneId = z.id;
+        layer.bindPopup(buildMonitoringZonePopup(z, zoneColor));
 
-        monitoringGroupRef.current.addLayer(circle);
-        monitoringZonesRef.current.set(z.id, circle);
+        monitoringGroupRef.current.addLayer(layer);
+        monitoringZonesRef.current.set(z.id, layer);
       });
 
       ensureMonitoringGroupOnMap(showMonitoringZonesRef.current);
     };
 
     const finalizeMonitoringZone = (tempLayerId: number, zone: MonitoringZone) => {
-      const circle = pendingMonitoringRef.current.get(tempLayerId);
-      if (!circle) return;
+      const layer = pendingMonitoringRef.current.get(tempLayerId);
+      if (!layer) return;
 
       pendingMonitoringRef.current.delete(tempLayerId);
-      (circle as any)._monitoringZoneId = zone.id;
+      (layer as any)._monitoringZoneId = zone.id;
 
       const zoneColor = getMonitoringZoneColor(Number(zone.people_count ?? 0));
-      circle.setStyle({
+      layer.setStyle({
         color: zoneColor,
         weight: 3,
         opacity: 0.85,
@@ -544,28 +698,16 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
         fillOpacity: 0.18,
       });
 
-      circle.bindPopup(
-        `<div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom: 1px solid #e2e8f0;">
-            <strong style="font-size: 13px; color: #0f172a;">Monitoring Zone</strong>
-            <span style="padding: 2px 8px; border-radius: 999px; background: ${zoneColor}15; color: ${zoneColor}; font-weight: 700; font-size: 10px; letter-spacing: 0.4px;">MANUAL</span>
-          </div>
-          <div style="color:#334155; display:grid; gap:6px;">
-            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Name</span> <strong>${escapeHtml(zone.name || 'Unnamed')}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(zone.people_count ?? 0)}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(zone.radius_meters) || 0)} m</strong></div>
-          </div>
-        </div>`
-      );
+      layer.bindPopup(buildMonitoringZonePopup(zone, zoneColor));
 
-      monitoringZonesRef.current.set(zone.id, circle);
+      monitoringZonesRef.current.set(zone.id, layer);
     };
 
     const discardPendingMonitoringZone = (tempLayerId: number) => {
-      const circle = pendingMonitoringRef.current.get(tempLayerId);
-      if (!circle) return;
+      const layer = pendingMonitoringRef.current.get(tempLayerId);
+      if (!layer) return;
       pendingMonitoringRef.current.delete(tempLayerId);
-      circle.remove();
+      layer.remove();
     };
 
     const getMarkerCount = () => markersRef.current.size;
@@ -646,6 +788,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
     const fitToDataBounds = (params: {
       points?: Array<[number, number]>;
       circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
+      polygons?: MonitoringZoneCoordinate[][];
       maxZoom?: number;
     }) => {
       const map = mapInstanceRef.current;
@@ -669,6 +812,14 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
           const circleBounds = L.circle([circle.lat, circle.lng], { radius: circle.radiusMeters }).getBounds();
           bounds.extend(circleBounds);
         }
+      });
+
+      (params.polygons ?? []).forEach((polygon) => {
+        polygon.forEach((point) => {
+          if (Number.isFinite(point.lat) && Number.isFinite(point.lng)) {
+            bounds.extend([point.lat, point.lng]);
+          }
+        });
       });
 
       if (!bounds.isValid()) return false;
@@ -881,7 +1032,17 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
           marker: false,
           circlemarker: false,
           polyline: false,
-          polygon: false,
+          polygon: {
+            allowIntersection: false,
+            showArea: true,
+            shapeOptions: {
+              color: '#2563eb',
+              weight: 3,
+              opacity: 0.85,
+              fillOpacity: 0.16,
+              fillColor: '#2563eb',
+            },
+          },
           rectangle: false,
           circle: {
             metric: true,
@@ -907,39 +1068,42 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
       map.on('draw:created', (e: any) => {
         const layer = e.layer;
-        if (!(layer instanceof L.Circle)) return;
+        const isCircle = layer instanceof L.Circle;
+        const isPolygon = layer instanceof L.Polygon && !(layer instanceof L.Circle);
+        if (!isCircle && !isPolygon) return;
 
-        const tempLayerId = (layer as any)._leaflet_id as number;
-        pendingMonitoringRef.current.set(tempLayerId, layer);
+        const monitoringLayer = layer as L.Circle | L.Polygon;
+        const tempLayerId = (monitoringLayer as any)._leaflet_id as number;
+        pendingMonitoringRef.current.set(tempLayerId, monitoringLayer);
         monitoringGroupRef.current.addLayer(layer);
 
-        const c = layer.getLatLng();
-        layer.bindPopup(
+        const payload = getMonitoringLayerPayload(monitoringLayer);
+        const draftLabel = payload.shape === 'polygon' ? 'New polygon zone' : 'New monitoring zone';
+
+        monitoringLayer.bindPopup(
           `<div style="font-size: 12px; font-family: system-ui, -apple-system, sans-serif;">
-            <strong>New monitoring zone</strong><br/>
+            <strong>${draftLabel}</strong><br/>
             <span style="color:#64748b">Enter a name to save</span>
           </div>`
         );
 
         onMonitoringZoneCreateRequestedRef.current?.({
           tempLayerId,
-          center_lat: c.lat,
-          center_lng: c.lng,
-          radius_meters: layer.getRadius(),
+          ...payload,
         });
       });
 
       map.on('draw:edited', (e: any) => {
         e.layers.eachLayer((layer: any) => {
-          if (!(layer instanceof L.Circle)) return;
+          const isCircle = layer instanceof L.Circle;
+          const isPolygon = layer instanceof L.Polygon && !(layer instanceof L.Circle);
+          if (!isCircle && !isPolygon) return;
           const zoneId = (layer as any)._monitoringZoneId as string | undefined;
           if (!zoneId) return;
-          const c = layer.getLatLng();
+          const payload = getMonitoringLayerPayload(layer as L.Circle | L.Polygon);
           onMonitoringZoneEditedRef.current?.({
             zoneId,
-            center_lat: c.lat,
-            center_lng: c.lng,
-            radius_meters: layer.getRadius(),
+            ...payload,
           });
         });
       });
