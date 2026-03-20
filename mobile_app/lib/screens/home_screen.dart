@@ -18,15 +18,23 @@ import '../models/official_advisory.dart';
 import '../services/advisory_service.dart';
 import '../providers/map_provider.dart';
 import '../services/map_service.dart';
+import '../services/home_feed_bootstrap_service.dart';
 import '../models/map_marker_data.dart';
 import 'report_details_screen.dart';
 import 'reports_screen.dart';
 import 'media_viewer_screen.dart';
 
-enum _ReportWindow { now, week, month }
-
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final HomeFeedWindow? initialReportWindow;
+  final List<MapMarkerData>? initialLiveReports;
+  final LatLng? initialUserLocation;
+
+  const HomeScreen({
+    super.key,
+    this.initialReportWindow,
+    this.initialLiveReports,
+    this.initialUserLocation,
+  });
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -37,7 +45,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _userName = '';
   List<OfficialAdvisory> _liveAdvisories = const [];
 
-  _ReportWindow _reportWindow = _ReportWindow.now;
+  HomeFeedWindow _reportWindow = HomeFeedWindow.now;
+  bool _didApplyStartupWindowFallback = false;
   String? _selectedHazard;
   String? _selectedUrgency;
   List<MapMarkerData> _liveReports = const [];
@@ -48,9 +57,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _loadUserName();
-    _loadLastKnownLocationSilently();
-    _loadLiveAdvisories();
-    _loadLiveReports();
+    if (widget.initialUserLocation != null) {
+      _setUserLocationAfterBuild(widget.initialUserLocation!);
+    } else {
+      _loadLastKnownLocationSilently();
+    }
+    _loadLiveAdvisories(locationOverride: widget.initialUserLocation);
+
+    if (widget.initialReportWindow != null) {
+      _reportWindow = widget.initialReportWindow!;
+      _didApplyStartupWindowFallback = true;
+    }
+    if (widget.initialLiveReports != null) {
+      _liveReports = widget.initialLiveReports!;
+    }
+
+    if (widget.initialLiveReports == null) {
+      _loadLiveReports(
+        applyStartupWindowFallback: true,
+        locationOverride: widget.initialUserLocation,
+      );
+    }
 
     // If location becomes available later (e.g. map screen updates it), refresh report feed.
     _locationSub = ref.listenManual<LatLng?>(userLocationProvider, (prev, next) {
@@ -76,10 +103,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (pos == null) return;
 
       final loc = LatLng(pos.latitude, pos.longitude);
-      ref.read(userLocationProvider.notifier).update(loc);
+      _setUserLocationAfterBuild(loc);
     } catch (_) {
       // Ignore; we only use this to improve sorting.
     }
+  }
+
+  void _setUserLocationAfterBuild(LatLng location) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(userLocationProvider.notifier).update(location);
+    });
   }
 
   Future<void> _loadUserName() async {
@@ -90,9 +124,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> _loadLiveAdvisories() async {
+  Future<void> _loadLiveAdvisories({LatLng? locationOverride}) async {
     try {
-      final loc = ref.read(userLocationProvider);
+      final loc = locationOverride ?? ref.read(userLocationProvider);
       final items = await AdvisoryService().getLatest(limit: 10, userLocation: loc);
       if (!mounted) return;
       setState(() => _liveAdvisories = items);
@@ -101,66 +135,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  DateTime _sinceForWindow(_ReportWindow window) {
+  DateTime _sinceForWindow(HomeFeedWindow window) {
     final now = DateTime.now();
     switch (window) {
-      case _ReportWindow.week:
+      case HomeFeedWindow.week:
         return now.subtract(const Duration(days: 7));
-      case _ReportWindow.month:
+      case HomeFeedWindow.month:
         return now.subtract(const Duration(days: 30));
-      case _ReportWindow.now:
+      case HomeFeedWindow.now:
         return now.subtract(const Duration(hours: 24));
     }
   }
 
-  double _deltaDegreesForWindow(_ReportWindow window) {
+  double _deltaDegreesForWindow(HomeFeedWindow window) {
     // Approximate viewport radius around user location for home feed.
     // Keeps results locally relevant while still showing enough items.
     switch (window) {
-      case _ReportWindow.week:
+      case HomeFeedWindow.week:
         return 1.8;
-      case _ReportWindow.month:
+      case HomeFeedWindow.month:
         return 3.5;
-      case _ReportWindow.now:
+      case HomeFeedWindow.now:
         return 0.9;
     }
   }
 
-  Future<void> _loadLiveReports() async {
-    try {
-      final loc = ref.read(userLocationProvider);
-      final since = _sinceForWindow(_reportWindow);
+  Future<List<MapMarkerData>> _fetchLiveReportsForWindow(HomeFeedWindow window, {required LatLng? loc}) async {
+    final since = _sinceForWindow(window);
 
-      double minLat = -90, maxLat = 90, minLon = -180, maxLon = 180;
-      if (loc != null) {
-        final d = _deltaDegreesForWindow(_reportWindow);
-        minLat = (loc.latitude - d).clamp(-90, 90);
-        maxLat = (loc.latitude + d).clamp(-90, 90);
-        minLon = (loc.longitude - d).clamp(-180, 180);
-        maxLon = (loc.longitude + d).clamp(-180, 180);
+    double minLat = -90, maxLat = 90, minLon = -180, maxLon = 180;
+    if (loc != null) {
+      final d = _deltaDegreesForWindow(window);
+      minLat = (loc.latitude - d).clamp(-90, 90);
+      maxLat = (loc.latitude + d).clamp(-90, 90);
+      minLon = (loc.longitude - d).clamp(-180, 180);
+      maxLon = (loc.longitude + d).clamp(-180, 180);
+    }
+
+    final items = await MapService().getReportsInBounds(
+      minLat: minLat,
+      maxLat: maxLat,
+      minLon: minLon,
+      maxLon: maxLon,
+      limit: 200,
+    );
+
+    final filtered = items
+        .where((r) => r.timestamp.isAfter(since))
+        .where((r) => _selectedHazard == null || r.hazardType == _selectedHazard)
+        .where((r) =>
+            _selectedUrgency == null ||
+            (_selectedUrgency == 'High' &&
+                (r.urgencyLevel.toLowerCase() == 'high' ||
+                    r.urgencyLevel.toLowerCase() == 'critical')) ||
+            (_selectedUrgency != 'High' &&
+                r.urgencyLevel.toLowerCase() == _selectedUrgency!.toLowerCase()))
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return filtered.take(10).toList();
+  }
+
+  Future<void> _loadLiveReports({
+    bool applyStartupWindowFallback = false,
+    LatLng? locationOverride,
+  }) async {
+    try {
+      final loc = locationOverride ?? ref.read(userLocationProvider);
+
+      final shouldApplyStartupFallback = applyStartupWindowFallback &&
+          !_didApplyStartupWindowFallback &&
+          _reportWindow == HomeFeedWindow.now &&
+          _selectedHazard == null &&
+          _selectedUrgency == null;
+
+      if (shouldApplyStartupFallback) {
+        _didApplyStartupWindowFallback = true;
+        final fallbackOrder = [HomeFeedWindow.now, HomeFeedWindow.week, HomeFeedWindow.month];
+
+        HomeFeedWindow resolvedWindow = HomeFeedWindow.month;
+        List<MapMarkerData> resolvedItems = const [];
+
+        for (final window in fallbackOrder) {
+          final items = await _fetchLiveReportsForWindow(window, loc: loc);
+          resolvedWindow = window;
+          resolvedItems = items;
+          if (items.isNotEmpty) break;
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _reportWindow = resolvedWindow;
+          _liveReports = resolvedItems;
+        });
+        return;
       }
 
-      final items = await MapService().getReportsInBounds(
-        minLat: minLat,
-        maxLat: maxLat,
-        minLon: minLon,
-        maxLon: maxLon,
-        limit: 200,
-      );
-
-      final filtered = items
-          .where((r) => r.timestamp.isAfter(since))
-          .where((r) => _selectedHazard == null || r.hazardType == _selectedHazard)
-          .where((r) => _selectedUrgency == null || 
-             (_selectedUrgency == 'High' && (r.urgencyLevel.toLowerCase() == 'high' || r.urgencyLevel.toLowerCase() == 'critical')) ||
-             (_selectedUrgency != 'High' && r.urgencyLevel.toLowerCase() == _selectedUrgency!.toLowerCase())
-          )
-          .toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
+      final items = await _fetchLiveReportsForWindow(_reportWindow, loc: loc);
       if (!mounted) return;
       setState(() {
-        _liveReports = filtered.take(10).toList();
+        _liveReports = items;
       });
     } catch (_) {
       // Ignore offline/network errors.
@@ -390,30 +464,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     _buildFilterChip(
                       context.l10n.filterNow,
-                      _reportWindow == _ReportWindow.now,
+                      _reportWindow == HomeFeedWindow.now,
                       onTap: () {
-                        if (_reportWindow == _ReportWindow.now) return;
-                        setState(() => _reportWindow = _ReportWindow.now);
+                        if (_reportWindow == HomeFeedWindow.now) return;
+                        setState(() => _reportWindow = HomeFeedWindow.now);
                         _loadLiveReports();
                       },
                     ),
                     const SizedBox(width: 8),
                     _buildFilterChip(
                       context.l10n.filterLastWeek,
-                      _reportWindow == _ReportWindow.week,
+                      _reportWindow == HomeFeedWindow.week,
                       onTap: () {
-                        if (_reportWindow == _ReportWindow.week) return;
-                        setState(() => _reportWindow = _ReportWindow.week);
+                        if (_reportWindow == HomeFeedWindow.week) return;
+                        setState(() => _reportWindow = HomeFeedWindow.week);
                         _loadLiveReports();
                       },
                     ),
                     const SizedBox(width: 8),
                     _buildFilterChip(
                       context.l10n.filterLastMonth,
-                      _reportWindow == _ReportWindow.month,
+                      _reportWindow == HomeFeedWindow.month,
                       onTap: () {
-                        if (_reportWindow == _ReportWindow.month) return;
-                        setState(() => _reportWindow = _ReportWindow.month);
+                        if (_reportWindow == HomeFeedWindow.month) return;
+                        setState(() => _reportWindow = HomeFeedWindow.month);
                         _loadLiveReports();
                       },
                     ),

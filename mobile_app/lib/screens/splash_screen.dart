@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/supabase_config.dart';
+import '../services/home_feed_bootstrap_service.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
@@ -39,13 +40,23 @@ class _SplashScreenState extends State<SplashScreen>
       final isOnboardingComplete =
           prefs.getBool('onboarding_complete') ?? false;
       final isSignedIn = SupabaseConfig.client.auth.currentUser != null;
+      HomeFeedBootstrapData? homeFeedBootstrap;
+
+      if (isOnboardingComplete && isSignedIn) {
+        homeFeedBootstrap = await HomeFeedBootstrapService().resolveInitialHomeFeed();
+      }
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (_, __, ___) {
               if (!isOnboardingComplete) return const OnboardingScreen();
-              return isSignedIn ? const HomeScreen() : const LoginScreen();
+              if (!isSignedIn) return const LoginScreen();
+              return HomeScreen(
+                initialReportWindow: homeFeedBootstrap?.window,
+                initialLiveReports: homeFeedBootstrap?.reports,
+                initialUserLocation: homeFeedBootstrap?.userLocation,
+              );
             },
             transitionsBuilder: (_, animation, __, child) {
               return FadeTransition(opacity: animation, child: child);
