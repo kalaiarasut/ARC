@@ -44,6 +44,7 @@ export function Dashboard() {
   const [topCitizens, setTopCitizens] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quickVerifyLoadingId, setQuickVerifyLoadingId] = useState<string | null>(null);
 
   const loadDashboardData = async () => {
     try {
@@ -85,6 +86,40 @@ export function Dashboard() {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const handleQuickVerify = async (report: HazardReport) => {
+    if (report.status !== 'pending' || quickVerifyLoadingId) return;
+
+    const ok = window.confirm('Accept this report and mark as VERIFIED?');
+    if (!ok) return;
+
+    try {
+      setQuickVerifyLoadingId(report.id);
+      await hazardService.verifyReport(report.id);
+
+      setRecentReports((prev) =>
+        prev.map((item) => (item.id === report.id ? { ...item, status: 'verified' } : item)),
+      );
+
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          pendingReports: Math.max(0, prev.pendingReports - 1),
+          byStatus: {
+            ...prev.byStatus,
+            pending: Math.max(0, prev.byStatus.pending - 1),
+            verified: prev.byStatus.verified + 1,
+          },
+        };
+      });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to quick verify report.');
+    } finally {
+      setQuickVerifyLoadingId(null);
+    }
+  };
 
   /*
   useEffect(() => {
@@ -540,6 +575,8 @@ export function Dashboard() {
         <RecentReportsTable
           reports={recentReports}
           loading={loading}
+          onQuickVerify={handleQuickVerify}
+          quickVerifyLoadingId={quickVerifyLoadingId}
           onViewReport={(report) => {
             window.location.href = `/reports?id=${report.id}`;
           }}

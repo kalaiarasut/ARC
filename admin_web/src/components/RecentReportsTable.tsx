@@ -16,6 +16,7 @@ import {
   TableRow,
   Avatar,
   Skeleton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
@@ -37,6 +38,8 @@ interface RecentReportsTableProps {
   reports: HazardReport[];
   loading?: boolean;
   onViewReport?: (report: HazardReport) => void;
+  onQuickVerify?: (report: HazardReport) => void | Promise<void>;
+  quickVerifyLoadingId?: string | null;
 }
 
 // Get hazard icon based on type
@@ -141,6 +144,8 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
   reports,
   loading = false,
   onViewReport,
+  onQuickVerify,
+  quickVerifyLoadingId,
 }) => {
   const theme = useTheme();
 
@@ -515,6 +520,7 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
                           <Tooltip title="Quick Verify" arrow>
                             <IconButton
                               size="small"
+                              disabled={quickVerifyLoadingId === report.id}
                               sx={{
                                 color: theme.palette.success.main,
                                 bgcolor: alpha(theme.palette.success.main, 0.08),
@@ -524,10 +530,14 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // TODO: Add quick verify action
+                                void onQuickVerify?.(report);
                               }}
                             >
-                              <VerifyIcon sx={{ fontSize: 18 }} />
+                              {quickVerifyLoadingId === report.id ? (
+                                <CircularProgress size={16} color="inherit" />
+                              ) : (
+                                <VerifyIcon sx={{ fontSize: 18 }} />
+                              )}
                             </IconButton>
                           </Tooltip>
                         )}
