@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'l10n/app_localizations.dart';
 import 'core/supabase_config.dart';
+import 'core/app_navigator.dart';
 import 'providers/language_provider.dart';
 import 'services/android_workmanager_report_sync.dart';
 import 'services/fcm_push_service.dart';
@@ -86,6 +87,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: 'ARC',
       debugShowCheckedModeBanner: false,
+      navigatorKey: appNavigatorKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,

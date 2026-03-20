@@ -7,6 +7,21 @@ import '../models/official_advisory.dart';
 class AdvisoryService {
   final SupabaseClient _supabase = SupabaseConfig.client;
 
+  Future<OfficialAdvisory?> getById(String advisoryId) async {
+    final id = advisoryId.trim();
+    if (id.isEmpty) return null;
+
+    final response = await _supabase
+        .from('official_advisories')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+
+    if (response == null) return null;
+
+    return OfficialAdvisory.fromJson(response);
+  }
+
   Future<List<OfficialAdvisory>> getLatest({
     int limit = 30,
     LatLng? userLocation,

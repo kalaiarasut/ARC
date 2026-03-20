@@ -1,11 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../core/app_navigator.dart';
+import '../screens/advisory_details_screen.dart';
+import '../screens/report_details_screen.dart';
 import 'notification_service.dart';
 import 'notification_settings_service.dart';
 import 'push_token_service.dart';
@@ -41,6 +46,14 @@ Future<bool> _shouldShowNotification(RemoteMessage message) async {
   }
 }
 
+String _encodeNotificationPayload(Map<String, dynamic> data) {
+  final normalized = <String, dynamic>{};
+  for (final entry in data.entries) {
+    normalized[entry.key] = entry.value?.toString();
+  }
+  return jsonEncode(normalized);
+}
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (!Platform.isAndroid) return;
@@ -63,6 +76,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     title: title,
     body: body,
+    payload: _encodeNotificationPayload(message.data),
   );
 }
 
@@ -74,6 +88,7 @@ class FcmPushService {
   final PushTokenService _pushTokens = PushTokenService();
 
   bool _listenersAttached = false;
+  bool _initialTapChecksDone = false;
 
   Future<bool> startIfEnabled() async {
     if (!Platform.isAndroid) return false;
@@ -146,6 +161,22 @@ class FcmPushService {
   Future<void> _ensureListeners() async {
     if (_listenersAttached) return;
 
+    NotificationService.instance.setTapHandler((payload) async {
+      await _handleNotificationPayload(payload);
+    });
+
+    if (!_initialTapChecksDone) {
+      _initialTapChecksDone = true;
+
+      final launchPayload = await NotificationService.instance.consumeLaunchPayload();
+      await _handleNotificationPayload(launchPayload);
+
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        await _handleTapData(initialMessage.data);
+      }
+    }
+
     // Foreground: show a local notification (we send data-only pushes from backend).
     FirebaseMessaging.onMessage.listen((message) async {
       final enabled = await _settings.isEnabled();
@@ -161,6 +192,7 @@ class FcmPushService {
         id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
         title: title,
         body: body,
+        payload: _encodeNotificationPayload(message.data),
       );
     });
 
@@ -170,8 +202,8 @@ class FcmPushService {
       await _pushTokens.upsertToken(token: token, enabled: enabled);
     });
 
-    // Future: handle taps to deep-link.
-    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    FirebaseMessaging.onMessageOpenedApp.listen((message) async {
+      await _handleTapData(message.data);
       if (kDebugMode) {
         // ignore: avoid_print
         print('FCM opened: ${message.data}');
@@ -179,5 +211,53 @@ class FcmPushService {
     });
 
     _listenersAttached = true;
+  }
+
+  Future<void> _handleNotificationPayload(String? payload) async {
+    if (payload == null || payload.trim().isEmpty) return;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        await _handleTapData(decoded);
+        return;
+      }
+      if (decoded is Map) {
+        await _handleTapData(
+          decoded.map((key, value) => MapEntry(key.toString(), value)),
+        );
+      }
+    } catch (_) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Invalid notification payload: $payload');
+      }
+    }
+  }
+
+  Future<void> _handleTapData(Map<String, dynamic> data) async {
+    final reportId = _asNonEmptyString(data['report_id']);
+    if (reportId != null) {
+      await pushRouteWhenReady(
+        MaterialPageRoute(
+          builder: (_) => ReportDetailsScreen(reportId: reportId, isOwnReport: true),
+        ),
+      );
+      return;
+    }
+
+    final advisoryId = _asNonEmptyString(data['advisory_id']);
+    if (advisoryId != null) {
+      await pushRouteWhenReady(
+        MaterialPageRoute(
+          builder: (_) => AdvisoryDetailsScreen(advisoryId: advisoryId),
+        ),
+      );
+    }
+  }
+
+  String? _asNonEmptyString(Object? value) {
+    final parsed = value?.toString().trim();
+    if (parsed == null || parsed.isEmpty || parsed == 'null') return null;
+    return parsed;
   }
 }
