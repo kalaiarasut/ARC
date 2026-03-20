@@ -89,7 +89,7 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
     ),
   ];
   
-  static const Set<String> _supportedCodes = {'en', 'ta'};
+  static const Set<String> _supportedCodes = {'en', 'hi', 'ml', 'ta', 'te'};
 
   String _selectedCode = 'en';
 
@@ -135,15 +135,6 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                 children: [
                   Text(
                     context.l10n.chooseLanguage,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.fromSettings ? '' : 'भाषा चुनें',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
