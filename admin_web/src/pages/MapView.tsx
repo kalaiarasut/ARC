@@ -101,6 +101,7 @@ export const MapView: React.FC = () => {
     };
 
     const zonesRefreshTimerRef = useRef<number | null>(null);
+    const zonesRequestIdRef = useRef(0);
     const zoneMoveHandlerBoundRef = useRef(false);
 
     const showZonesRef = useRef(showZones);
@@ -303,12 +304,16 @@ export const MapView: React.FC = () => {
         const bounds = map.getBounds();
         if (!bounds) return;
 
+        const requestId = ++zonesRequestIdRef.current;
+
         try {
             setZonesLoading(true);
             setZonesError(null);
 
             const includeInactive = showCandidateRef.current || showSuppressedRef.current;
-            const zones = await riskZoneService.listInBounds(bounds, includeInactive);
+            const zoomLevel = map.getZoomLevel() ?? 10;
+            const zones = await riskZoneService.listInBounds(bounds, includeInactive, { zoomLevel });
+            if (requestId !== zonesRequestIdRef.current) return;
             const visibleZones = zones.filter(isZoneVisible);
 
             map.clearAllZones();
@@ -353,11 +358,14 @@ export const MapView: React.FC = () => {
             setZoneCount(visibleZones.length);
             tryAutoFitOnOpen({ riskZones: visibleZones });
         } catch (e) {
+            if (requestId !== zonesRequestIdRef.current) return;
             console.error(e);
             setZonesError('Failed to load risk zones.');
             mapRef.current?.clearAllZones();
         } finally {
-            setZonesLoading(false);
+            if (requestId === zonesRequestIdRef.current) {
+                setZonesLoading(false);
+            }
         }
     };
 
@@ -439,16 +447,6 @@ export const MapView: React.FC = () => {
         void loadMonitoringZones();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    useEffect(() => {
-        if (!showZones) {
-            mapRef.current?.clearAllZones();
-            setZoneCount(0);
-            return;
-        }
-        void loadZonesForCurrentBounds();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showZones, showCandidateZones, showSuppressedZones]);
 
     const handleRecenter = () => {
         mapRef.current?.panToLocation(13.08, 80.27, zoomOnLoad ? 14 : 6);
@@ -651,6 +649,7 @@ export const MapView: React.FC = () => {
                             size="small"
                             startIcon={loading ? null : <RefreshIcon sx={{ fontSize: '0.9rem !important' }} />}
                             onClick={async () => {
+                                riskZoneService.clearBoundsCache();
                                 await loadLiveReports();
                                 await loadMonitoringZones();
                             }}

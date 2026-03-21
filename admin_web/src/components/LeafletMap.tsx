@@ -16,7 +16,11 @@ const patchLeafletDrawReadableAreaBug = () => {
   const geometryUtil = (L as typeof L & {
     GeometryUtil?: {
       formattedNumber?: (value: number, precision?: number) => string;
-      readableArea?: (area: number, isMetric: boolean | string | string[], precision?: Record<string, number>) => string;
+      readableArea?: (
+        area: number,
+        isMetric?: boolean | string | string[],
+        precision?: L.PrecisionOptions | Record<string, number>,
+      ) => string;
     };
     Util: typeof L.Util;
   }).GeometryUtil;
@@ -25,8 +29,8 @@ const patchLeafletDrawReadableAreaBug = () => {
 
   geometryUtil.readableArea = (
     area: number,
-    isMetric: boolean | string | string[],
-    precision?: Record<string, number>
+    isMetric: boolean | string | string[] = true,
+    precision?: L.PrecisionOptions | Record<string, number>
   ) => {
     const defaultPrecision = {
       km: 2,
@@ -42,10 +46,9 @@ const patchLeafletDrawReadableAreaBug = () => {
 
     if (isMetric) {
       let units: string[] = ['ha', 'm'];
-      const metricMode = typeof isMetric;
-      if (metricMode === 'string') {
+      if (typeof isMetric === 'string') {
         units = [isMetric];
-      } else if (metricMode !== 'boolean') {
+      } else if (Array.isArray(isMetric)) {
         units = isMetric;
       }
 
@@ -287,6 +290,7 @@ export interface MapMethods {
   clearAllMarkers: () => void;
   getMarkerCount: () => number;
   panToLocation: (lat: number, lng: number, zoomLevel?: number) => void;
+  getZoomLevel: () => number | null;
   fitToDataBounds: (params: {
     points?: Array<[number, number]>;
     circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
@@ -785,6 +789,11 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       }
     };
 
+    const getZoomLevel = () => {
+      if (!mapInstanceRef.current) return null;
+      return mapInstanceRef.current.getZoom();
+    };
+
     const fitToDataBounds = (params: {
       points?: Array<[number, number]>;
       circles?: Array<{ lat: number; lng: number; radiusMeters: number }>;
@@ -863,6 +872,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       clearAllMarkers,
       getMarkerCount,
       panToLocation,
+      getZoomLevel,
       fitToDataBounds,
       drawZone,
       getBounds,
