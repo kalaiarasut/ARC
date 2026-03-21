@@ -175,7 +175,7 @@ class AppLocalizationsHi extends AppLocalizationsEn {
       'रियल-टाइम अलर्ट पाएं और समुद्री खतरों की रिपोर्ट देकर सुरक्षा में योगदान दें।';
 
   @override
-  String get onboarding2Title => 'सुरक्षा को सशक्त बनाना,\nएक कदम एक समय';
+  String get onboarding2Title => 'सुरक्षा को मजबूत बनाएं,\nकदम दर कदम';
 
   @override
   String get onboarding2Description =>
@@ -196,7 +196,7 @@ class AppLocalizationsHi extends AppLocalizationsEn {
 
   @override
   String get togetherForOceanSafety =>
-      'समुद्री सुरक्षा के लिए\nएक साथ,\nऔर मजबूत';
+      'समुद्री सुरक्षा के लिए\nएकजुट हों,\nमजबूत बनें';
 
   @override
   String get seeUpdates => 'अपडेट देखें';

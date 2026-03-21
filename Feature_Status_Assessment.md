@@ -69,9 +69,9 @@
 
 | # | Feature | Status | What Exists | What's Missing |
 |---|---------|--------|-------------|----------------|
-| 1 | **Privacy Controls** | 🟡 Partial | `privacy_provider.dart` with `reduceMapPrecision` toggle, `privacy_controls_screen.dart` UI with switch | The toggle stores a preference but coordinate fuzzing is **not applied** during report submission or map display. The setting is saved but has no downstream effect |
-| 2 | **FCM Deep-Linking** | ✅ Complete | Implemented notification tap deep-links for foreground/background/terminated flows. Taps route to `ReportDetailsScreen` (`report_id`) or `AdvisoryDetailsScreen` (`advisory_id`) via app navigator and notification payload parsing | � |
-| 3 | **Admin Quick Verify** | ✅ Complete | Added quick-verify action in `RecentReportsTable.tsx` wired to `hazardService.verifyReport` from Dashboard, with loading state and optimistic status updates | � |
+| 1 | **Privacy Controls** | 🟡 Not Needed | `privacy_provider.dart` with `reduceMapPrecision` toggle, `privacy_controls_screen.dart` UI with switch | The toggle stores a preference but coordinate fuzzing is **not applied** during report submission or map display. The setting is saved but has no downstream effect |
+| 2 | **FCM Deep-Linking** | ✅ Complete | Implemented notification tap deep-links for foreground/background/terminated flows. Taps route to `ReportDetailsScreen` (`report_id`) or `AdvisoryDetailsScreen` (`advisory_id`) via app navigator and notification payload parsing |   |
+| 3 | **Admin Quick Verify** | ✅ Complete | Added quick-verify action in `RecentReportsTable.tsx` wired to `hazardService.verifyReport` from Dashboard, with loading state and optimistic status updates |   |
 | 4 | **Map Image/PDF Export** | ✅ Complete | Export button in Live Map toolbar — PNG (high-res via html2canvas) and A4 landscape PDF (jsPDF with header, timestamp, watermark) |
 | 5 | **Geofencing Page** | 🟡 Partial | Monitoring zones can be drawn via `LeafletMapWithDraw` on the Live Map page | No dedicated "Geofencing" page exists. Geofences are only monitoring-zone circles — no polygon support, no automated alerting when citizens enter/exit zones |
 
@@ -81,10 +81,10 @@
 
 | # | Feature | Current State | Suggested Improvement |
 |---|---------|--------------|----------------------|
-| 1 | **Offline Queue Visibility** | Pending count shown in profile and updates screen | Add a dedicated "Queued Reports" list showing each offline report's status, retry count, and error reason. Allow deleting stuck reports |
+| 1 | **Offline Queue Visibility** | ✅ Complete | Dedicated `QueuedReportsScreen` linked from Profile and Updates. Shows per-item queue status, retry count, attachments, error reason, next retry timing, and delete action for stuck reports | � |
 | 2 | **Report Filtering** | ✅ Complete | Mobile app includes Hazard Type and Urgency drop-down filters alongside time windows. Admin has full multi-filter |
 | 3 | **Advisory Targeting** | ✅ Complete | Advisories can be targeted by GPS radius. Mobile app drops targeted notifications if user is out of bounds |
-| 4 | **Map Performance** | Risk zones fetched on each map pan/zoom | Implement client-side tile caching and debounced fetching to reduce API calls during rapid map interactions |
+| 4 | **Map Performance** | ✅ Complete | Admin Live Map now debounces viewport-driven risk-zone refreshes and uses client-side tile/viewport caching with invalidation on refresh and zone mutations | � |
 | 5 | **Media Compression** | Photos/videos uploaded at original resolution | Add client-side compression (image resize, video transcode) before upload to reduce bandwidth and storage costs |
 | 6 | **Report Detail on Admin** | Full-page dialog with all media inline | Add image zoom/lightbox, video seek preview, and audio waveform visualization for better evidence review |
 | 7 | **Notification Granularity** | All-or-nothing notification toggle | Let users choose: advisory notifications only, report status only, or both. Per-severity filtering (e.g., only Warning-level advisories) |
@@ -122,6 +122,7 @@
 |----------|-------|
 | ✅ Fully Completed | 44 features |
 | 🟡 Partially Implemented | 3 features |
-| 🔵 Can Be Improved | 12 features |
+| 🔵 Can Be Improved | 10 features |
 | 🔴 New to Implement | 12 features |
+
 

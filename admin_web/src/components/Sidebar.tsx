@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
                 {/* Theme Toggle */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: isAuthenticated && user ? 2 : 0 }}>
                     <IconButton 
-                        onClick={toggleColorMode} 
+                        onClick={(e) => toggleColorMode(e)} 
                         sx={{ 
                             color: isDark ? '#00ffd1' : '#475569',
                             backgroundColor: isDark ? 'rgba(0, 255, 209, 0.05)' : 'rgba(0,0,0,0.04)',

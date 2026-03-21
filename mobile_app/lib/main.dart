@@ -1,12 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'l10n/app_localizations.dart';
 import 'core/supabase_config.dart';
 import 'core/app_navigator.dart';
 import 'providers/language_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/android_workmanager_report_sync.dart';
 import 'services/fcm_push_service.dart';
 import 'services/notification_service.dart';
@@ -15,7 +17,6 @@ import 'services/realtime_notification_service.dart';
 import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'services/tile_caching_service.dart';
-import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'widgets/upload_progress_overlay.dart';
@@ -84,30 +85,46 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
-    return MaterialApp(
-      title: 'ARC',
-      debugShowCheckedModeBanner: false,
-      navigatorKey: appNavigatorKey,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      locale: locale,
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      builder: (context, child) {
-        return Stack(
-          children: [
-            if (child != null) child,
-            const UploadProgressOverlay(),
-          ],
+
+    // Determine the resolved theme for the animated switcher
+    final brightness = themeMode == ThemeMode.system
+        ? MediaQuery.platformBrightnessOf(context)
+        : (themeMode == ThemeMode.dark ? Brightness.dark : Brightness.light);
+    final resolvedTheme = brightness == Brightness.dark
+        ? AppTheme.darkTheme
+        : AppTheme.lightTheme;
+
+    return ThemeProvider(
+      initTheme: resolvedTheme,
+      builder: (_, theme) {
+        return ThemeSwitchingArea(
+          child: MaterialApp(
+            title: 'ARC',
+            debugShowCheckedModeBanner: false,
+            navigatorKey: appNavigatorKey,
+            theme: theme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  const UploadProgressOverlay(),
+                ],
+              );
+            },
+            home: const SplashScreen(),
+          ),
         );
       },
-      home: const SplashScreen(),
     );
   }
 }

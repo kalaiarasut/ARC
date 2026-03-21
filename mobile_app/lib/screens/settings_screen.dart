@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
@@ -10,6 +11,7 @@ import '../services/notification_settings_service.dart';
 import '../services/notification_service.dart';
 import '../services/realtime_notification_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import 'about_transparency_screen.dart';
 import 'help_faq_screen.dart';
 import 'language_screen.dart';
@@ -111,37 +113,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   padding: const EdgeInsets.all(4),
                   child: Row(
                     children: [
-                      _themeBtn(
+                      _animatedThemeBtn(
+                        context: context,
+                        ref: ref,
                         icon: Icons.light_mode_rounded,
                         label: 'Light',
                         selected: currentMode == ThemeMode.light,
                         isDark: isDark,
                         accent: accent,
-                        onTap: () => ref
-                            .read(themeModeProvider.notifier)
-                            .setThemeMode(ThemeMode.light),
+                        targetMode: ThemeMode.light,
                       ),
                       const SizedBox(width: 4),
-                      _themeBtn(
+                      _animatedThemeBtn(
+                        context: context,
+                        ref: ref,
                         icon: Icons.dark_mode_rounded,
                         label: 'Dark',
                         selected: currentMode == ThemeMode.dark,
                         isDark: isDark,
                         accent: accent,
-                        onTap: () => ref
-                            .read(themeModeProvider.notifier)
-                            .setThemeMode(ThemeMode.dark),
+                        targetMode: ThemeMode.dark,
                       ),
                       const SizedBox(width: 4),
-                      _themeBtn(
+                      _animatedThemeBtn(
+                        context: context,
+                        ref: ref,
                         icon: Icons.settings_suggest_rounded,
                         label: 'System',
                         selected: currentMode == ThemeMode.system,
                         isDark: isDark,
                         accent: accent,
-                        onTap: () => ref
-                            .read(themeModeProvider.notifier)
-                            .setThemeMode(ThemeMode.system),
+                        targetMode: ThemeMode.system,
                       ),
                     ],
                   ),
@@ -309,56 +311,81 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _themeBtn({
+  Widget _animatedThemeBtn({
+    required BuildContext context,
+    required WidgetRef ref,
     required IconData icon,
     required String label,
     required bool selected,
     required bool isDark,
     required Color accent,
-    required VoidCallback onTap,
+    required ThemeMode targetMode,
   }) {
-    final selBg = isDark ? AppColors.darkElevated : Colors.white;
-    final selTxt = accent;
-    final unTxt = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.textSecondary;
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? selBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                        color: accent.withOpacity(0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2))
-                  ]
-                : null,
-          ),
-          child: Column(
-            children: [
-              Icon(icon,
-                  size: 20,
-                  color: selected ? selTxt : unTxt),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? selTxt : unTxt,
-                ),
+      child: ThemeSwitcher(
+        clipper: const ThemeSwitcherCircleClipper(),
+        builder: (switcherContext) {
+          final selBg = isDark ? AppColors.darkElevated : Colors.white;
+          final selTxt = accent;
+          final unTxt = isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.textSecondary;
+          return GestureDetector(
+            onTap: () {
+              // Determine the target theme
+              final targetTheme = targetMode == ThemeMode.dark
+                  ? AppTheme.darkTheme
+                  : targetMode == ThemeMode.light
+                      ? AppTheme.lightTheme
+                      : (MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                          ? AppTheme.darkTheme
+                          : AppTheme.lightTheme);
+
+              // Trigger the circular reveal animation
+              ThemeSwitcher.of(switcherContext).changeTheme(
+                theme: targetTheme,
+                isReversed: targetMode == ThemeMode.light,
+              );
+
+              // Persist the preference
+              ref.read(themeModeProvider.notifier).setThemeMode(targetMode);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: selected ? selBg : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                            color: accent.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2))
+                      ]
+                    : null,
               ),
-            ],
-          ),
-        ),
+              child: Column(
+                children: [
+                  Icon(icon,
+                      size: 20,
+                      color: selected ? selTxt : unTxt),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? selTxt : unTxt,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -81,15 +81,15 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
       code: "gu",
     ),
     LanguageItem(
-      name: "Punjabi",
-      nativeName: "ਪੰਜਾਬੀ",
-      character: "ੳ",
+      name: "Odia",
+      nativeName: "ଓଡିଆ",
+      character: "ଓ",
       color: const Color(0xFFFCE4EC), // Light Pink
-      code: "pa",
+      code: "or",
     ),
   ];
   
-  static const Set<String> _supportedCodes = {'en', 'hi', 'ml', 'ta', 'te'};
+  static const Set<String> _supportedCodes = {'bn', 'en', 'gu', 'hi', 'kn', 'ml', 'mr', 'or', 'ta', 'te'};
 
   String _selectedCode = 'en';
 

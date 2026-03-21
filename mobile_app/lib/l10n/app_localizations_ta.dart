@@ -150,7 +150,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get faqA3 =>
-      'ஆபம் எங்கு நிகழ்கிறது என்பதை புரிந்துகொள்ள உங்கள் இடம் உதவுகிறது. பொதுப் பார்வைக்கு, இடம் குறைந்த துல்லியத்துடன் காட்டப்படலாம்.';
+      'ஆபத்து எங்கு நிகழ்கிறது என்பதை புரிந்துகொள்ள உங்கள் இடம் உதவுகிறது. பொதுப் பார்வைக்கு, இடம் குறைந்த துல்லியத்துடன் காட்டப்படலாம்.';
 
   @override
   String get loginTitle => 'உள்நுழை / பதிவு செய்';
@@ -239,10 +239,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get onboarding1Description =>
-      'நேரடி அலர்ட்களை பெறுங்கள் மற்றும் கடல் ஆபங்களை நிகழும் போதே அறிக்கையிட்டு பாதுகாப்பில் பங்களிக்கவும்.';
+      'நேரடி அலர்ட்களை பெறுங்கள் மற்றும் கடல் ஆபத்துகளை நிகழும் போதே அறிக்கையிட்டு பாதுகாப்பில் பங்களிக்கவும்.';
 
   @override
-  String get onboarding2Title => 'பாதுகாப்பை வலுப்படுத்தி,\nஒரு படி ஒருமுறை';
+  String get onboarding2Title => 'பாதுகாப்பை மேம்படுத்துவோம்,\nஒவ்வொரு படியாக';
 
   @override
   String get onboarding2Description =>
@@ -253,7 +253,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get onboarding3Description =>
-      'கடல் ஆபங்களை அறிக்கையிடுங்கள், முக்கிய அலர்ட்களை பெறுங்கள், நேரம் தாமதமாகும்முன் தகவலறிந்து இருக்கவும்.';
+      'கடல் ஆபத்துகளை அறிக்கையிடுங்கள், முக்கிய அலர்ட்களை பெறுங்கள், நேரம் தாமதமாகும்முன் தகவலறிந்து இருக்கவும்.';
 
   @override
   String get skip => 'தவிர்';
@@ -262,14 +262,14 @@ class AppLocalizationsTa extends AppLocalizations {
   String get splashTitle => 'சிவில் அலர்ட்';
 
   @override
-  String get splashSubtitle => 'ஆபங்களை துல்லியமாக கண்டறிதல்';
+  String get splashSubtitle => 'ஆபத்துகளை துல்லியமாக கண்டறிதல்';
 
   @override
   String get hiWelcome => 'வணக்கம், வரவேற்கிறோம் 👋';
 
   @override
   String get togetherForOceanSafety =>
-      'கடல் பாதுகாப்பிற்காக\nஒன்றிணைந்து,\nஒன்றாக வலிமை';
+      'கடல் பாதுகாப்பிற்காக\nஒன்றிணைவோம்,\nஇணைந்தால் பலம்';
 
   @override
   String get seeUpdates => 'புதுப்பிப்புகளை காண்க';
@@ -294,7 +294,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get enableLocationServicesForReporting =>
-      'ஆபங்களை அறிக்கையிட, இடச் சேவைகளை (GPS) இயக்கவும். உங்கள் இடம் அதிகாரிகள் விரைவில் பதிலளிக்க உதவுகிறது.';
+      'ஆபத்துகளை அறிக்கையிட, இடச் சேவைகளை (GPS) இயக்கவும். உங்கள் இடம் அதிகாரிகள் விரைவில் பதிலளிக்க உதவுகிறது.';
 
   @override
   String get enableLocationServicesForCurrentLocation =>
@@ -317,7 +317,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get locationPermissionPermanentlyDeniedForReporting =>
-      'இட அனுமதி நிரந்தரமாக மறுக்கப்பட்டுள்ளது. ஆபங்களை அறிக்கையிட, ஆப் அமைப்புகளில் அதை இயக்கவும்.';
+      'இட அனுமதி நிரந்தரமாக மறுக்கப்பட்டுள்ளது. ஆபத்துகளை அறிக்கையிட, ஆப் அமைப்புகளில் அதை இயக்கவும்.';
 
   @override
   String get locationPermissionPermanentlyDeniedForCurrentLocation =>
@@ -373,7 +373,7 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String get pleaseSelectHazardType => 'ஒரு ஆப வகையைத் தேர்ந்தெடுக்கவும்';
+  String get pleaseSelectHazardType => 'ஒரு ஆபத்து வகையைத் தேர்ந்தெடுக்கவும்';
 
   @override
   String get pleaseDescribeSituation => 'நிகழ்வை விவரிக்கவும்';
@@ -426,7 +426,7 @@ class AppLocalizationsTa extends AppLocalizations {
       'உங்கள் அறிக்கை அனைவரையும் பாதுகாப்பாக வைத்திருக்க உதவுகிறது';
 
   @override
-  String get hazardTypeRequired => 'ஆப வகை *';
+  String get hazardTypeRequired => 'ஆபத்து வகை *';
 
   @override
   String get descriptionRequired => 'விளக்கம் *';
