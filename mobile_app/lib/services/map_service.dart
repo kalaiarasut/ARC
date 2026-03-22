@@ -6,6 +6,7 @@ import '../core/supabase_config.dart';
 import '../models/risk_zone.dart';
 import '../models/map_marker_data.dart';
 import '../models/official_advisory.dart';
+import 'storage_service.dart';
 
 /// Service for handling map-specific data fetching
 /// Implements debouncing and caching for performance
@@ -136,23 +137,34 @@ class MapService {
   }) async {
     try {
       final safeLimit = limit > 300 ? 300 : (limit < 1 ? 1 : limit);
+      final languageCode = (() {
+        final saved = (StorageService.getLanguage() ?? 'en').trim().toLowerCase();
+        switch (saved) {
+          case 'ta':
+          case 'hi':
+          case 'te':
+          case 'ml':
+          case 'en':
+            return saved;
+          default:
+            return 'en';
+        }
+      })();
 
-      final response = await _supabase
-          .from('official_advisories')
-          .select(
-              'id,title,body,region,severity,category,latitude,longitude,starts_at,expires_at,contact_phone,contact_whatsapp,contact_hotline,published_at')
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .gte('latitude', minLat)
-          .lte('latitude', maxLat)
-          .gte('longitude', minLon)
-          .lte('longitude', maxLon)
-          .order('published_at', ascending: false)
-          .limit(safeLimit);
+      final response = await _supabase.rpc(
+        'get_official_advisories_localized',
+        params: {
+          'p_language_code': languageCode,
+          'p_limit': safeLimit,
+          'p_offset': 0,
+        },
+      );
 
       final list = (response as List)
           .map((json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>))
           .where((a) => a.latitude != null && a.longitude != null)
+          .where((a) => a.latitude! >= minLat && a.latitude! <= maxLat)
+          .where((a) => a.longitude! >= minLon && a.longitude! <= maxLon)
           .toList();
 
       return list;

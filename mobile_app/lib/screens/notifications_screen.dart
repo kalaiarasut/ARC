@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../core/supabase_config.dart';
 import '../services/advisory_service.dart';
+import '../models/advisory_category.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -23,6 +24,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _loading = true);
     try {
+      final languageCode = Localizations.localeOf(context).languageCode;
       final advisories = await AdvisoryService().getLatest(limit: 20);
 
       // Fetch recent report status changes for this user
@@ -70,7 +72,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           icon: Icons.campaign,
           iconColor: severityColor,
           title: a.title,
-          body: a.region ?? a.severity.toUpperCase(),
+          body: a.region ?? advisorySeverityLabelForLanguage(a.severity, languageCode).toUpperCase(),
           time: a.publishedAt,
           type: _NotifType.advisory,
         );

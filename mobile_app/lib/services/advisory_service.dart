@@ -3,40 +3,67 @@ import 'package:latlong2/latlong.dart';
 
 import '../core/supabase_config.dart';
 import '../models/official_advisory.dart';
+import 'storage_service.dart';
 
 class AdvisoryService {
   final SupabaseClient _supabase = SupabaseConfig.client;
+  static const _defaultLanguageCode = 'en';
 
-  Future<OfficialAdvisory?> getById(String advisoryId) async {
+  String _resolveLanguageCode(String? requestedLanguageCode) {
+    final code = (requestedLanguageCode ?? StorageService.getLanguage() ?? _defaultLanguageCode).trim().toLowerCase();
+    switch (code) {
+      case 'ta':
+      case 'hi':
+      case 'te':
+      case 'ml':
+      case 'en':
+        return code;
+      default:
+        return _defaultLanguageCode;
+    }
+  }
+
+  Future<OfficialAdvisory?> getById(String advisoryId, {String? languageCode}) async {
     final id = advisoryId.trim();
     if (id.isEmpty) return null;
 
-    final response = await _supabase
-        .from('official_advisories')
-        .select()
-        .eq('id', id)
-        .maybeSingle();
+    final response = await _supabase.rpc(
+      'get_official_advisory_localized',
+      params: {
+        'p_advisory_id': id,
+        'p_language_code': _resolveLanguageCode(languageCode),
+      },
+    );
 
     if (response == null) return null;
+    if (response is List) {
+      if (response.isEmpty) return null;
+      return OfficialAdvisory.fromJson(response.first as Map<String, dynamic>);
+    }
 
-    return OfficialAdvisory.fromJson(response);
+    return OfficialAdvisory.fromJson(response as Map<String, dynamic>);
   }
 
   Future<List<OfficialAdvisory>> getLatest({
     int limit = 30,
     LatLng? userLocation,
+    String? languageCode,
   }) async {
     final safeLimit = limit < 1 ? 1 : limit;
+    final resolvedLanguageCode = _resolveLanguageCode(languageCode);
 
     // If we have a user location, fetch a bigger window so distance-sorting has
     // enough candidates. Then we sort and take the closest `safeLimit`.
     final fetchLimit = userLocation == null ? safeLimit : (safeLimit < 120 ? 120 : safeLimit);
 
-    final response = await _supabase
-        .from('official_advisories')
-        .select()
-        .order('published_at', ascending: false)
-        .limit(fetchLimit);
+    final response = await _supabase.rpc(
+      'get_official_advisories_localized',
+      params: {
+        'p_language_code': resolvedLanguageCode,
+        'p_limit': fetchLimit,
+        'p_offset': 0,
+      },
+    );
 
     final items = (response as List)
         .map((json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>))

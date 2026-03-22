@@ -6,7 +6,9 @@ import '../models/map_marker_data.dart';
 import '../models/official_advisory.dart';
 import '../models/risk_zone.dart';
 import '../core/supabase_config.dart';
+import '../services/advisory_service.dart';
 import '../services/map_service.dart';
+import 'language_provider.dart';
 
 /// Map filters state
 class MapFilters{
@@ -120,6 +122,21 @@ class MapNotifier extends Notifier<MapState> {
     return true;
   }
 
+  Future<void> _refreshLocalizedRealtimeAdvisory(String advisoryId) async {
+    if (advisoryId.trim().isEmpty) return;
+    try {
+      final advisory = await AdvisoryService().getById(
+        advisoryId,
+        languageCode: ref.read(languageCodeProvider),
+      );
+      if (advisory != null) {
+        _upsertRealtimeAdvisory(advisory);
+      }
+    } catch (_) {
+      // Ignore malformed payloads / transient network issues.
+    }
+  }
+
   void _upsertRealtimeAdvisory(OfficialAdvisory advisory) {
     // Only keep advisories with a location.
     if (advisory.latitude == null || advisory.longitude == null) {
@@ -180,24 +197,18 @@ class MapNotifier extends Notifier<MapState> {
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'official_advisories',
-          callback: (payload) {
-            try {
-              _upsertRealtimeAdvisory(OfficialAdvisory.fromJson(payload.newRecord));
-            } catch (_) {
-              // Ignore malformed payloads.
-            }
+          callback: (payload) async {
+            final id = (payload.newRecord['id'] as String?) ?? '';
+            await _refreshLocalizedRealtimeAdvisory(id);
           },
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
           table: 'official_advisories',
-          callback: (payload) {
-            try {
-              _upsertRealtimeAdvisory(OfficialAdvisory.fromJson(payload.newRecord));
-            } catch (_) {
-              // Ignore malformed payloads.
-            }
+          callback: (payload) async {
+            final id = (payload.newRecord['id'] as String?) ?? '';
+            await _refreshLocalizedRealtimeAdvisory(id);
           },
         )
         .onPostgresChanges(

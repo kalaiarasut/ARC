@@ -1,0 +1,59 @@
+/// <reference path="../types.d.ts" />
+
+import { handleCors, jsonResponse, requireAdmin } from "../_shared_admin.ts";
+
+const REQUIRED_LANGUAGES = ["ta", "hi", "te", "ml"];
+
+Deno.serve(async (request: Request) => {
+  const corsResponse = handleCors(request);
+  if (corsResponse) return corsResponse;
+
+  if (request.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") {
+    return jsonResponse({ error: "Invalid JSON payload" }, 400);
+  }
+
+  const translations = Array.isArray(payload.translations) ? payload.translations : [];
+  const translationCodes = new Set(
+    translations
+      .map((item: any) => String(item?.language_code ?? "").trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  for (const code of REQUIRED_LANGUAGES) {
+    if (!translationCodes.has(code)) {
+      return jsonResponse({ error: `Missing reviewed translation for ${code}` }, 400);
+    }
+  }
+
+  const { data, error } = await auth.supabase.rpc("admin_publish_official_advisory_with_translations", {
+    p_title: payload.title,
+    p_body: payload.body,
+    p_region: payload.region ?? null,
+    p_severity: payload.severity ?? "info",
+    p_category: payload.category ?? "warning",
+    p_latitude: payload.latitude ?? null,
+    p_longitude: payload.longitude ?? null,
+    p_radius_km: payload.radius_km ?? null,
+    p_starts_at: payload.starts_at ?? null,
+    p_expires_at: payload.expires_at ?? null,
+    p_contact_phone: payload.contact_phone ?? null,
+    p_contact_whatsapp: payload.contact_whatsapp ?? null,
+    p_contact_hotline: payload.contact_hotline ?? null,
+    p_source_language: payload.source_language ?? "en",
+    p_translations: translations,
+  });
+
+  if (error) {
+    return jsonResponse({ error: error.message }, 400);
+  }
+
+  return jsonResponse({ advisory: data });
+});

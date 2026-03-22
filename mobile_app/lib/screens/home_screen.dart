@@ -15,8 +15,10 @@ import 'updates_screen.dart';
 import 'settings_screen.dart';
 import 'notifications_screen.dart';
 import '../models/official_advisory.dart';
+import '../models/advisory_category.dart';
 import '../services/advisory_service.dart';
 import '../providers/map_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/map_service.dart';
 import '../services/home_feed_bootstrap_service.dart';
 import '../models/map_marker_data.dart';
@@ -52,6 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<MapMarkerData> _liveReports = const [];
 
   ProviderSubscription<LatLng?>? _locationSub;
+  ProviderSubscription<String>? _languageSub;
 
   @override
   void initState() {
@@ -85,11 +88,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _loadLiveReports();
       }
     });
+
+    _languageSub = ref.listenManual<String>(languageCodeProvider, (prev, next) {
+      if (prev != null && prev != next) {
+        _loadLiveAdvisories();
+      }
+    });
   }
 
   @override
   void dispose() {
     _locationSub?.close();
+    _languageSub?.close();
     super.dispose();
   }
 
@@ -684,6 +694,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     separatorBuilder: (context, index) => const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       final a = _liveAdvisories[index];
+                      final languageCode = Localizations.localeOf(context).languageCode;
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -715,7 +726,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  a.severity.toUpperCase(),
+                                  advisorySeverityLabelForLanguage(a.severity, languageCode).toUpperCase(),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,

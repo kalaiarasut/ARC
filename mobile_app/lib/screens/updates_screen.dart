@@ -3,18 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/official_advisory.dart';
+import '../models/advisory_category.dart';
 import '../services/advisory_service.dart';
 import '../services/offline_report_queue_service.dart';
 import '../theme/app_colors.dart';
 import '../l10n/l10n.dart';
 import '../widgets/app_state_view.dart';
 import '../providers/map_provider.dart';
+import '../providers/language_provider.dart';
 import 'queued_reports_screen.dart';
 
 final advisoryServiceProvider = Provider<AdvisoryService>((ref) => AdvisoryService());
 final advisoriesProvider = FutureProvider<List<OfficialAdvisory>>((ref) async {
   final userLocation = ref.watch(userLocationProvider);
-  return ref.read(advisoryServiceProvider).getLatest(userLocation: userLocation);
+  final languageCode = ref.watch(languageCodeProvider);
+  return ref.read(advisoryServiceProvider).getLatest(
+        userLocation: userLocation,
+        languageCode: languageCode,
+      );
 });
 
 class UpdatesScreen extends ConsumerWidget {
@@ -34,6 +40,7 @@ class UpdatesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final advisories = ref.watch(advisoriesProvider);
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -191,7 +198,7 @@ class UpdatesScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    a.severity.toUpperCase(),
+                                    advisorySeverityLabelForLanguage(a.severity, languageCode).toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,

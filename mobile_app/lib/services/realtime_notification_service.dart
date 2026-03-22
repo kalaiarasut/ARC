@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_config.dart';
+import '../models/advisory_category.dart';
+import 'advisory_service.dart';
 import 'notification_service.dart';
 import 'notification_settings_service.dart';
+import 'storage_service.dart';
 
 class RealtimeNotificationService {
   static final RealtimeNotificationService instance = RealtimeNotificationService._();
@@ -65,13 +68,23 @@ class RealtimeNotificationService {
           table: 'official_advisories',
           callback: (payload) async {
             final row = payload.newRecord;
-            final title = (row['title'] as String?) ?? 'New advisory';
-            final severity = (row['severity'] as String?) ?? '';
-            final region = (row['region'] as String?) ?? '';
+            final advisoryId = (row['id'] as String?) ?? '';
+            final advisory = advisoryId.isEmpty
+                ? null
+                : await AdvisoryService().getById(
+                    advisoryId,
+                    languageCode: StorageService.getLanguage(),
+                  );
+            final languageCode = StorageService.getLanguage() ?? 'en';
+            final title = advisory?.title ?? (row['title'] as String?) ?? 'New advisory';
+            final severity = advisory?.severity ?? (row['severity'] as String?) ?? '';
+            final region = advisory?.region ?? (row['region'] as String?) ?? '';
 
             await NotificationService.instance.show(
               id: DateTime.now().millisecondsSinceEpoch.remainder(1 << 30),
-              title: severity.isEmpty ? 'Advisory' : 'Advisory: ${severity.toUpperCase()}',
+              title: severity.isEmpty
+                  ? advisoryLabelForLanguage('advisory', languageCode)
+                  : '${advisoryLabelForLanguage('advisory', languageCode)}: ${advisorySeverityLabelForLanguage(severity, languageCode).toUpperCase()}',
               body: region.isEmpty ? title : '$title ($region)',
             );
           },

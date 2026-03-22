@@ -14,6 +14,7 @@ import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 import '../core/supabase_config.dart';
 import '../providers/map_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/map_marker_data.dart';
 import '../models/official_advisory.dart';
 import '../models/advisory_category.dart';
@@ -37,6 +38,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   bool _hasPromptedForPermissionSettings = false;
   StreamSubscription<ServiceStatus>? _serviceStatusSub;
   Timer? _debounceTimer;
+  ProviderSubscription<String>? _languageSub;
 
   double _markerScale = 1.0;
   double _lastZoom = -1;
@@ -124,6 +126,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     });
 
     _getUserLocation();
+
+    _languageSub = ref.listenManual<String>(languageCodeProvider, (previous, next) {
+      if (previous != null && previous != next && ref.read(mapProvider).currentBounds != null) {
+        // ignore: discarded_futures
+        ref.read(mapProvider.notifier).refresh();
+      }
+    });
   }
 
   @override
@@ -131,6 +140,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     _serviceStatusSub?.cancel();
     _debounceTimer?.cancel();
+    _languageSub?.close();
     super.dispose();
   }
 
@@ -1019,7 +1029,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
   Widget _buildAdvisoryMarkerWidget(OfficialAdvisory advisory) {
     final color = _getAdvisoryColor(advisory.category);
-    final categoryLabel = advisoryCategoryLabel(advisoryCategoryFromString(advisory.category));
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final categoryLabel = advisoryCategoryLabelForLanguage(
+      advisoryCategoryFromString(advisory.category),
+      languageCode,
+    );
 
     return Column(
       children: [
@@ -1079,10 +1093,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
   Widget _buildAdvisoryDetailsSheet(OfficialAdvisory advisory) {
     final color = _getAdvisoryColor(advisory.category);
-    final categoryLabel = advisoryCategoryLabel(advisoryCategoryFromString(advisory.category));
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final categoryLabel = advisoryCategoryLabelForLanguage(
+      advisoryCategoryFromString(advisory.category),
+      languageCode,
+    );
     final validityParts = <String>[];
-    if (advisory.startsAt != null) validityParts.add('From: ${advisory.startsAt!.toLocal()}');
-    if (advisory.expiresAt != null) validityParts.add('Until: ${advisory.expiresAt!.toLocal()}');
+    if (advisory.startsAt != null) {
+      validityParts.add('${advisoryLabelForLanguage('starts', languageCode)}: ${advisory.startsAt!.toLocal()}');
+    }
+    if (advisory.expiresAt != null) {
+      validityParts.add('${advisoryLabelForLanguage('expires', languageCode)}: ${advisory.expiresAt!.toLocal()}');
+    }
 
     return Positioned(
       bottom: 0,
@@ -1226,17 +1248,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                     (advisory.contactWhatsapp ?? '').isNotEmpty ||
                     (advisory.contactHotline ?? '').isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text(
-                    'Contacts',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  Text(
+                    advisoryLabelForLanguage('contacts', languageCode),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 6),
                   if ((advisory.contactPhone ?? '').isNotEmpty)
-                    Text('Phone: ${advisory.contactPhone}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text('${advisoryLabelForLanguage('phone', languageCode)}: ${advisory.contactPhone}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                   if ((advisory.contactWhatsapp ?? '').isNotEmpty)
-                    Text('WhatsApp: ${advisory.contactWhatsapp}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text('${advisoryLabelForLanguage('whatsapp', languageCode)}: ${advisory.contactWhatsapp}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                   if ((advisory.contactHotline ?? '').isNotEmpty)
-                    Text('Hotline: ${advisory.contactHotline}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text('${advisoryLabelForLanguage('hotline', languageCode)}: ${advisory.contactHotline}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
                 ],
 
                 const SizedBox(height: 20),
@@ -1272,7 +1294,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             _openDirectionsTo(lat, lon);
                           },
                           icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Navigate'),
+                          label: Text(advisoryLabelForLanguage('directions', languageCode)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
                             foregroundColor: Colors.white,

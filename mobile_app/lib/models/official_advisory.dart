@@ -14,6 +14,8 @@ class OfficialAdvisory {
   final String? contactWhatsapp;
   final String? contactHotline;
   final DateTime publishedAt;
+  final String sourceLanguage;
+  final String displayLanguage;
 
   OfficialAdvisory({
     required this.id,
@@ -31,6 +33,8 @@ class OfficialAdvisory {
     this.contactWhatsapp,
     this.contactHotline,
     required this.publishedAt,
+    this.sourceLanguage = 'en',
+    this.displayLanguage = 'en',
   });
 
   factory OfficialAdvisory.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class OfficialAdvisory {
       contactWhatsapp: json['contact_whatsapp'] as String?,
       contactHotline: json['contact_hotline'] as String?,
       publishedAt: DateTime.parse(json['published_at'] as String),
+      sourceLanguage: (json['source_language'] as String?) ?? 'en',
+      displayLanguage: (json['display_language'] as String?) ?? ((json['source_language'] as String?) ?? 'en'),
     );
   }
 }

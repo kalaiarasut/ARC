@@ -14,6 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type OutboxRow = {
   id: string;
+  push_token_id: string | null;
   user_id: string | null;
   type: string;
   title: string;
@@ -47,7 +48,7 @@ Deno.serve(async (_req: Request) => {
 
   const { data: outbox, error: outboxError } = await supabase
     .from("notification_outbox")
-    .select("id,user_id,type,title,body,data,attempts")
+    .select("id,push_token_id,user_id,type,title,body,data,attempts")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(50);
@@ -62,19 +63,32 @@ Deno.serve(async (_req: Request) => {
   const results: Array<{ id: string; sent: number; failed: number }> = [];
 
   for (const item of outbox ?? []) {
-    if (!item.user_id) {
+    let tokens: PushTokenRow[] | null = null;
+    let tokenError: { message: string } | null = null;
+
+    if (item.push_token_id) {
+      const response = await supabase
+        .from("push_tokens")
+        .select("id,user_id,token,enabled")
+        .eq("id", item.push_token_id)
+        .eq("enabled", true);
+      tokens = response.data as PushTokenRow[] | null;
+      tokenError = response.error;
+    } else if (item.user_id) {
+      const response = await supabase
+        .from("push_tokens")
+        .select("id,user_id,token,enabled")
+        .eq("user_id", item.user_id)
+        .eq("enabled", true);
+      tokens = response.data as PushTokenRow[] | null;
+      tokenError = response.error;
+    } else {
       await supabase
         .from("notification_outbox")
-        .update({ status: "failed", last_error: "missing_user_id" })
+        .update({ status: "failed", last_error: "missing_recipient" })
         .eq("id", item.id);
       continue;
     }
-
-    const { data: tokens, error: tokenError } = await supabase
-      .from("push_tokens")
-      .select("id,user_id,token,enabled")
-      .eq("user_id", item.user_id)
-      .eq("enabled", true);
 
     if (tokenError) {
       await supabase

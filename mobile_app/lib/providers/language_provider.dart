@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/widgets.dart';
 import '../services/storage_service.dart';
+import '../services/push_token_service.dart';
 
 // Language code provider (e.g., 'en', 'ta')
 final languageCodeProvider = NotifierProvider<LanguageCodeNotifier, String>(() {
@@ -32,5 +33,6 @@ class LanguageCodeNotifier extends Notifier<String> {
   Future<void> setLanguageCode(String code) async {
     state = code;
     await StorageService.saveLanguage(code);
+    await PushTokenService().syncLanguageCode(code);
   }
 }
