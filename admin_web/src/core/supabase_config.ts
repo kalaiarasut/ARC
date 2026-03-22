@@ -1,5 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
+const noOpAuthLock = async <T,>(
+  _name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<T>
+): Promise<T> => {
+  return await fn();
+};
+
 /**
  * Supabase Configuration & Client Setup (Fail-Safe)
  * 
@@ -126,6 +134,7 @@ export const supabase = createClient(
   {
     auth: {
       persistSession: true,
+      lock: import.meta.env.DEV ? noOpAuthLock : undefined,
     },
   }
 );

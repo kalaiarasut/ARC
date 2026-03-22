@@ -377,14 +377,21 @@ export const Login: React.FC = () => {
             return;
         }
         setIsSubmitting(true);
-        const { error: loginError } = await login(email, password);
-        setIsSubmitting(false);
-        if (loginError) {
-            console.error('Login error:', loginError);
-            setError(loginError.message || 'Invalid credentials. Please try again.');
-            return;
+        try {
+            const { error: loginError } = await login(email, password);
+            if (loginError) {
+                console.error('Login error:', loginError);
+                setError(loginError.message || 'Invalid credentials. Please try again.');
+                return;
+            }
+
+            navigate('/dashboard');
+        } catch (error) {
+            console.error('Unexpected login failure:', error);
+            setError('Login failed. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
-        navigate('/dashboard');
     };
 
     const fillCredentials = () => {

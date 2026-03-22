@@ -32,6 +32,27 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
+const isAbortError = (error: unknown): boolean => {
+    if (error instanceof DOMException) {
+        return error.name === 'AbortError';
+    }
+
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        (error as { name?: string }).name === 'AbortError'
+    );
+};
+
+type SessionUser = {
+    id: string;
+    email?: string | null;
+    user_metadata?: {
+        name?: string | null;
+    } | null;
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -45,90 +66,135 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .maybeSingle();
 
             return (data?.role as 'admin' | undefined) ?? null;
-        } catch {
+        } catch (error) {
+            if (isAbortError(error)) {
+                throw error;
+            }
+
             return null;
         }
     };
 
-    const hydrateUserFromSession = async (sessionUser: { id: string; email?: string | null; user_metadata?: any }) => {
+    const resolveAuthorizedUser = async (sessionUser: SessionUser): Promise<User | null> => {
         const email = sessionUser.email || '';
-
         const role = await getUserRole(sessionUser.id);
 
-        // Strict admin-only web access.
         if (role !== 'admin') {
-            await supabase.auth.signOut();
-            setUser(null);
-            return;
+            return null;
         }
 
-        setUser({
+        return {
             id: sessionUser.id,
             email,
             name: sessionUser.user_metadata?.name || email.split('@')[0] || 'User',
             role,
-        });
+        };
     };
 
     useEffect(() => {
-        // Check active session
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                await hydrateUserFromSession(session.user);
-            }
+        let active = true;
+        let initialized = false;
+
+        const finalizeBootstrap = () => {
+            if (!active || initialized) return;
+            initialized = true;
             setLoading(false);
         };
 
-        getSession();
+        const syncSession = async (sessionUser: SessionUser | null) => {
+            try {
+                if (!sessionUser) {
+                    if (active) setUser(null);
+                    return;
+                }
+
+                const nextUser = await resolveAuthorizedUser(sessionUser);
+                if (!active) return;
+
+                if (!nextUser) {
+                    setUser(null);
+                    void supabase.auth.signOut().catch((error) => {
+                        if (!isAbortError(error)) {
+                            console.error('Failed to sign out unauthorized user', error);
+                        }
+                    });
+                    return;
+                }
+
+                setUser(nextUser);
+            } catch (error) {
+                if (!isAbortError(error)) {
+                    console.error('Failed to restore auth session', error);
+                }
+                if (active) setUser(null);
+            } finally {
+                finalizeBootstrap();
+            }
+        };
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                void hydrateUserFromSession(session.user).finally(() => setLoading(false));
-                return;
-            }
-            setUser(null);
-            setLoading(false);
+            void syncSession(session?.user ?? null);
         });
 
-        return () => subscription.unsubscribe();
+        const bootstrapTimeout = window.setTimeout(() => {
+            if (active && !initialized) {
+                setUser(null);
+                setLoading(false);
+            }
+        }, 4000);
+
+        return () => {
+            active = false;
+            window.clearTimeout(bootstrapTimeout);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const login = async (email: string, password: string) => {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-        if (error) {
-            return { error };
-        }
+            if (error) {
+                return { error };
+            }
 
-        const signedInUser = data.user;
-        if (!signedInUser) {
+            const signedInUser = data.user;
+            if (!signedInUser) {
+                return { error: { message: 'Login failed. Please try again.' } };
+            }
+
+            const nextUser = await resolveAuthorizedUser(signedInUser);
+            if (!nextUser) {
+                await supabase.auth.signOut();
+                setUser(null);
+                return { error: { message: 'Access denied. Admin account required.' } };
+            }
+
+            setUser(nextUser);
+
+            return { error: null };
+        } catch (error) {
+            if (isAbortError(error)) {
+                return { error: { message: 'Authentication request was interrupted. Please try again.' } };
+            }
+
+            console.error('Login failed unexpectedly', error);
             return { error: { message: 'Login failed. Please try again.' } };
         }
-
-        const role = await getUserRole(signedInUser.id);
-        if (role !== 'admin') {
-            await supabase.auth.signOut();
-            setUser(null);
-            return { error: { message: 'Access denied. Admin account required.' } };
-        }
-
-        setUser({
-            id: signedInUser.id,
-            email: signedInUser.email || email,
-            name: signedInUser.user_metadata?.name || (signedInUser.email || email).split('@')[0] || 'Admin',
-            role,
-        });
-
-        return { error: null };
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
+        try {
+            await supabase.auth.signOut();
+        } catch (error) {
+            if (!isAbortError(error)) {
+                console.error('Logout failed', error);
+            }
+        }
         setUser(null);
     };
 

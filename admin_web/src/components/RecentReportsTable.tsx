@@ -227,8 +227,8 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
       </Box>
 
       {/* Table */}
-      <TableContainer>
-        <Table sx={{ minWidth: 700 }}>
+      <TableContainer sx={{ overflowX: 'hidden' }}>
+        <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
           <TableHead>
             <TableRow
               sx={{
@@ -240,23 +240,23 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
                 },
               }}
             >
-              <TableCell sx={{ width: 60 }}></TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <TableCell sx={{ width: '56px' }}></TableCell>
+              <TableCell sx={{ width: '18%', fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Hazard Type
               </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <TableCell sx={{ width: '28%', fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Description
               </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <TableCell sx={{ width: '16%', fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Location
               </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <TableCell sx={{ width: '10%', fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Status
               </TableCell>
-              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <TableCell sx={{ width: '14%', fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Reported
               </TableCell>
-              <TableCell sx={{ width: 80 }}></TableCell>
+              <TableCell sx={{ width: '72px' }}></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -388,11 +388,12 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
                           fontSize: '0.8125rem',
                           color: 'text.primary',
                           lineHeight: 1.5,
-                          maxWidth: 280,
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          wordBreak: 'break-word',
                         }}
                       >
                         {report.description}
