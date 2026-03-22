@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -7,12 +7,9 @@ import {
   CircularProgress,
   Collapse,
   Container,
-  Divider,
-  Grid,
   IconButton,
   Paper,
   Stack,
-  Tab,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +17,6 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  Tabs,
   TextField,
   Tooltip,
   Typography,
@@ -30,51 +26,52 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 import GTranslateIcon from '@mui/icons-material/GTranslate';
+import PhoneIcon from '@mui/icons-material/Phone';
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import PreviewIcon from '@mui/icons-material/Preview';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { format } from 'date-fns';
 
 import { isSupabaseConfigured } from '../core/supabase_config';
 import { useAuth } from '../contexts/AuthContext';
 import { advisoryService } from '../services/advisoryService';
 import { riskZoneService } from '../services/riskZoneService';
-import type {
-  AdvisoryCategory,
-  AdvisorySeverity,
-  AdvisoryTranslationDraft,
-  OfficialAdvisory,
-} from '../types/advisory';
+import type { OfficialAdvisory } from '../types/advisory';
+import { useAdvisoryForm } from '../components/advisories/hooks/useAdvisoryForm';
+import { useTranslations } from '../components/advisories/hooks/useTranslations';
+import { FormSection } from '../components/advisories/FormSection';
+import { TranslationProgressBar } from '../components/advisories/TranslationProgressBar';
+import { TranslationEditor } from '../components/advisories/TranslationEditor';
 
-const CATEGORIES: { value: AdvisoryCategory; label: string }[] = [
-  { value: 'food', label: 'Food' },
-  { value: 'shelter', label: 'Shelter' },
-  { value: 'medical', label: 'Medical' },
-  { value: 'rescue', label: 'Rescue' },
-  { value: 'roadblock', label: 'Roadblock' },
-  { value: 'warning', label: 'Warning' },
-  { value: 'evacuation', label: 'Evacuation' },
+const CATEGORIES = [
+  { value: 'food' as const, label: 'Food', color: '#10b981' },
+  { value: 'shelter' as const, label: 'Shelter', color: '#6366f1' },
+  { value: 'medical' as const, label: 'Medical', color: '#ef4444' },
+  { value: 'rescue' as const, label: 'Rescue', color: '#f59e0b' },
+  { value: 'roadblock' as const, label: 'Roadblock', color: '#64748b' },
+  { value: 'warning' as const, label: 'Warning', color: '#eab308' },
+  { value: 'evacuation' as const, label: 'Evacuation', color: '#dc2626' },
 ];
 
-const SEVERITIES: { value: AdvisorySeverity; label: string }[] = [
-  { value: 'info', label: 'Info' },
-  { value: 'watch', label: 'Watch' },
-  { value: 'warning', label: 'Warning' },
+const SEVERITIES = [
+  { value: 'info' as const, label: 'Informational', color: '#3b82f6' },
+  { value: 'watch' as const, label: 'Watch', color: '#f59e0b' },
+  { value: 'warning' as const, label: 'Warning', color: '#ef4444' },
 ];
 
-const TARGET_LANGUAGES: Array<{
-  code: AdvisoryTranslationDraft['language_code'];
-  label: string;
-  nativeLabel: string;
-}> = [
-  { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
-  { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
-  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' },
-  { code: 'ml', label: 'Malayalam', nativeLabel: 'മലയാളം' },
-];
+const getCategoryColor = (category: string) => {
+  const cat = CATEGORIES.find((c) => c.value === category);
+  return cat?.color || '#64748b';
+};
 
-const getSeverityChipColor = (severity: AdvisorySeverity) => {
+const getSeverityChipColor = (severity: string) => {
   switch (severity) {
     case 'warning':
       return 'error' as const;
@@ -86,34 +83,21 @@ const getSeverityChipColor = (severity: AdvisorySeverity) => {
   }
 };
 
-const getCategoryChipColor = (category: AdvisoryCategory) => {
-  switch (category) {
-    case 'medical':
-      return 'error' as const;
-    case 'evacuation':
-      return 'warning' as const;
-    case 'rescue':
-      return 'primary' as const;
-    case 'shelter':
-    case 'food':
-      return 'success' as const;
-    case 'roadblock':
-      return 'secondary' as const;
-    case 'warning':
-    default:
-      return 'info' as const;
-  }
-};
-
 const formatDateTime = (value: string | null) => {
-  if (!value) return '-';
-
+  if (!value) return '—';
   try {
-    return format(new Date(value), 'dd MMM yyyy, hh:mm a');
+    return format(new Date(value), 'MMM d, yyyy HH:mm');
   } catch {
-    return '-';
+    return '—';
   }
 };
+
+const WIZARD_STEPS = [
+  { label: 'Advisory Content', icon: <EditNoteIcon /> },
+  { label: 'Location & Contacts', icon: <PlaceOutlinedIcon /> },
+  { label: 'Translations', icon: <GTranslateIcon /> },
+  { label: 'Review & Publish', icon: <PreviewIcon /> },
+];
 
 export function Advisories() {
   const { isAuthenticated } = useAuth();
@@ -122,6 +106,7 @@ export function Advisories() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [publishExpanded, setPublishExpanded] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
 
   const [items, setItems] = useState<OfficialAdvisory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,41 +117,28 @@ export function Advisories() {
 
   const [publishing, setPublishing] = useState(false);
   const [generatingTranslations, setGeneratingTranslations] = useState(false);
-  const [translations, setTranslations] = useState<AdvisoryTranslationDraft[]>([]);
-  const [activeTranslationTab, setActiveTranslationTab] =
-    useState<AdvisoryTranslationDraft['language_code']>('ta');
 
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [region, setRegion] = useState('');
-  const [category, setCategory] = useState<AdvisoryCategory>('warning');
-  const [severity, setSeverity] = useState<AdvisorySeverity>('info');
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [radius, setRadius] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [hotline, setHotline] = useState('');
+  const formState = useAdvisoryForm();
+  const translationsState = useTranslations();
+  const { form, updateField, resetForm, isSourceReady, parseNullableNumber, toIsoOrNull } =
+    formState;
+  const {
+    translations,
+    activeTab,
+    setActiveTab,
+    updateTranslation,
+    markReviewed,
+    markEditable,
+    allReviewed,
+    reviewedCount,
+    totalCount: translationCount,
+    languages,
+    clearTranslations,
+  } = translationsState;
 
   const supabaseOk = useMemo(() => isSupabaseConfigured(), []);
-  const sourceReady = title.trim().length > 0 && body.trim().length > 0;
-  const reviewedTranslations = useMemo(
-    () =>
-      TARGET_LANGUAGES.every((lang) =>
-        translations.some(
-          (translation) =>
-            translation.language_code === lang.code &&
-            translation.translation_status === 'reviewed' &&
-            translation.title.trim().length > 0 &&
-            translation.body.trim().length > 0,
-        ),
-      ),
-    [translations],
-  );
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -175,7 +147,7 @@ export function Advisories() {
         setItems([]);
         setTotalCount(0);
         setError(
-          'Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in admin_web/.env.local and restart the dev server.',
+          'Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in admin_web/.env.local and restart the dev server.'
         );
         return;
       }
@@ -191,12 +163,11 @@ export function Advisories() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage]);
+    void load();
+  }, [load]);
 
   useEffect(() => {
     if (!isAuthenticated || !supabaseOk) {
@@ -219,79 +190,8 @@ export function Advisories() {
     };
   }, [isAuthenticated, supabaseOk]);
 
-  const parseNullableNumber = (value: string): number | null => {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const toIsoOrNull = (value: string): string | null => {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    const parsed = new Date(trimmed);
-    return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : null;
-  };
-
-  const clearTranslationDrafts = () => {
-    setTranslations([]);
-    setActiveTranslationTab('ta');
-  };
-
-  const updateTranslationDraft = (
-    languageCode: AdvisoryTranslationDraft['language_code'],
-    patch: Partial<AdvisoryTranslationDraft>,
-  ) => {
-    setTranslations((current) =>
-      current.map((translation) => {
-        if (translation.language_code !== languageCode) return translation;
-
-        const next = { ...translation, ...patch };
-        const touchedText =
-          patch.title !== undefined || patch.body !== undefined || patch.region !== undefined;
-
-        if (touchedText && translation.translation_status === 'reviewed') {
-          next.translation_status = 'generated';
-        }
-
-        return next;
-      }),
-    );
-  };
-
-  const markTranslationReviewed = (languageCode: AdvisoryTranslationDraft['language_code']) => {
-    const draft = translations.find((translation) => translation.language_code === languageCode);
-
-    if (!draft || !draft.title.trim() || !draft.body.trim()) {
-      setError('Each translation must include a title and message before review.');
-      return;
-    }
-
-    updateTranslationDraft(languageCode, {
-      translation_status: 'reviewed',
-      error: undefined,
-    });
-  };
-
-  const resetForm = () => {
-    setTitle('');
-    setBody('');
-    setRegion('');
-    setCategory('warning');
-    setSeverity('info');
-    setLat('');
-    setLng('');
-    setRadius('');
-    setStartsAt('');
-    setExpiresAt('');
-    setPhone('');
-    setWhatsapp('');
-    setHotline('');
-    clearTranslationDrafts();
-  };
-
   const handleGenerateTranslations = async () => {
-    if (!title.trim() || !body.trim()) {
+    if (!isSourceReady) {
       setError('Title and message are required before translation.');
       return;
     }
@@ -306,15 +206,15 @@ export function Advisories() {
       setError(null);
 
       const preview = await advisoryService.generateTranslationPreview({
-        title: title.trim(),
-        body: body.trim(),
-        region: region.trim() || null,
-        target_languages: TARGET_LANGUAGES.map((lang) => lang.code),
+        title: form.title.trim(),
+        body: form.body.trim(),
+        region: form.region.trim() || null,
+        target_languages: languages.map((lang) => lang.code),
       });
 
-      setTranslations(preview.translations);
+      translationsState.setTranslations(preview.translations);
       if (preview.translations.length > 0) {
-        setActiveTranslationTab(preview.translations[0].language_code);
+        setActiveTab(preview.translations[0].language_code);
       }
     } catch (e) {
       console.error(e);
@@ -324,8 +224,14 @@ export function Advisories() {
     }
   };
 
+  const handleReset = () => {
+    resetForm();
+    clearTranslations();
+    setActiveStep(0);
+  };
+
   const handlePublish = async () => {
-    if (!title.trim() || !body.trim()) {
+    if (!isSourceReady) {
       setError('Title and message are required.');
       return;
     }
@@ -335,7 +241,7 @@ export function Advisories() {
       return;
     }
 
-    if (!reviewedTranslations) {
+    if (!allReviewed) {
       setError('Generate and review all required translations before publish.');
       return;
     }
@@ -344,9 +250,9 @@ export function Advisories() {
       setPublishing(true);
       setError(null);
 
-      const latitude = parseNullableNumber(lat);
-      const longitude = parseNullableNumber(lng);
-      const radiusKm = parseNullableNumber(radius);
+      const latitude = parseNullableNumber(form.lat);
+      const longitude = parseNullableNumber(form.lng);
+      const radiusKm = parseNullableNumber(form.radius);
 
       if ((latitude === null) !== (longitude === null)) {
         setError('Please provide both Latitude and Longitude (or leave both empty).');
@@ -354,24 +260,25 @@ export function Advisories() {
       }
 
       await advisoryService.publishAdvisory({
-        title: title.trim(),
-        body: body.trim(),
-        region: region.trim() || null,
-        category,
-        severity,
+        title: form.title.trim(),
+        body: form.body.trim(),
+        region: form.region.trim() || null,
+        category: form.category,
+        severity: form.severity,
         latitude,
         longitude,
         radius_km: radiusKm,
-        starts_at: toIsoOrNull(startsAt),
-        expires_at: toIsoOrNull(expiresAt),
-        contact_phone: phone.trim() || null,
-        contact_whatsapp: whatsapp.trim() || null,
-        contact_hotline: hotline.trim() || null,
+        starts_at: toIsoOrNull(form.startsAt),
+        expires_at: toIsoOrNull(form.expiresAt),
+        contact_phone: form.phone.trim() || null,
+        contact_whatsapp: form.whatsapp.trim() || null,
+        contact_hotline: form.hotline.trim() || null,
         source_language: 'en',
         translations,
       });
 
-      resetForm();
+      handleReset();
+      setPublishExpanded(false);
       setPage(0);
       await load();
     } catch (e) {
@@ -382,92 +289,102 @@ export function Advisories() {
     }
   };
 
-  const handleDelete = async (advisoryId: string) => {
-    if (!isAuthenticated) {
-      setError('Please login to delete updates.');
-      return;
-    }
-
-    if (!isAdmin) {
-      setError('You do not have permission to delete updates.');
-      return;
-    }
-
-    const ok = window.confirm('Delete this official update? This cannot be undone.');
-    if (!ok) return;
-
-    try {
-      setDeletingId(advisoryId);
-      setError(null);
-
-      await advisoryService.deleteAdvisory(advisoryId);
-
-      const nextTotal = Math.max(0, totalCount - 1);
-      const isLastRowOnPage = items.length === 1;
-      const nextMaxPage = Math.max(0, Math.ceil(nextTotal / rowsPerPage) - 1);
-
-      if (isLastRowOnPage && page > nextMaxPage) {
-        setTotalCount(nextTotal);
-        setPage(nextMaxPage);
+  const handleDelete = useCallback(
+    async (advisoryId: string) => {
+      if (!isAuthenticated) {
+        setError('Please login to delete updates.');
         return;
       }
 
-      await load();
-    } catch (e) {
-      console.error(e);
-      setError('Failed to delete update. Check your permissions (RLS) and login status.');
-    } finally {
-      setDeletingId(null);
+      if (!isAdmin) {
+        setError('You do not have permission to delete updates.');
+        return;
+      }
+
+      const ok = window.confirm('Delete this official update? This cannot be undone.');
+      if (!ok) return;
+
+      try {
+        setDeletingId(advisoryId);
+        setError(null);
+
+        await advisoryService.deleteAdvisory(advisoryId);
+
+        const nextTotal = Math.max(0, totalCount - 1);
+        const isLastRowOnPage = items.length === 1;
+        const nextMaxPage = Math.max(0, Math.ceil(nextTotal / rowsPerPage) - 1);
+
+        if (isLastRowOnPage && page > nextMaxPage) {
+          setTotalCount(nextTotal);
+          setPage(nextMaxPage);
+          return;
+        }
+
+        await load();
+      } catch (e) {
+        console.error(e);
+        setError('Failed to delete update. Check your permissions (RLS) and login status.');
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [isAuthenticated, isAdmin, items.length, load, page, rowsPerPage, totalCount]
+  );
+
+  const canAdvance = useMemo(() => {
+    switch (activeStep) {
+      case 0:
+        return isSourceReady;
+      case 1:
+        return true;
+      case 2:
+        return translations.length > 0;
+      case 3:
+        return allReviewed;
+      default:
+        return false;
     }
-  };
+  }, [activeStep, isSourceReady, translations.length, allReviewed]);
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        bgcolor: alpha(theme.palette.primary.main, 0.02),
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
       <Box
         sx={{
           px: { xs: 2, sm: 3 },
-          py: 2,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(
-            theme.palette.background.paper,
-            1,
-          )} 100%)`,
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+          py: 2.5,
+          bgcolor: 'background.paper',
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center">
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                color: 'primary.main',
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
               }}
             >
-              <CampaignOutlinedIcon />
+              <CampaignOutlinedIcon sx={{ fontSize: 22 }} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h5" fontWeight={600} color="text.primary">
                 Official Updates
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Publish alerts and advisories
+                Publish alerts and advisories to citizens
               </Typography>
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1.5}>
             <Tooltip title="Refresh updates">
               <span>
                 <IconButton onClick={load} disabled={loading} size="small">
@@ -480,7 +397,6 @@ export function Advisories() {
               size="small"
               startIcon={publishExpanded ? <CloseIcon /> : <AddCircleOutlineIcon />}
               onClick={() => setPublishExpanded((current) => !current)}
-              sx={{ textTransform: 'none' }}
             >
               {publishExpanded ? 'Cancel' : 'New Update'}
             </Button>
@@ -488,436 +404,455 @@ export function Advisories() {
         </Stack>
       </Box>
 
-      <Container maxWidth="xl" sx={{ pt: 2.5, pb: 4 }}>
+      {/* Main Content */}
+      <Container maxWidth="xl" sx={{ pt: 3, pb: 4, flex: 1 }}>
         {!supabaseOk && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
             Supabase is not configured. Publishing and loading updates will not work.
           </Alert>
         )}
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert
+            severity="error"
+            sx={{ mb: 2, borderRadius: '12px' }}
+            onClose={() => setError(null)}
+          >
             {error}
           </Alert>
         )}
 
+        {/* Wizard */}
         <Collapse in={publishExpanded}>
-          <Paper variant="outlined" sx={{ mb: 3, p: { xs: 2, md: 3 } }}>
-            <Grid container spacing={2.5}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Stack spacing={2}>
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 3,
+              borderRadius: '16px',
+              overflow: 'hidden',
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: theme.shadows[2],
+              bgcolor: 'background.paper',
+            }}
+          >
+            {/* Stepper */}
+            <Box
+              sx={{
+                px: { xs: 2, sm: 3, md: 4 },
+                py: { xs: 2, md: 3 },
+                bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.grey[900], 0.5) : theme.palette.grey[50],
+                borderBottom: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 2,
+                flexWrap: 'wrap',
+              }}
+            >
+              {WIZARD_STEPS.map((step, index) => {
+                const isCompleted = activeStep > index;
+                const isActive = activeStep === index;
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1,
+                      cursor: isCompleted ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease',
+                      '&:hover': isCompleted ? { opacity: 0.8 } : {},
+                    }}
+                    onClick={() => isCompleted && setActiveStep(index)}
+                  >
+                    <Box
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        transition: 'all 0.2s ease',
+                        background: isCompleted
+                          ? `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`
+                          : isActive
+                          ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+                          : theme.palette.mode === 'dark'
+                          ? theme.palette.grey[800]
+                          : theme.palette.grey[200],
+                        color: isCompleted || isActive ? '#fff' : theme.palette.text.secondary,
+                        boxShadow: isActive
+                          ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+                          : 'none',
+                      }}
+                    >
+                      {isCompleted ? <CheckCircleOutlineIcon /> : step.icon}
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      fontWeight={isActive ? 600 : 500}
+                      sx={{ textAlign: 'center', maxWidth: 80 }}
+                    >
+                      {step.label}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: 320 }}>
+              {/* Step 1: Content */}
+              {activeStep === 0 && (
+                <Stack spacing={3}>
                   <TextField
-                    label="Title"
-                    value={title}
-                    onChange={(event) => {
-                      setTitle(event.target.value);
-                      clearTranslationDrafts();
+                    label="Title *"
+                    value={form.title}
+                    onChange={(e) => {
+                      updateField('title', e.target.value);
+                      translationsState.invalidateTranslations();
                     }}
                     fullWidth
-                    size="small"
-                    placeholder="Enter alert title..."
+                    placeholder="Enter advisory title..."
                   />
                   <TextField
-                    label="Message"
-                    value={body}
-                    onChange={(event) => {
-                      setBody(event.target.value);
-                      clearTranslationDrafts();
+                    label="Message *"
+                    value={form.body}
+                    onChange={(e) => {
+                      updateField('body', e.target.value);
+                      translationsState.invalidateTranslations();
                     }}
                     fullWidth
-                    size="small"
                     multiline
-                    minRows={4}
+                    rows={6}
+                    placeholder="Describe the advisory in detail..."
                   />
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                     <TextField
                       label="Category"
                       select
-                      value={category}
-                      onChange={(event) => setCategory(event.target.value as AdvisoryCategory)}
+                      value={form.category}
+                      onChange={(e) => updateField('category', e.target.value as unknown as AdvisoryCategory)}
                       fullWidth
-                      size="small"
                       SelectProps={{ native: true }}
                     >
-                      {CATEGORIES.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
                         </option>
                       ))}
                     </TextField>
                     <TextField
                       label="Severity"
                       select
-                      value={severity}
-                      onChange={(event) => setSeverity(event.target.value as AdvisorySeverity)}
+                      value={form.severity}
+                      onChange={(e) => updateField('severity', e.target.value as unknown as AdvisorySeverity)}
                       fullWidth
-                      size="small"
                       SelectProps={{ native: true }}
                     >
-                      {SEVERITIES.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
+                      {SEVERITIES.map((sev) => (
+                        <option key={sev.value} value={sev.value}>
+                          {sev.label}
                         </option>
                       ))}
                     </TextField>
+                    <TextField
+                      label="Region"
+                      value={form.region}
+                      onChange={(e) => {
+                        updateField('region', e.target.value);
+                        translationsState.invalidateTranslations();
+                      }}
+                      fullWidth
+                      placeholder="e.g. Chennai Coast"
+                    />
                   </Stack>
-                  <TextField
-                    label="Region"
-                    value={region}
-                    onChange={(event) => {
-                      setRegion(event.target.value);
-                      clearTranslationDrafts();
-                    }}
-                    fullWidth
-                    size="small"
-                  />
                 </Stack>
-              </Grid>
+              )}
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Stack spacing={2}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <TextField
-                      label="Latitude"
-                      value={lat}
-                      onChange={(event) => setLat(event.target.value)}
-                      fullWidth
-                      size="small"
-                      inputProps={{ inputMode: 'decimal' }}
-                    />
-                    <TextField
-                      label="Longitude"
-                      value={lng}
-                      onChange={(event) => setLng(event.target.value)}
-                      fullWidth
-                      size="small"
-                      inputProps={{ inputMode: 'decimal' }}
-                    />
-                    <TextField
-                      label="Target Radius (km)"
-                      value={radius}
-                      onChange={(event) => setRadius(event.target.value)}
-                      fullWidth
-                      size="small"
-                      inputProps={{ inputMode: 'decimal' }}
-                      disabled={!lat && !lng}
-                    />
-                  </Stack>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <TextField
-                      label="Starts At"
-                      type="datetime-local"
-                      value={startsAt}
-                      onChange={(event) => setStartsAt(event.target.value)}
-                      fullWidth
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                      label="Expires At"
-                      type="datetime-local"
-                      value={expiresAt}
-                      onChange={(event) => setExpiresAt(event.target.value)}
-                      fullWidth
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Stack>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <TextField
-                      label="Phone"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                    <TextField
-                      label="WhatsApp"
-                      value={whatsapp}
-                      onChange={(event) => setWhatsapp(event.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                  </Stack>
-                  <TextField
-                    label="Hotline"
-                    value={hotline}
-                    onChange={(event) => setHotline(event.target.value)}
-                    fullWidth
-                    size="small"
-                  />
+              {/* Step 2: Location & Contacts */}
+              {activeStep === 1 && (
+                <Stack spacing={3}>
+                  <FormSection
+                    icon={<PlaceOutlinedIcon />}
+                    title="Geographic Targeting"
+                    description="Target this advisory to a specific location (optional)"
+                    color="info"
+                  >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        label="Latitude"
+                        value={form.lat}
+                        onChange={(e) => updateField('lat', e.target.value)}
+                        fullWidth
+                        placeholder="e.g. 13.0827"
+                      />
+                      <TextField
+                        label="Longitude"
+                        value={form.lng}
+                        onChange={(e) => updateField('lng', e.target.value)}
+                        fullWidth
+                        placeholder="e.g. 80.2707"
+                      />
+                      <TextField
+                        label="Radius (km)"
+                        value={form.radius}
+                        onChange={(e) => updateField('radius', e.target.value)}
+                        fullWidth
+                        disabled={!form.lat && !form.lng}
+                      />
+                    </Stack>
+                  </FormSection>
+
+                  <FormSection
+                    icon={<EditNoteIcon />}
+                    title="Validity Period"
+                    description="When should this advisory be active? (optional)"
+                    color="primary"
+                  >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        label="Starts At"
+                        type="datetime-local"
+                        value={form.startsAt}
+                        onChange={(e) => updateField('startsAt', e.target.value)}
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        label="Expires At"
+                        type="datetime-local"
+                        value={form.expiresAt}
+                        onChange={(e) => updateField('expiresAt', e.target.value)}
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Stack>
+                  </FormSection>
+
+                  <FormSection
+                    icon={<PhoneIcon />}
+                    title="Emergency Contacts"
+                    description="Provide contact numbers (optional)"
+                    color="warning"
+                  >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <TextField
+                        label="Phone"
+                        value={form.phone}
+                        onChange={(e) => updateField('phone', e.target.value)}
+                        fullWidth
+                        placeholder="+91 98765 43210"
+                      />
+                      <TextField
+                        label="WhatsApp"
+                        value={form.whatsapp}
+                        onChange={(e) => updateField('whatsapp', e.target.value)}
+                        fullWidth
+                        placeholder="+91 98765 43210"
+                      />
+                      <TextField
+                        label="Hotline"
+                        value={form.hotline}
+                        onChange={(e) => updateField('hotline', e.target.value)}
+                        fullWidth
+                        placeholder="1800-XXX-XXXX"
+                      />
+                    </Stack>
+                  </FormSection>
                 </Stack>
-              </Grid>
+              )}
 
-              <Grid size={{ xs: 12 }}>
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Stack spacing={2}>
-                    <Stack
-                      direction={{ xs: 'column', md: 'row' }}
-                      spacing={1.5}
-                      alignItems={{ xs: 'flex-start', md: 'center' }}
-                      justifyContent="space-between"
+              {/* Step 3: Translations */}
+              {activeStep === 2 && (
+                <Stack spacing={2.5}>
+                  <Stack direction="row" justifyContent="flex-end">
+                    <Button
+                      variant="contained"
+                      startIcon={
+                        generatingTranslations ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <GTranslateIcon />
+                        )
+                      }
+                      onClick={handleGenerateTranslations}
+                      disabled={generatingTranslations || !isSourceReady}
                     >
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          Step 2: Generate and review translations
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Generate Sarvam previews for Tamil, Hindi, Telugu, and Malayalam, then
-                          review each translation before publishing.
-                        </Typography>
-                      </Box>
+                      {generatingTranslations ? 'Generating...' : 'Generate Translations'}
+                    </Button>
+                  </Stack>
 
-                      <Tooltip
-                        title={
-                          sourceReady
-                            ? 'Generate translation previews'
-                            : 'Generate translations after the English source is ready'
-                        }
+                  {translations.length === 0 ? (
+                    <Alert severity="info">Generate translations to create AI-powered previews.</Alert>
+                  ) : (
+                    <>
+                      <TranslationProgressBar
+                        reviewedCount={reviewedCount}
+                        totalCount={translationCount}
+                      />
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        useFlexGap
+                        sx={{
+                          p: 1.5,
+                          bgcolor: alpha(theme.palette.grey[500], 0.04),
+                          borderRadius: 2,
+                          border: `1px solid ${theme.palette.divider}`,
+                        }}
                       >
-                        <span>
-                          <Button
-                            variant="outlined"
-                            startIcon={
-                              generatingTranslations ? (
-                                <CircularProgress size={16} color="inherit" />
-                              ) : (
-                                <GTranslateIcon />
-                              )
-                            }
-                            onClick={handleGenerateTranslations}
-                            disabled={generatingTranslations || !sourceReady}
-                            sx={{ textTransform: 'none' }}
-                          >
-                            {generatingTranslations ? 'Generating...' : 'Generate Translations'}
-                          </Button>
-                        </span>
-                      </Tooltip>
-                    </Stack>
-
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Chip
-                        label="1. Source (English)"
-                        color={sourceReady ? 'primary' : 'default'}
-                        size="small"
-                      />
-                      <Chip
-                        label="2. Review translations"
-                        color={translations.length > 0 ? 'primary' : 'default'}
-                        variant={translations.length > 0 ? 'filled' : 'outlined'}
-                        size="small"
-                      />
-                      <Chip
-                        label="3. Publish"
-                        color={reviewedTranslations ? 'success' : 'default'}
-                        variant={reviewedTranslations ? 'filled' : 'outlined'}
-                        size="small"
-                      />
-                    </Stack>
-
-                    {translations.length === 0 ? (
-                      <Alert severity="info">
-                        Generate translations after you finish the English source advisory.
-                      </Alert>
-                    ) : (
-                      <>
-                        <Tabs
-                          value={activeTranslationTab}
-                          onChange={(_, value: AdvisoryTranslationDraft['language_code']) =>
-                            setActiveTranslationTab(value)
-                          }
-                          variant="scrollable"
-                          allowScrollButtonsMobile
-                        >
-                          {TARGET_LANGUAGES.map((language) => {
-                            const draft = translations.find(
-                              (item) => item.language_code === language.code,
-                            );
-                            const status = draft?.translation_status ?? 'failed';
-
-                            return (
-                              <Tab
-                                key={language.code}
-                                value={language.code}
-                                label={`${language.label} · ${status}`}
-                              />
-                            );
-                          })}
-                        </Tabs>
-
-                        <Divider />
-
-                        {TARGET_LANGUAGES.map((language) => {
-                          if (language.code !== activeTranslationTab) return null;
-                          const draft = translations.find(
-                            (item) => item.language_code === language.code,
-                          );
-                          if (!draft) return null;
-
-                          const statusColor =
-                            draft.translation_status === 'reviewed'
-                              ? 'success'
-                              : draft.translation_status === 'failed'
-                                ? 'error'
-                                : 'warning';
+                        {languages.map((lang) => {
+                          const draft = translations.find((t) => t.language_code === lang.code);
+                          const isReviewed = draft?.translation_status === 'reviewed';
 
                           return (
-                            <Stack key={language.code} spacing={2}>
-                              <Stack
-                                direction={{ xs: 'column', md: 'row' }}
-                                spacing={1.5}
-                                alignItems={{ xs: 'flex-start', md: 'center' }}
-                                justifyContent="space-between"
-                              >
-                                <Stack
-                                  direction="row"
-                                  spacing={1}
-                                  useFlexGap
-                                  flexWrap="wrap"
-                                  alignItems="center"
-                                >
-                                  <Typography variant="subtitle2" fontWeight={700}>
-                                    {language.label}
-                                  </Typography>
-                                  <Chip
-                                    label={language.nativeLabel}
-                                    size="small"
-                                    variant="outlined"
-                                  />
-                                  <Chip
-                                    label={draft.translation_status.toUpperCase()}
-                                    size="small"
-                                    color={statusColor}
-                                  />
-                                </Stack>
-                                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                                  <Chip
-                                    label={`Provider: ${draft.provider ?? 'sarvam'}`}
-                                    size="small"
-                                    variant="outlined"
-                                  />
-                                  <Chip
-                                    label={`Model: ${draft.model ?? 'n/a'}`}
-                                    size="small"
-                                    variant="outlined"
-                                  />
-                                </Stack>
+                            <Button
+                              key={lang.code}
+                              onClick={() => setActiveTab(lang.code)}
+                              sx={{
+                                borderRadius: 2,
+                                px: 2,
+                                py: 1,
+                                textTransform: 'none',
+                                fontWeight: 500,
+                                bgcolor:
+                                  activeTab === lang.code
+                                    ? 'background.paper'
+                                    : 'transparent',
+                                color: activeTab === lang.code ? 'text.primary' : 'text.secondary',
+                                border: activeTab === lang.code
+                                  ? `1px solid ${theme.palette.divider}`
+                                  : 'transparent',
+                              }}
+                            >
+                              <Stack direction="row" alignItems="center" spacing={0.75}>
+                                <span>{lang.label}</span>
+                                {isReviewed && <TaskAltIcon sx={{ fontSize: 16, color: 'success.main' }} />}
                               </Stack>
-
-                              {draft.error && <Alert severity="warning">{draft.error}</Alert>}
-
-                              <TextField
-                                label={`${language.label} Title`}
-                                value={draft.title}
-                                onChange={(event) =>
-                                  updateTranslationDraft(language.code, {
-                                    title: event.target.value,
-                                    error: undefined,
-                                  })
-                                }
-                                fullWidth
-                                size="small"
-                              />
-                              <TextField
-                                label={`${language.label} Message`}
-                                value={draft.body}
-                                onChange={(event) =>
-                                  updateTranslationDraft(language.code, {
-                                    body: event.target.value,
-                                    error: undefined,
-                                  })
-                                }
-                                fullWidth
-                                size="small"
-                                multiline
-                                minRows={3}
-                              />
-                              <TextField
-                                label={`${language.label} Region`}
-                                value={draft.region ?? ''}
-                                onChange={(event) =>
-                                  updateTranslationDraft(language.code, {
-                                    region: event.target.value || null,
-                                    error: undefined,
-                                  })
-                                }
-                                fullWidth
-                                size="small"
-                              />
-
-                              <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                <Button
-                                  variant="outlined"
-                                  onClick={() =>
-                                    updateTranslationDraft(language.code, {
-                                      translation_status: 'generated',
-                                      error: undefined,
-                                    })
-                                  }
-                                  sx={{ textTransform: 'none' }}
-                                >
-                                  Mark Pending Review
-                                </Button>
-                                <Button
-                                  variant="contained"
-                                  startIcon={<TaskAltIcon />}
-                                  onClick={() => markTranslationReviewed(language.code)}
-                                  sx={{ textTransform: 'none' }}
-                                >
-                                  Mark Reviewed
-                                </Button>
-                              </Stack>
-                            </Stack>
+                            </Button>
                           );
                         })}
-                      </>
-                    )}
-                  </Stack>
-                </Paper>
-              </Grid>
+                      </Stack>
 
-              <Grid size={{ xs: 12 }}>
-                <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-                  <Button
-                    variant="text"
-                    onClick={resetForm}
-                    disabled={publishing}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Clear
-                  </Button>
+                      {languages.map((lang) => {
+                        if (lang.code !== activeTab) return null;
+                        const draft = translations.find((t) => t.language_code === lang.code);
+                        if (!draft) return null;
+
+                        return (
+                          <Box key={lang.code}>
+                            <TranslationEditor
+                              language={lang}
+                              draft={draft}
+                              onUpdate={(patch) => updateTranslation(lang.code, patch)}
+                              onMarkReviewed={() => markReviewed(lang.code)}
+                              onMarkEditable={() => markEditable(lang.code)}
+                            />
+                          </Box>
+                        );
+                      })}
+                    </>
+                  )}
+                </Stack>
+              )}
+
+              {/* Step 4: Review */}
+              {activeStep === 3 && (
+                <Alert severity="info">
+                  Review summary: Title: {form.title || '—'}, {translations.length} translations,
+                  {allReviewed ? ' All reviewed ✓' : ' Awaiting review'}
+                </Alert>
+              )}
+            </Box>
+
+            {/* Navigation */}
+            <Box
+              sx={{
+                px: { xs: 2, sm: 3, md: 4 },
+                py: 2.5,
+                borderTop: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.5) : alpha(theme.palette.grey[50], 0.5),
+              }}
+            >
+              <Button
+                variant="text"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+                disabled={activeStep === 0}
+              >
+                Back
+              </Button>
+
+              <Stack direction="row" spacing={1.5}>
+                <Button variant="text" onClick={handleReset} disabled={publishing}>
+                  Clear
+                </Button>
+
+                {activeStep < 3 ? (
                   <Button
                     variant="contained"
-                    startIcon={
-                      publishing ? <CircularProgress size={16} color="inherit" /> : <SendOutlinedIcon />
-                    }
-                    onClick={handlePublish}
-                    disabled={publishing || !sourceReady || !reviewedTranslations}
-                    sx={{ textTransform: 'none' }}
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => setActiveStep(Math.min(3, activeStep + 1))}
+                    disabled={!canAdvance}
                   >
-                    {publishing ? 'Publishing...' : 'Publish Update'}
+                    Next
                   </Button>
-                </Stack>
-              </Grid>
-            </Grid>
+                ) : (
+                  <Button
+                    variant="contained"
+                    startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <SendOutlinedIcon />}
+                    onClick={handlePublish}
+                    disabled={publishing || !isSourceReady || !allReviewed}
+                  >
+                    {publishing ? 'Publishing...' : 'Publish'}
+                  </Button>
+                )}
+              </Stack>
+            </Box>
           </Paper>
         </Collapse>
 
-        <Paper variant="outlined">
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            justifyContent="space-between"
-            sx={{ px: 2, py: 1.5 }}
+        {/* Table */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '16px',
+            overflow: 'hidden',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[2],
+          }}
+        >
+          <Box
+            sx={{
+              px: 3,
+              py: 2.5,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.grey[900], 0.02)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+            }}
           >
-            <Typography variant="h6" fontWeight={700}>
-              Recent Updates
-            </Typography>
-            <Chip label={`${totalCount} total`} size="small" color="info" variant="outlined" />
-          </Stack>
-
-          <Divider />
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Box
+                sx={{
+                  width: 4,
+                  height: 24,
+                  borderRadius: '2px',
+                  background: `linear-gradient(180deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                }}
+              />
+              <Typography variant="subtitle1" fontWeight={700}>
+                Recent Updates
+              </Typography>
+            </Stack>
+          </Box>
 
           <TableContainer>
             <Table size="small">
@@ -952,74 +887,43 @@ export function Advisories() {
                       <TableCell>
                         <Chip
                           size="small"
-                          label={
-                            CATEGORIES.find((entry) => entry.value === item.category)?.label ??
-                            item.category
-                          }
-                          color={getCategoryChipColor(item.category)}
-                          variant="outlined"
+                          label={CATEGORIES.find((c) => c.value === item.category)?.label}
+                          sx={{
+                            bgcolor: alpha(getCategoryColor(item.category), 0.1),
+                            color: getCategoryColor(item.category),
+                          }}
                         />
                       </TableCell>
                       <TableCell>
                         <Chip
                           size="small"
-                          label={
-                            SEVERITIES.find((entry) => entry.value === item.severity)?.label ??
-                            item.severity
-                          }
+                          label={SEVERITIES.find((s) => s.value === item.severity)?.label}
                           color={getSeverityChipColor(item.severity)}
                           variant="outlined"
                         />
                       </TableCell>
                       <TableCell>
-                        <Stack spacing={0.5}>
-                          <Typography variant="body2" fontWeight={600}>
-                            {item.title}
-                          </Typography>
-                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                            <Chip
-                              size="small"
-                              label={`Source: ${item.source_language.toUpperCase()}`}
-                              variant="outlined"
-                            />
-                            {item.latitude !== null && item.longitude !== null && (
-                              <Chip
-                                size="small"
-                                label={`Targeted${item.radius_km ? ` · ${item.radius_km} km` : ''}`}
-                                variant="outlined"
-                              />
-                            )}
-                          </Stack>
-                        </Stack>
+                        <Typography variant="body2" fontWeight={500}>
+                          {item.title}
+                        </Typography>
                       </TableCell>
-                      <TableCell>{item.region || '-'}</TableCell>
+                      <TableCell>{item.region || '—'}</TableCell>
                       <TableCell>
-                        <Stack spacing={0.25}>
-                          <Typography variant="caption" color="text.secondary">
-                            Start: {formatDateTime(item.starts_at)}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            End: {formatDateTime(item.expires_at)}
-                          </Typography>
-                        </Stack>
+                        <Typography variant="caption">{formatDateTime(item.starts_at)}</Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title={isAdmin ? 'Delete update' : 'Admin access required'}>
-                          <span>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDelete(item.id)}
-                              disabled={!isAdmin || deletingId === item.id}
-                            >
-                              {deletingId === item.id ? (
-                                <CircularProgress size={16} color="inherit" />
-                              ) : (
-                                <DeleteOutlineIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </span>
-                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={!isAdmin || deletingId === item.id}
+                        >
+                          {deletingId === item.id ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <DeleteOutlineIcon />
+                          )}
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
