@@ -513,8 +513,8 @@ class _ReportScreenState extends State<ReportScreen> {
       final totalSteps = 2 + _selectedMedia.length;
       UploadProgressController.instance.start(
         flowType: UploadFlowType.submit,
-        title: 'Uploading your report',
-        subtitle: 'Preparing report details',
+        title: context.l10n.uploadingReportTitle,
+        subtitle: context.l10n.preparingReportDesc,
         totalSteps: totalSteps,
       );
 
@@ -574,18 +574,18 @@ class _ReportScreenState extends State<ReportScreen> {
       );
 
       final reportId = await _reportService.insertReport(report);
-      UploadProgressController.instance.step('Report details uploaded');
+      UploadProgressController.instance.step(context.l10n.reportDetailsUploaded);
 
       // If backend dedupe returned an existing report, stop and inform user.
       final meta = await _reportService.getReportMetaById(reportId);
       final existingClientId = meta?['client_id']?.toString();
       final isLikelyDuplicate = existingClientId != null && existingClientId != report.clientId;
       if (isLikelyDuplicate) {
-        UploadProgressController.instance.complete('Duplicate report detected, linked to existing report');
+        UploadProgressController.instance.complete(context.l10n.duplicateReportLinked);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Similar report already exists nearby. We linked your submission to it.'),
+            SnackBar(
+              content: Text(context.l10n.duplicateReportDetected),
               backgroundColor: Colors.orange,
             ),
           );
@@ -610,8 +610,8 @@ class _ReportScreenState extends State<ReportScreen> {
             );
             uploadedUrls.add(url);
             UploadProgressController.instance.step(
-              'Uploaded attachment ${index + 1}/${_selectedMedia.length}',
-              subtitle: 'Uploading media',
+              context.l10n.uploadedAttachmentCounter(index + 1, _selectedMedia.length),
+              subtitle: context.l10n.uploadingMedia,
             );
           }
           
@@ -634,12 +634,12 @@ class _ReportScreenState extends State<ReportScreen> {
             media: _selectedMedia,
             lastError: uploadError.toString(),
           );
-          UploadProgressController.instance.note('Media upload failed, queued for retry');
+          UploadProgressController.instance.note(context.l10n.mediaUploadFailedQueued);
         }
       }
 
-      UploadProgressController.instance.step('Finalizing report');
-      UploadProgressController.instance.complete('Report submitted successfully');
+      UploadProgressController.instance.step(context.l10n.finalizingReport);
+      UploadProgressController.instance.complete(context.l10n.reportSubmittedSuccessfully);
 
       if (mounted) {
         await _showSubmittedConfirmationDialog();
@@ -649,27 +649,27 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       final msg = e.toString().toLowerCase();
       if (msg.contains('rate_limited_min_interval')) {
-        UploadProgressController.instance.fail('Please wait before sending another report');
+        UploadProgressController.instance.fail(context.l10n.pleaseWaitBeforeSending);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You are sending reports too quickly. Please wait 30 seconds and try again.'),
+            SnackBar(
+              content: Text(context.l10n.rateLimitMinInterval),
               backgroundColor: Colors.orange,
             ),
           );
         }
       } else if (msg.contains('rate_limited_hourly')) {
-        UploadProgressController.instance.fail('Hourly report limit reached');
+        UploadProgressController.instance.fail(context.l10n.hourlyReportLimitTitle);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Hourly report limit reached. Please try again later.'),
+            SnackBar(
+              content: Text(context.l10n.rateLimitHourly),
               backgroundColor: Colors.orange,
             ),
           );
         }
       } else {
-      UploadProgressController.instance.fail('Upload failed: ${e.toString()}');
+      UploadProgressController.instance.fail(context.l10n.uploadFailedError(e.toString()));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
@@ -713,7 +713,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your upload timeline has been completed and saved.',
+                  context.l10n.uploadTimelineCompleted,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                 ),
@@ -721,7 +721,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    text: 'Done',
+                    text: context.l10n.doneLabel,
                     backgroundColor: AppColors.primaryBlue,
                     onPressed: () => Navigator.pop(context),
                   ),

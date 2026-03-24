@@ -203,4 +203,697 @@
   ,"@errorStoppingAudioWithError": {"placeholders": {"error": {}}}
   ,"@errorStartingAudioWithError": {"placeholders": {"error": {}}}
   ,"@errorWithError": {"placeholders": {"error": {}}}
+  ,"queuedReportStuck": "Stuck"
+  ,"queuedReportPendingUpload": "Pending upload"
+  ,"queuedReportReadyToRetry": "Ready to retry"
+  ,"queuedReportWaitingForRetry": "Waiting for retry"
+  ,"removeQueuedReportTitle": "Remove queued report?"
+  ,"removeQueuedReportContent": "This will delete the offline copy and stop future retries for this report."
+  ,"queuedReportRemoved": "Queued report removed"
+  ,"themeLight": "Light"
+  ,"themeDark": "Dark"
+  ,"themeSystem": "System"
+  ,"notifications": "Notifications"
+  ,"logOutTitle": "Log out?"
+  ,"logOut": "Log out"
+  ,"similarReportExists": "Similar report already exists nearby. We linked your submission to it."
+  ,"sendingReportsTooQuickly": "You are sending reports too quickly. Please wait 30 seconds and try again."
+  ,"hourlyReportLimitReached": "Hourly report limit reached. Please try again later."
+  ,"couldNotOpenMaps": "Could not open maps"
+  ,"navigate": "Navigate"
+  ,"reportDetailsNotAvailable": "Report details are not available yet"
+  ,"viewQueue": "View queue"
+  ,"achievements": "Achievements"
+  ,"leaderboard": "Leaderboard"
+  ,"chooseFromGallery": "Choose from gallery"
+  ,"downloadOfflineRegion": "Download Offline Region"
+  ,"radius": "Radius"
+  ,"download": "Download"
+  ,"deleteRegionTitle": "Delete Region?"
+  ,"deleteRegionContent": "Remove \"{name}\" and its {count} cached tiles?"
+  ,"@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  }
+  ,"delete": "Delete"
+  ,"media": "Media"
+  ,"failedToLoadImage": "Failed to load image"
+  ,"unsupportedMediaType": "Unsupported media type"
+  ,"noVerifiedRiskZones": "No verified risk zones in this area yet."
+  ,"filterAllHazards": "All Hazards"
+  ,"filterRipCurrent": "Rip Current"
+  ,"filterPollution": "Pollution"
+  ,"filterEarthquake": "Earthquake"
+  ,"mobileNumberHint": "12345 67890"
+  ,"distanceInKm": "{r} km"
+  ,"@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  }
+  ,"filterCommunity": "Community"
+  ,"filterMySubmitted": "My Submitted"
+  ,"noReportsYet": "No reports yet"
+  ,"noSubmittedReportsYet": "No submitted reports yet",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "Advisory not found.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} m away",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "LOW",
+  "@low": {},
+  "justNow": "Just now",
+  "@justNow": {},
+  "minutesAgo": "{minutes} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours} hr ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "Leaderboard",
+  "@leaderboardTitle": {},
+  "error": "Error: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "No leaderboard data yet",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "Start reporting to climb the ranks!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "YOU",
+  "@you": {},
+  "achievementsTitle": "Achievements",
+  "@achievementsTitle": {},
+  "earnedBadges": "Earned Badges",
+  "@earnedBadges": {},
+  "lockedBadges": "Locked Badges",
+  "@lockedBadges": {},
+  "pointsHistory": "Points History",
+  "@pointsHistory": {},
+  "totalPoints": "Total Points",
+  "@totalPoints": {},
+  "verified": "Verified",
+  "@verified": {},
+  "rate": "Rate",
+  "@rate": {},
+  "badges": "Badges",
+  "@badges": {},
+  "submitFirstReportBadge": "Submit your first report to earn a badge!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 All badges earned!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "No points history yet",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ Earned!",
+  "submitReport": "Submit Report",
+
+  "close": "Close",
+  "moreDetails": "More Details"
+
+  ,"hazardHighWaves": "High Waves",
+  "hazardTsunami": "Tsunami",
+  "hazardStorm": "Storm",
+  "hazardFlood": "Flood",
+  "hazardOther": "Other",
+
+  "homeTab": "Home",
+  "mapTab": "Map",
+  "updatesTab": "Updates",
+  "profileTab": "Reports",
+  "liveNews": "Live News",
+  "sampleHazardHeadline": "High Waves in Pacific Coast",
+  "sampleDate": "Sun, 11 June 2024",
+  "sampleTimeAgo": "3 min ago"
+
+  ,"@sentToNumber": {"placeholders": {"mobileNumber": {}}}
+  ,"@signInFailedWithError": {"placeholders": {"error": {}}}
+  ,"@failedToResendOtpWithError": {"placeholders": {"error": {}}}
+  ,"@errorGettingLocationWithError": {"placeholders": {"error": {}}}
+  ,"@maximumAttachmentsAllowed": {"placeholders": {"max": {}}}
+  ,"@errorPickingImageWithError": {"placeholders": {"error": {}}}
+  ,"@errorPickingVideoWithError": {"placeholders": {"error": {}}}
+  ,"@errorStoppingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorStartingAudioWithError": {"placeholders": {"error": {}}}
+  ,"@errorWithError": {"placeholders": {"error": {}}}
+  ,"queuedReportStuck": "Stuck"
+  ,"queuedReportPendingUpload": "Pending upload"
+  ,"queuedReportReadyToRetry": "Ready to retry"
+  ,"queuedReportWaitingForRetry": "Waiting for retry"
+  ,"removeQueuedReportTitle": "Remove queued report?"
+  ,"removeQueuedReportContent": "This will delete the offline copy and stop future retries for this report."
+  ,"queuedReportRemoved": "Queued report removed"
+  ,"themeLight": "Light"
+  ,"themeDark": "Dark"
+  ,"themeSystem": "System"
+  ,"notifications": "Notifications"
+  ,"logOutTitle": "Log out?"
+  ,"logOut": "Log out"
+  ,"similarReportExists": "Similar report already exists nearby. We linked your submission to it."
+  ,"sendingReportsTooQuickly": "You are sending reports too quickly. Please wait 30 seconds and try again."
+  ,"hourlyReportLimitReached": "Hourly report limit reached. Please try again later."
+  ,"couldNotOpenMaps": "Could not open maps"
+  ,"navigate": "Navigate"
+  ,"reportDetailsNotAvailable": "Report details are not available yet"
+  ,"viewQueue": "View queue"
+  ,"achievements": "Achievements"
+  ,"leaderboard": "Leaderboard"
+  ,"chooseFromGallery": "Choose from gallery"
+  ,"downloadOfflineRegion": "Download Offline Region"
+  ,"radius": "Radius"
+  ,"download": "Download"
+  ,"deleteRegionTitle": "Delete Region?"
+  ,"deleteRegionContent": "Remove \"{name}\" and its {count} cached tiles?"
+  ,"@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  }
+  ,"delete": "Delete"
+  ,"media": "Media"
+  ,"failedToLoadImage": "Failed to load image"
+  ,"unsupportedMediaType": "Unsupported media type"
+  ,"noVerifiedRiskZones": "No verified risk zones in this area yet."
+  ,"filterAllHazards": "All Hazards"
+  ,"filterRipCurrent": "Rip Current"
+  ,"filterPollution": "Pollution"
+  ,"filterEarthquake": "Earthquake"
+  ,"mobileNumberHint": "12345 67890"
+  ,"distanceInKm": "{r} km"
+  ,"@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  }
+  ,"filterCommunity": "Community"
+  ,"filterMySubmitted": "My Submitted"
+  ,"noReportsYet": "No reports yet"
+  ,"noSubmittedReportsYet": "No submitted reports yet",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "Advisory not found.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} m away",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "LOW",
+  "@low": {},
+  "justNow": "Just now",
+  "@justNow": {},
+  "minutesAgo": "{minutes} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours} hr ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "Leaderboard",
+  "@leaderboardTitle": {},
+  "error": "Error: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "No leaderboard data yet",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "Start reporting to climb the ranks!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "YOU",
+  "@you": {},
+  "achievementsTitle": "Achievements",
+  "@achievementsTitle": {},
+  "earnedBadges": "Earned Badges",
+  "@earnedBadges": {},
+  "lockedBadges": "Locked Badges",
+  "@lockedBadges": {},
+  "pointsHistory": "Points History",
+  "@pointsHistory": {},
+  "totalPoints": "Total Points",
+  "@totalPoints": {},
+  "verified": "Verified",
+  "@verified": {},
+  "rate": "Rate",
+  "@rate": {},
+  "badges": "Badges",
+  "@badges": {},
+  "submitFirstReportBadge": "Submit your first report to earn a badge!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 All badges earned!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "No points history yet",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ Earned!",
+  "@earned": {},
+  "notYetEarned": "🔒 Not yet earned",
+  "@notYetEarned": {},
+  "ok": "OK",
+  "@ok": {},
+  "filterAllUrgencies": "All Urgencies",
+  "@filterAllUrgencies": {},
+  "urgencyHigh": "High (Critical)",
+  "@urgencyHigh": {},
+  "urgencyMedium": "Medium",
+  "@urgencyMedium": {},
+  "locationServicesOffTitle": "Location Services Disabled",
+  "@locationServicesOffTitle": {},
+  "enableLocationServicesForCurrentLocation": "Please enable location services to view your current location.",
+  "@enableLocationServicesForCurrentLocation": {},
+  "notNow": "Not Now",
+  "@notNow": {},
+  "openSettings": "Open Settings",
+  "@openSettings": {},
+  "permissionRequiredTitle": "Permission Required",
+  "@permissionRequiredTitle": {},
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "Location permissions are permanently denied. Please allow them in settings.",
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "locationPermissionDeniedAllowForCurrentLocation": "Allow location permission to view your current location",
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "locationPermissionBlockedEnableInSettings": "Location permissions blocked. Enable them in Settings.",
+  "@locationPermissionBlockedEnableInSettings": {},
+  "gettingYourLocation": "Getting your location...",
+  "@gettingYourLocation": {},
+  "filtersTitle": "Filters",
+  "@filtersTitle": {},
+  "timeRangeTitle": "Time Range",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 hours",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "Show Risk Zones",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "Display hazard hotspots",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "High Risk Only",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "Show only critical reports",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "Media Viewer",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "Loading...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "HIGH RISK",
+  "@highRiskBadge": {},
+  "mediaTitle": "Media",
+  "@mediaTitle": {},
+  "failedToLoadImage": "Failed to load image",
+  "@failedToLoadImage": {},
+  "playLabel": "Play",
+  "@playLabel": {},
+  "pauseLabel": "Pause",
+  "@pauseLabel": {},
+  "unsupportedMediaType": "Unsupported media type",
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "Notifications",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noNotificationsYet": "No notifications yet",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "Download Offline Region",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "Downloads map tiles around your current location for offline use.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "Region Name",
+  "@regionNameLabel": {},
+  "radiusLabel": "Radius",
+  "@radiusLabel": {},
+  "cancelLabel": "Cancel",
+  "@cancelLabel": {},
+  "downloadLabel": "Download",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteRegionTitle": "Delete Region?",
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "Delete",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "Offline Maps",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "Downloading tiles...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "Map tiles you view online are automatically cached for offline use. Download regions for full offline coverage.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "No offline regions yet",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "Tap + to download a region",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "Review retry status, error reason, and remove stuck items here.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "Similar report already exists nearby. We linked your submission to it.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "Your upload timeline has been completed and saved.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "Done",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "You are sending reports too quickly. Please wait 30 seconds and try again.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "Hourly report limit reached. Please try again later.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "Uploading your report",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "Preparing report details",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "Report details uploaded",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "Duplicate report detected, linked to existing report",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "Uploading media",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "Media upload failed, queued for retry",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "Finalizing report",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "Please wait before sending another report",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "Hourly report limit reached",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "Open the queue to review retry status, error reason, and remove stuck items.",
+  "@openQueueToReview": {},
+  "arcAbbr": "ARC",
+  "@arcAbbr": {},
+  "arcFull": "ALERT  •  REPORT  •  COORDINATE",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotOpenMaps": "Could not open maps",
+  "@couldNotOpenMaps": {},
+  "syncingQueuedReports": "Syncing queued reports",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "Uploading attachments",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "Report update",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "This app helps citizens report ocean hazards and helps authorities understand real-time conditions.\n\nWe prioritize privacy by limiting public exposure of personal details and by using privacy-safe map data for public views.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "What we collect: your phone (for login), your report description, time, and location.\n\nHow we use it: to store your report and show verified, privacy-safe information on the map and updates feed.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "Report submitted",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "Report verified",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "High-risk report verified",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "Report rejected",
+  "@reportRejectedReason": {}
 }

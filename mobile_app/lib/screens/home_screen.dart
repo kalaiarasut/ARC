@@ -959,16 +959,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       itemBuilder: (ctx) => [
-        const PopupMenuItem(value: null, child: Text('All Hazards')),
-        const PopupMenuItem(value: 'High Waves', child: Text('High Waves')),
-        const PopupMenuItem(value: 'Tsunami', child: Text('Tsunami')),
-        const PopupMenuItem(value: 'Storm', child: Text('Storm')),
-        const PopupMenuItem(value: 'Flood', child: Text('Flood')),
-        const PopupMenuItem(value: 'Rip Current', child: Text('Rip Current')),
-        const PopupMenuItem(value: 'Pollution', child: Text('Pollution')),
-        const PopupMenuItem(value: 'Earthquake', child: Text('Earthquake')),
+        PopupMenuItem(value: null, child: Text(context.l10n.filterAllHazards)),
+        PopupMenuItem(value: 'High Waves', child: Text(context.l10n.hazardHighWaves)),
+        PopupMenuItem(value: 'Tsunami', child: Text(context.l10n.hazardTsunami)),
+        PopupMenuItem(value: 'Storm', child: Text(context.l10n.hazardStorm)),
+        PopupMenuItem(value: 'Flood', child: Text(context.l10n.hazardFlood)),
+        PopupMenuItem(value: 'Rip Current', child: Text(context.l10n.filterRipCurrent)),
+        PopupMenuItem(value: 'Pollution', child: Text(context.l10n.filterPollution)),
+        PopupMenuItem(value: 'Earthquake', child: Text(context.l10n.filterEarthquake)),
       ],
-      child: _buildDropdownFilterChip(_selectedHazard ?? 'Hazards', _selectedHazard != null),
+      child: _buildDropdownFilterChip(_selectedHazard ?? context.l10n.filterAllHazards, _selectedHazard != null),
     );
   }
 
@@ -980,12 +980,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       itemBuilder: (ctx) => [
-        const PopupMenuItem(value: null, child: Text('All Urgencies')),
-        const PopupMenuItem(value: 'High', child: Text('High (Critical)')),
-        const PopupMenuItem(value: 'Medium', child: Text('Medium')),
-        const PopupMenuItem(value: 'Low', child: Text('Low')),
+        PopupMenuItem(value: null, child: Text(context.l10n.filterAllUrgencies)),
+        PopupMenuItem(value: 'High', child: Text(context.l10n.urgencyHigh)),
+        PopupMenuItem(value: 'Medium', child: Text(context.l10n.urgencyMedium)),
+        PopupMenuItem(value: 'Low', child: Text(context.l10n.low)),
       ],
-      child: _buildDropdownFilterChip(_selectedUrgency ?? 'Urgency', _selectedUrgency != null),
+      child: _buildDropdownFilterChip(_selectedUrgency ?? context.l10n.filterAllUrgencies, _selectedUrgency != null),
     );
   }
 

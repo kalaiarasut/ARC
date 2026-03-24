@@ -117,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         context: context,
                         ref: ref,
                         icon: Icons.light_mode_rounded,
-                        label: 'Light',
+                        label: context.l10n.themeLight,
                         selected: currentMode == ThemeMode.light,
                         isDark: isDark,
                         accent: accent,
@@ -128,7 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         context: context,
                         ref: ref,
                         icon: Icons.dark_mode_rounded,
-                        label: 'Dark',
+                        label: context.l10n.themeDark,
                         selected: currentMode == ThemeMode.dark,
                         isDark: isDark,
                         accent: accent,
@@ -139,7 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         context: context,
                         ref: ref,
                         icon: Icons.settings_suggest_rounded,
-                        label: 'System',
+                        label: context.l10n.themeSystem,
                         selected: currentMode == ThemeMode.system,
                         isDark: isDark,
                         accent: accent,
@@ -170,7 +170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   value: _notificationsEnabled ?? true,
                   secondary:
                       Icon(Icons.notifications_outlined, color: accent),
-                  title: const Text('Notifications'),
+                  title: Text(context.l10n.notifications),
                   subtitle: const Text(
                       'Advisories and report status updates'),
                   onChanged: _notificationsEnabled == null
@@ -249,7 +249,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: Icon(Icons.logout,
                   color: isDark ? AppColors.darkError : AppColors.error),
               title: Text(
-                'Log out',
+                context.l10n.logOut,
                 style: TextStyle(
                   color: isDark ? AppColors.darkError : AppColors.error,
                   fontWeight: FontWeight.w700,
@@ -259,7 +259,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 final ok = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Log out?'),
+                    title: Text(context.l10n.logOutTitle),
                     content: const Text(
                         'You will need to verify your phone again to sign back in.'),
                     actions: [
@@ -275,7 +275,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           foregroundColor: Colors.white,
                           elevation: 0,
                         ),
-                        child: const Text('Log out'),
+                        child: Text(context.l10n.logOut),
                       ),
                     ],
                   ),

@@ -160,12 +160,12 @@ class ReportDetailsScreen extends ConsumerWidget {
                               final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                               if (!ok && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Could not open maps')),
+                                  SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
                                 );
                               }
                             },
                             icon: const Icon(Icons.directions, size: 18),
-                            label: const Text('Navigate'),
+                            label: Text(context.l10n.navigate),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryBlue,
                               foregroundColor: Colors.white,
@@ -188,7 +188,7 @@ class ReportDetailsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Media',
+                          context.l10n.media,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),

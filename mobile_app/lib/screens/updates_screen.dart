@@ -147,12 +147,12 @@ class UpdatesScreen extends ConsumerWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '$queuedCount queued report${queuedCount == 1 ? '' : 's'}',
+                                        context.l10n.queuedReportsCount(queuedCount),
                                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Open the queue to review retry status, error reason, and remove stuck items.',
+                                        context.l10n.openQueueToReview,
                                         style: TextStyle(
                                           color: Theme.of(context).brightness == Brightness.dark
                                               ? AppColors.darkTextSecondary

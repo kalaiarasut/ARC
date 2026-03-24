@@ -1,10 +1,7 @@
 {
   "@@locale": "ta",
-
   "appTitle": "சிவில் அலர்ட் அமைப்பு",
-
   "profile": "சுயவிவரம்",
-
   "profileAndReports": "அறிக்கைகள்",
   "edit": "திருத்து",
   "user": "பயனர்",
@@ -33,19 +30,16 @@
   "failedToLoadReports": "அறிக்கைகள் ஏற்ற முடியவில்லை",
   "youreOffline": "நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்",
   "connectToInternetToLoadMyReports": "என் அறிக்கைகளை ஏற்ற இணையத்துடன் இணைக்கவும்.",
-
   "settings": "அமைப்புகள்",
   "helpFaq": "உதவி / கேள்விகள்",
   "aboutTransparency": "பற்றி & வெளிப்படைத்தன்மை",
   "language": "மொழி",
   "privacyControls": "மொழி & தனியுரிமை கட்டுப்பாடுகள்",
   "privacy": "தனியுரிமை",
-
   "chooseLanguage": "மொழியைத் தேர்ந்தெடுக்கவும்",
   "save": "சேமி",
   "continueLabel": "தொடரவும்",
   "languageComingSoon": "இந்த மொழி விரைவில் வரும்.",
-
   "updates": "புதுப்பிப்புகள்",
   "pendingCount": "{count} நிலுவையில்",
   "@pendingCount": {
@@ -55,22 +49,18 @@
   },
   "noUpdatesYet": "இன்னும் புதுப்பிப்புகள் இல்லை",
   "failedToLoadUpdates": "புதுப்பிப்புகளை ஏற்ற முடியவில்லை",
-
   "helpTitle": "உதவி / கேள்விகள்",
   "aboutTitle": "பற்றி & வெளிப்படைத்தன்மை",
   "privacyTitle": "தனியுரிமை கட்டுப்பாடுகள்",
-
   "privacyReducePrecisionTitle": "வரைபடத்தில் இடத் துல்லியத்தை குறைக்கவும்",
   "privacyReducePrecisionSubtitle": "இயக்கப்பட்டால், உங்கள் அறிக்கை குறியீடுகள் வரைபடத்தில் குறைந்த துல்லியத்துடன் காட்டப்படும்.",
-
   "faqQ1": "ஆபத்தை எப்படி அறிக்கையிடுவது?",
   "faqA1": "Report பக்கத்தில் சென்று நீங்கள் பார்க்கும் நிலையை விவரித்து அனுப்பவும். நீங்கள் ஆஃப்லைனில் இருந்தால், அது சேமிக்கப்பட்டு இணையம் வந்ததும் பதிவேற்றப்படும்.",
   "faqQ2": "கேலரியிலிருந்து பதிவேற்ற முடியாதது ஏன்?",
   "faqA2": "அறிக்கைகள் நம்பத்தகுந்ததாக இருக்க, நேரடியாகப் பதிவு செய்த (கேமரா/பதிவு) மீடியா மட்டும் அனுமதிக்கப்படுகிறது.",
   "faqQ3": "என் இடம் எப்படி பயன்படுத்தப்படுகிறது?",
-  "faqA3": "ஆபத்து எங்கு நிகழ்கிறது என்பதை புரிந்துகொள்ள உங்கள் இடம் உதவுகிறது. பொதுப் பார்வைக்கு, இடம் குறைந்த துல்லியத்துடன் காட்டப்படலாம்."
-
-  ,"loginTitle": "உள்நுழை / பதிவு செய்",
+  "faqA3": "ஆபத்து எங்கு நிகழ்கிறது என்பதை புரிந்துகொள்ள உங்கள் இடம் உதவுகிறது. பொதுப் பார்வைக்கு, இடம் குறைந்த துல்லியத்துடன் காட்டப்படலாம்.",
+  "loginTitle": "உள்நுழை / பதிவு செய்",
   "signUpWithMobile": "பதிவு செய்யப்பட்ட கைபேசி எண்ணுடன் பதிவு செய்யவும்",
   "otpIntro": "உங்கள் எண்ணை சரிபார்க்க OTP அனுப்பப்படும்",
   "mobileNumberLabel": "கைபேசி எண் *",
@@ -78,26 +68,22 @@
   "sendOtp": "OTP அனுப்பு",
   "failedToSendOtp": "OTP அனுப்ப முடியவில்லை.",
   "checkSupabasePhoneConfig": "Supabase: Authentication → Providers → Phone (enabled) மற்றும் SMS provider (Twilio) அமைக்கப்பட்டுள்ளதா என சரிபார்க்கவும்.",
-
   "enterOtp": "OTP உள்ளிடவும்",
-  "sentToNumber": "இதற்கு அனுப்பப்பட்டது: {mobileNumber}",
+  "sentToNumber": "Sent to {mobileNumber}",
   "pleaseEnter6DigitOtp": "6 இலக்க OTP ஐ உள்ளிடவும்",
   "otpVerificationFailed": "OTP சரிபார்ப்பு தோல்வியடைந்தது.",
-  "signInFailedWithError": "உள்நுழை தோல்வியடைந்தது: {error}",
+  "signInFailedWithError": "Sign-in failed: {error}",
   "didntReceiveOtp": "OTP வரவில்லையா? ",
   "otpResentSuccessfully": "OTP மீண்டும் அனுப்பப்பட்டது",
-  "failedToResendOtpWithError": "OTP மீண்டும் அனுப்ப முடியவில்லை: {error}",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
   "resendWithTimer": "மீண்டும் அனுப்பு (00:30)",
   "savingLabel": "சேமிக்கிறது...",
-
   "signedInSuccessfully": "உள்நுழைவு\nவெற்றிகரமாக முடிந்தது",
   "directingToDashboard": "டாஷ்போர்டிற்கு கொண்டு செல்கிறோம்...",
-
   "whatsYourName": "உங்கள் பெயர் என்ன?",
   "personalizeExperience": "உங்கள் அனுபவத்தை தனிப்பயன் செய்ய உதவுங்கள்",
   "enterYourName": "உங்கள் பெயரை உள்ளிடவும்",
   "pleaseEnterValidName": "செல்லுபடியாகும் பெயரை உள்ளிடவும் (குறைந்தது 2 எழுத்துகள்)",
-
   "onboarding1Title": "பேரிடர் நேரங்களில்\nஉங்கள் நம்பகமான துணை",
   "onboarding1Description": "நேரடி அலர்ட்களை பெறுங்கள் மற்றும் கடல் ஆபத்துகளை நிகழும் போதே அறிக்கையிட்டு பாதுகாப்பில் பங்களிக்கவும்.",
   "onboarding2Title": "பாதுகாப்பை மேம்படுத்துவோம்,\nஒவ்வொரு படியாக",
@@ -105,10 +91,8 @@
   "onboarding3Title": "உங்கள் கைவசத்தில்\nதயார்நிலை",
   "onboarding3Description": "கடல் ஆபத்துகளை அறிக்கையிடுங்கள், முக்கிய அலர்ட்களை பெறுங்கள், நேரம் தாமதமாகும்முன் தகவலறிந்து இருக்கவும்.",
   "skip": "தவிர்",
-
   "splashTitle": "சிவில் அலர்ட்",
   "splashSubtitle": "ஆபத்துகளை துல்லியமாக கண்டறிதல்",
-
   "hiWelcome": "வணக்கம், வரவேற்கிறோம் 👋",
   "togetherForOceanSafety": "கடல் பாதுகாப்பிற்காக\nஒன்றிணைவோம்,\nஇணைந்தால் பலம்",
   "seeUpdates": "புதுப்பிப்புகளை காண்க",
@@ -117,7 +101,6 @@
   "filterNow": "இப்போது",
   "filterLastWeek": "கடந்த வாரம்",
   "filterLastMonth": "கடந்த மாதம்",
-
   "locationServicesOffTitle": "இடச் சேவைகள் அணைக்கப்பட்டுள்ளன",
   "enableLocationServicesForReporting": "ஆபத்துகளை அறிக்கையிட, இடச் சேவைகளை (GPS) இயக்கவும். உங்கள் இடம் அதிகாரிகள் விரைவில் பதிலளிக்க உதவுகிறது.",
   "enableLocationServicesForCurrentLocation": "இடச் சேவைகள் அணைக்கப்பட்டுள்ளன. உங்கள் தற்போதைய இடத்தை காட்ட GPS ஐ இயக்கவும்.",
@@ -130,30 +113,26 @@
   "cancel": "ரத்து",
   "notNow": "இப்போது இல்லை",
   "openSettings": "அமைப்புகளை திற",
-  "errorGettingLocationWithError": "இடம் பெறுவதில் பிழை: {error}",
+  "errorGettingLocationWithError": "Error getting location: {error}",
   "gettingLocation": "இடம் பெறுகிறது...",
   "gettingYourLocation": "உங்கள் இடத்தை பெறுகிறது...",
-
-  "maximumAttachmentsAllowed": "அதிகபட்சம் {max} இணைப்புகள் மட்டுமே அனுமதி",
-  "errorPickingImageWithError": "படத்தை தேர்வு செய்வதில் பிழை: {error}",
-  "errorPickingVideoWithError": "வீடியோவை தேர்வு செய்வதில் பிழை: {error}",
-  "errorStoppingAudioWithError": "ஆடியோ நிறுத்துவதில் பிழை: {error}",
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
   "recordingAudioTapToStop": "ஆடியோ பதிவு செய்கிறது… நிறுத்த மீண்டும் தட்டவும்.",
-  "errorStartingAudioWithError": "ஆடியோ தொடங்குவதில் பிழை: {error}",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
   "pleaseSelectHazardType": "ஒரு ஆபத்து வகையைத் தேர்ந்தெடுக்கவும்",
   "pleaseDescribeSituation": "நிகழ்வை விவரிக்கவும்",
   "waitingForLocation": "இடம் பெற காத்திருக்கிறது...",
   "pleaseEnterPeopleAtRisk": "ஆபத்தில் இருப்போர் எண்ணிக்கையை (மதிப்பீடு) உள்ளிடவும்",
   "noInternetReportQueued": "இணையம் இல்லை. அறிக்கை வரிசையில் சேமிக்கப்படும்.",
-
   "profileNeededTitle": "சுயவிவரம் தேவை",
   "profileNeededBody": "அறிக்கையை சமர்ப்பிக்கும் முன் உங்கள் தொலைபேசி எண்ணை சேர்க்கவும்.",
   "addNow": "இப்போது சேர்க்கவும்",
-
   "reportSavedMediaUploadFailedRetry": "அறிக்கை சேமிக்கப்பட்டது! மீடியா பதிவேற்றம் தோல்வியடைந்தது, பின்னர் மீண்டும் முயற்சி செய்யப்படும்.",
   "reportSubmittedSuccessfully": "அறிக்கை வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! 🎉",
-  "errorWithError": "பிழை: {error}",
-
+  "errorWithError": "Error: {error}",
   "retryGps": "GPS மீண்டும் முயற்சி",
   "reportHazard": "ஆபத்தை அறிக்கையிடு",
   "whatAreYouSeeing": "நீங்கள் என்ன பார்க்கிறீர்கள்? 👁️",
@@ -174,33 +153,525 @@
   "urgencyMedium": "நடுத்தரம்",
   "urgencyHigh": "அதிகம்",
   "submitReport": "அறிக்கையை சமர்ப்பி",
-
   "close": "மூடு",
-  "moreDetails": "மேலும் விவரங்கள்"
-
-  ,"hazardHighWaves": "உயர்ந்த அலைகள்",
+  "moreDetails": "மேலும் விவரங்கள்",
+  "hazardHighWaves": "உயர்ந்த அலைகள்",
   "hazardTsunami": "சுனாமி",
   "hazardStorm": "புயல்",
   "hazardFlood": "வெள்ளம்",
   "hazardOther": "மற்றவை",
-
   "homeTab": "முகப்பு",
   "mapTab": "வரைபடம்",
   "updatesTab": "புதுப்பிப்புகள்",
   "profileTab": "அறிக்கைகள்",
   "liveNews": "நேரடி செய்திகள்",
-  "sampleHazardHeadline": "பசிபிக் கரையில் உயர்ந்த அலைகள்",
-  "sampleDate": "ஞா, 11 ஜூன் 2024",
-  "sampleTimeAgo": "3 நிமிடங்களுக்கு முன்"
-
-  ,"@sentToNumber": {"placeholders": {"mobileNumber": {}}}
-  ,"@signInFailedWithError": {"placeholders": {"error": {}}}
-  ,"@failedToResendOtpWithError": {"placeholders": {"error": {}}}
-  ,"@errorGettingLocationWithError": {"placeholders": {"error": {}}}
-  ,"@maximumAttachmentsAllowed": {"placeholders": {"max": {}}}
-  ,"@errorPickingImageWithError": {"placeholders": {"error": {}}}
-  ,"@errorPickingVideoWithError": {"placeholders": {"error": {}}}
-  ,"@errorStoppingAudioWithError": {"placeholders": {"error": {}}}
-  ,"@errorStartingAudioWithError": {"placeholders": {"error": {}}}
-  ,"@errorWithError": {"placeholders": {"error": {}}}
+  "sampleHazardHeadline": "பசிபிக் கடற்கரையில் உயர் அலைகள்",
+  "sampleDate": "ஞாயிறு, 11 ஜூன் 2024",
+  "sampleTimeAgo": "3 நிமிடங்களுக்கு முன்பு",
+  "@sentToNumber": {
+    "placeholders": {
+      "mobileNumber": {}
+    }
+  },
+  "@signInFailedWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@failedToResendOtpWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorGettingLocationWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@maximumAttachmentsAllowed": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "@errorPickingImageWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorPickingVideoWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStoppingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStartingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "queuedReportStuck": "சிக்கிக்கொண்டது",
+  "queuedReportPendingUpload": "பதிவேற்ற நிலுவையில் உள்ளது",
+  "queuedReportReadyToRetry": "மீண்டும் முயற்சிக்க தயார்",
+  "queuedReportWaitingForRetry": "மீண்டும் முயற்சிக்க காத்திருக்கிறது",
+  "removeQueuedReportTitle": "வரிசையில் உள்ள அறிக்கையை அகற்றவா?",
+  "removeQueuedReportContent": "இது ஆஃப்லைன் நகலை அழித்து எதிர்கால முயற்சிகளை நிறுத்தும்.",
+  "queuedReportRemoved": "வரிசையில் இருந்த அறிக்கை அகற்றப்பட்டது",
+  "themeLight": "வௌிச்சம்",
+  "themeDark": "இருட்டு",
+  "themeSystem": "கணினி",
+  "notifications": "அறிவிப்புகள்",
+  "logOutTitle": "வெளியேறவா?",
+  "logOut": "வெளியேறு",
+  "similarReportExists": "அருகாமையில் இதேபோன்ற அறிக்கை உள்ளது. உங்கள் அறிக்கை அதனுடன் இணைக்கப்பட்டுள்ளது.",
+  "sendingReportsTooQuickly": "நீங்கள் மிக வேகமாக அறிக்கைகளை அனுப்புகிறீர்கள். 30 வினாடிகள் காத்திருக்கவும்.",
+  "hourlyReportLimitReached": "மணிநேர அறிக்கை வரம்பு எட்டப்பட்டது. பின்னர் முயற்சிக்கவும்.",
+  "couldNotOpenMaps": "வரைபடத்தை திறக்க முடியவில்லை",
+  "navigate": "வழிச்செலுத்து",
+  "reportDetailsNotAvailable": "அறிக்கை விவரங்கள் இன்னும் கிடைக்கவில்லை",
+  "viewQueue": "வரிசையைப் பார்க்கவும்",
+  "achievements": "சாதனைகள்",
+  "leaderboard": "முன்னிலைப்பட்டியல்",
+  "chooseFromGallery": "கேலரியில் இருந்து தேர்ந்தெடுக்கவும்",
+  "downloadOfflineRegion": "ஆஃப்லைன் பகுதியை பதிவிறக்கு",
+  "radius": "ஆரம்",
+  "download": "பதிவிறக்கு",
+  "deleteRegionTitle": "பகுதியை அழிக்கவா?",
+  "deleteRegionContent": "\"{name}\" மற்றும் அதன் {count} தற்காலிக சேமிப்பு ஓடுகளை அகற்றவா?",
+  "@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "delete": "அழி",
+  "media": "ஊடகம்",
+  "failedToLoadImage": "படத்தை ஏற்ற முடியவில்லை",
+  "unsupportedMediaType": "ஆதரிக்கப்படாத ஊடக வகை",
+  "noVerifiedRiskZones": "இப்பகுதியில் சரிபார்க்கப்பட்ட அபாய மண்டலங்கள் இன்னும் இல்லை.",
+  "filterAllHazards": "அனைத்து அபாயங்கள்",
+  "filterRipCurrent": "ரிப் கரண்ட்",
+  "filterPollution": "மாசுபாடு",
+  "filterEarthquake": "பூகம்பம்",
+  "mobileNumberHint": "12345 67890",
+  "distanceInKm": "{r} கி.மீ.",
+  "@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  },
+  "filterCommunity": "சமூகம்",
+  "filterMySubmitted": "நான் சமர்ப்பித்தவை",
+  "noReportsYet": "இதுவரை அறிக்கைகள் இல்லை",
+  "noSubmittedReportsYet": "இதுவரை சமர்ப்பிக்கப்பட்ட அறிக்கைகள் இல்லை",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "ஆலோசனை கிடைக்கவில்லை.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} மீ தொலைவில்",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "குறைந்த",
+  "@low": {},
+  "justNow": "இப்போதுதான்",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "லீடர்போர்டு",
+  "@leaderboardTitle": {},
+  "error": "பிழை: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "லீடர்போர்டு தரவு இன்னும் இல்லை",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "தரவரிசையில் ஏற அறிக்கையைத் தொடங்குங்கள்!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "நீங்கள்",
+  "@you": {},
+  "achievementsTitle": "சாதனைகள்",
+  "@achievementsTitle": {},
+  "earnedBadges": "சம்பாதித்த பதக்கங்கள்",
+  "@earnedBadges": {},
+  "lockedBadges": "பூட்டப்பட்ட பேட்ஜ்கள்",
+  "@lockedBadges": {},
+  "pointsHistory": "புள்ளிகள் வரலாறு",
+  "@pointsHistory": {},
+  "totalPoints": "மொத்த புள்ளிகள்",
+  "@totalPoints": {},
+  "verified": "சரிபார்க்கப்பட்டது",
+  "@verified": {},
+  "rate": "மதிப்பிடவும்",
+  "@rate": {},
+  "badges": "பேட்ஜ்கள்",
+  "@badges": {},
+  "submitFirstReportBadge": "பேட்ஜைப் பெற, உங்கள் முதல் அறிக்கையைச் சமர்ப்பிக்கவும்!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 அனைத்து பேட்ஜ்களும் பெற்றன!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "இதுவரை புள்ளிகள் வரலாறு இல்லை",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ சம்பாதித்தது!",
+  "@earned": {},
+  "notYetEarned": "🔒 இன்னும் சம்பாதிக்கவில்லை",
+  "@notYetEarned": {},
+  "ok": "சரி",
+  "@ok": {},
+  "filterAllUrgencies": "அனைத்து அவசரங்களும்",
+  "@filterAllUrgencies": {},
+  "@urgencyHigh": {},
+  "@urgencyMedium": {},
+  "@locationServicesOffTitle": {},
+  "@enableLocationServicesForCurrentLocation": {},
+  "@notNow": {},
+  "@openSettings": {},
+  "@permissionRequiredTitle": {},
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "@locationPermissionBlockedEnableInSettings": {},
+  "@gettingYourLocation": {},
+  "filtersTitle": "வடிப்பான்கள்",
+  "@filtersTitle": {},
+  "timeRangeTitle": "நேர வரம்பு",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 மணிநேரம்",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "ஆபத்து மண்டலங்களைக் காட்டு",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "ஆபத்து ஹாட்ஸ்பாட்களைக் காட்டு",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "அதிக ஆபத்து மட்டுமே",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "முக்கியமான அறிக்கைகளை மட்டும் காட்டு",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "மீடியா பார்வையாளர்",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "ஏற்றுகிறது...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "அதிக ஆபத்து",
+  "@highRiskBadge": {},
+  "mediaTitle": "ஊடகம்",
+  "@mediaTitle": {},
+  "@failedToLoadImage": {},
+  "playLabel": "விளையாடு",
+  "@playLabel": {},
+  "pauseLabel": "இடைநிறுத்தம்",
+  "@pauseLabel": {},
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "அறிவிப்புகள்",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "noNotificationsYet": "இதுவரை எந்த அறிவிப்பும் இல்லை",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "ஆஃப்லைன் பிராந்தியத்தைப் பதிவிறக்கவும்",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "ஆஃப்லைன் பயன்பாட்டிற்காக உங்கள் தற்போதைய இருப்பிடத்தைச் சுற்றியுள்ள வரைபட ஓடுகளைப் பதிவிறக்குகிறது.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "பிராந்தியத்தின் பெயர்",
+  "@regionNameLabel": {},
+  "radiusLabel": "ஆரம்",
+  "@radiusLabel": {},
+  "cancelLabel": "ரத்து செய்",
+  "@cancelLabel": {},
+  "downloadLabel": "பதிவிறக்கவும்",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "நீக்கு",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "ஆஃப்லைன் வரைபடங்கள்",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "ஓடுகளைப் பதிவிறக்குகிறது...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "நீங்கள் ஆன்லைனில் பார்க்கும் மேப் டைல்ஸ் ஆஃப்லைன் பயன்பாட்டிற்காக தானாகவே தற்காலிகமாக சேமிக்கப்படும்.முழு ஆஃப்லைன் கவரேஜுக்கு பிராந்தியங்களைப் பதிவிறக்கவும்.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "இன்னும் ஆஃப்லைன் பகுதிகள் இல்லை",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "ஒரு பகுதியைப் பதிவிறக்க + தட்டவும்",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "மறுமுயற்சியின் நிலை, பிழையின் காரணம் ஆகியவற்றை மதிப்பாய்வு செய்து, சிக்கிய பொருட்களை இங்கே அகற்றவும்.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "இதே போன்ற அறிக்கை ஏற்கனவே அருகில் உள்ளது.உங்கள் சமர்ப்பிப்பை அதனுடன் இணைத்துள்ளோம்.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "உங்கள் பதிவேற்ற காலவரிசை நிறைவு செய்யப்பட்டு சேமிக்கப்பட்டது.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "முடிந்தது",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "மிக விரைவாக அறிக்கைகளை அனுப்புகிறீர்கள்.30 வினாடிகள் காத்திருந்து மீண்டும் முயற்சிக்கவும்.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "மணிநேர அறிக்கை வரம்பை அடைந்தது.பிறகு முயற்சிக்கவும்.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "உங்கள் அறிக்கையைப் பதிவேற்றுகிறது",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "அறிக்கை விவரங்களைத் தயாரித்தல்",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "அறிக்கை விவரங்கள் பதிவேற்றப்பட்டன",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "நகல் அறிக்கை கண்டறியப்பட்டது, ஏற்கனவே உள்ள அறிக்கையுடன் இணைக்கப்பட்டுள்ளது",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "மீடியாவைப் பதிவேற்றுகிறது",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "மீடியா பதிவேற்றம் தோல்வியடைந்தது, மீண்டும் முயற்சிக்க வரிசையில் உள்ளது",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "இறுதி அறிக்கை",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "மற்றொரு அறிக்கையை அனுப்பும் முன் காத்திருக்கவும்",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "மணிநேர அறிக்கை வரம்பை அடைந்தது",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "மறுமுயற்சியின் நிலை, பிழையின் காரணத்தை மதிப்பாய்வு செய்யவும், சிக்கிய பொருட்களை அகற்றவும் வரிசையைத் திறக்கவும்.",
+  "@openQueueToReview": {},
+  "arcAbbr": "ARC",
+  "@arcAbbr": {},
+  "arcFull": "எச்சரிக்கை • அறிக்கை • ஒருங்கிணைத்தல்",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingQueuedReports": "வரிசைப்படுத்தப்பட்ட அறிக்கைகளை ஒத்திசைக்கிறது",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "இணைப்புகளைப் பதிவேற்றுகிறது",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "புதுப்பிப்பைப் புகாரளிக்கவும்",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "இந்த ஆப் குடிமக்கள் கடல் அபாயங்களைப் புகாரளிக்க உதவுகிறது மற்றும் நிகழ்நேர நிலைமைகளைப் புரிந்துகொள்ள அதிகாரிகளுக்கு உதவுகிறது.\n\nதனிப்பட்ட விவரங்களின் பொது வெளிப்பாட்டைக் கட்டுப்படுத்துவதன் மூலமும், பொதுப் பார்வைகளுக்கு தனியுரிமை தொடர்பான பாதுகாப்பான வரைபடத் தரவைப் பயன்படுத்துவதன் மூலமும் தனியுரிமைக்கு முன்னுரிமை அளிக்கிறோம்.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "நாங்கள் சேகரிப்பது: உங்கள் தொலைபேசி (உள்நுழைவதற்கு), உங்கள் அறிக்கை விளக்கம், நேரம் மற்றும் இருப்பிடம்.\n\nஅதை நாங்கள் எவ்வாறு பயன்படுத்துகிறோம்: உங்கள் அறிக்கையைச் சேமிக்கவும், வரைபடம் மற்றும் புதுப்பிப்புகள் ஊட்டத்தில் சரிபார்க்கப்பட்ட, தனியுரிமை தொடர்பான பாதுகாப்பான தகவலைக் காட்டவும்.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "அறிக்கை சமர்ப்பிக்கப்பட்டது",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "அறிக்கை சரிபார்க்கப்பட்டது",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "அதிக ஆபத்து அறிக்கை சரிபார்க்கப்பட்டது",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "அறிக்கை நிராகரிக்கப்பட்டது",
+  "@reportRejectedReason": {}
 }

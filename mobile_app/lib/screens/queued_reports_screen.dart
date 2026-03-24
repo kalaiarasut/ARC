@@ -122,14 +122,14 @@ class _QueuedReportsScreenState extends State<QueuedReportsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '$count queued report${count == 1 ? '' : 's'}',
+                              context.l10n.queuedReportsCount(count),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               stuckCount > 0
-                                  ? '$stuckCount item${stuckCount == 1 ? '' : 's'} need manual attention.'
-                                  : 'Review retry status, error reason, and remove stuck items here.',
+                                  ? context.l10n.stuckItemsManualAttention(stuckCount)
+                                  : context.l10n.reviewRetryStatus,
                               style: TextStyle(
                                 color: Theme.of(context).brightness == Brightness.dark
                                     ? AppColors.darkTextSecondary

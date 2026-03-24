@@ -58,35 +58,35 @@ class QueuedReportsList extends StatelessWidget {
     }
   }
 
-  static ({String label, Color color}) queueStatusFor(Map<String, dynamic> job) {
+  static ({String label, Color color}) queueStatusFor(BuildContext context, Map<String, dynamic> job) {
     final attempts = (job['attempts'] as num?)?.toInt() ?? 0;
     if (attempts >= OfflineReportQueueService.maxAutoAttempts) {
-      return (label: 'Stuck', color: AppColors.error);
+      return (label: context.l10n.queuedReportStuck, color: AppColors.error);
     }
     if (attempts == 0) {
-      return (label: 'Pending upload', color: AppColors.primaryBlue);
+      return (label: context.l10n.queuedReportPendingUpload, color: AppColors.primaryBlue);
     }
     if (OfflineReportQueueService.isDue(job)) {
-      return (label: 'Ready to retry', color: AppColors.success);
+      return (label: context.l10n.queuedReportReadyToRetry, color: AppColors.success);
     }
-    return (label: 'Waiting for retry', color: AppColors.warning);
+    return (label: context.l10n.queuedReportWaitingForRetry, color: AppColors.warning);
   }
 
   Future<void> _removeJob(BuildContext context, String clientId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove queued report?'),
-        content: const Text('This will delete the offline copy and stop future retries for this report.'),
+        title: Text(context.l10n.removeQueuedReportTitle),
+        content: Text(context.l10n.removeQueuedReportContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Remove'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),
@@ -98,7 +98,7 @@ class QueuedReportsList extends StatelessWidget {
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Queued report removed')),
+      SnackBar(content: Text(context.l10n.queuedReportRemoved)),
     );
   }
 
@@ -165,7 +165,7 @@ class QueuedReportsList extends StatelessWidget {
             final mediaItems = job['media'] is List ? job['media'] as List : const [];
             final createdAt = job['_createdAt'] as DateTime;
             final nextAttemptAt = parseDateTime(job['nextAttemptAt']);
-            final queueStatus = queueStatusFor(job);
+            final queueStatus = queueStatusFor(context, job);
 
             return Container(
               padding: const EdgeInsets.all(14),

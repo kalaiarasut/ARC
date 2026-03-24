@@ -5,6 +5,7 @@ import '../models/official_advisory.dart';
 import '../models/advisory_category.dart';
 import '../services/advisory_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 class AdvisoryDetailsScreen extends StatelessWidget {
   final String advisoryId;
@@ -23,7 +24,7 @@ class AdvisoryDetailsScreen extends StatelessWidget {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open maps')),
+        SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
       );
     }
   }
@@ -67,7 +68,7 @@ class AdvisoryDetailsScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  'Failed to load advisory: ${snapshot.error}',
+                  context.l10n.failedToLoadAdvisory(snapshot.error.toString()),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark
@@ -83,7 +84,7 @@ class AdvisoryDetailsScreen extends StatelessWidget {
           if (advisory == null) {
             return Center(
               child: Text(
-                'Advisory not found.',
+                context.l10n.advisoryNotFound,
                 style: TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.darkTextSecondary

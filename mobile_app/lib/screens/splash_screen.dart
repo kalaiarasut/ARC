@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/supabase_config.dart';
 import '../services/home_feed_bootstrap_service.dart';
+import '../l10n/l10n.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
@@ -105,9 +106,9 @@ class _SplashScreenState extends State<SplashScreen>
                     color: const Color(0x40778DA9),
                   ),
                   const SizedBox(height: 28),
-                  const Text(
-                    'ARC',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.arcAbbr,
+                    style: const TextStyle(
                       fontSize: 56,
                       fontWeight: FontWeight.w200,
                       color: Color(0xFFEAECEE),
@@ -116,10 +117,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'ALERT  •  REPORT  •  COORDINATE',
+                  Text(
+                    context.l10n.arcFull,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w400,
                       color: Color(0x77AABBCC),

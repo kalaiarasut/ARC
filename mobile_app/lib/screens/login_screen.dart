@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               CustomTextField(
-                hintText: "12345 67890",
+                hintText: context.l10n.mobileNumberHint,
                 controller: _mobileController,
                 keyboardType: TextInputType.number,
                 prefixText: "+91",

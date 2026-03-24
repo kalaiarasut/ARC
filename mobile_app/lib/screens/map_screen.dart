@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
 import '../services/tile_caching_service.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
@@ -57,7 +58,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open maps')),
+        SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
       );
     }
   }
@@ -107,9 +108,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     // Allow re-prompting if user previously dismissed dialogs.
     _hasPromptedForGps = false;
     _hasPromptedForPermissionSettings = false;
-    await _getUserLocation(promptForGpsIfOff: true);
+    await getUserLocation(promptForGpsIfOff: true);
     if (!mounted) return;
-    _recenterMap();
+    recenterMap();
   }
 
   @override
@@ -121,11 +122,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
       // When user enables GPS from settings, re-attempt location fetch.
       if (status == ServiceStatus.enabled) {
-        _getUserLocation(promptForGpsIfOff: false);
+        getUserLocation(promptForGpsIfOff: false);
       }
     });
 
-    _getUserLocation();
+    getUserLocation();
 
     _languageSub = ref.listenManual<String>(languageCodeProvider, (previous, next) {
       if (previous != null && previous != next && ref.read(mapProvider).currentBounds != null) {
@@ -148,7 +149,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // Returning from system settings: re-check services/permissions.
-      _getUserLocation(promptForGpsIfOff: false);
+      getUserLocation(promptForGpsIfOff: false);
     }
   }
 
@@ -160,7 +161,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     });
   }
 
-  Future<bool> _promptEnableLocationServices() async {
+
+  Future<bool> promptEnableLocationServices() async {
     if (!mounted) return false;
     if (_hasPromptedForGps) return false;
     _hasPromptedForGps = true;
@@ -195,7 +197,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     return false;
   }
 
-  Future<bool> _promptOpenAppSettingsForPermission() async {
+  Future<bool> promptOpenAppSettingsForPermission() async {
     if (!mounted) return false;
     if (_hasPromptedForPermissionSettings) return false;
     _hasPromptedForPermissionSettings = true;
@@ -229,7 +231,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     return false;
   }
 
-  Future<void> _getUserLocation({bool promptForGpsIfOff = true}) async {
+  Future<void> getUserLocation({bool promptForGpsIfOff = true}) async {
     if (_isFetchingLocation) return;
     if (mounted) {
       setState(() => _isFetchingLocation = true);
@@ -242,7 +244,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (promptForGpsIfOff) {
-          await _promptEnableLocationServices();
+          await promptEnableLocationServices();
         }
 
         if (mounted) {
@@ -277,7 +279,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       }
 
       if (permission == LocationPermission.deniedForever) {
-        await _promptOpenAppSettingsForPermission();
+        await promptOpenAppSettingsForPermission();
 
         if (mounted) {
           await Future<void>.delayed(Duration.zero);
@@ -323,8 +325,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       // Recenter & initial data fetch once the map is laid out
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _recenterMap();
-        _updateMapData();
+        recenterMap();
+        updateMapData();
       });
     } catch (e) {
       _setFallbackLocation();
@@ -348,7 +350,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
-  void _updateMapData() {
+  void updateMapData() {
     if (_userLocation == null) return;
 
     _debounceTimer?.cancel();
@@ -365,7 +367,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     });
   }
 
-  void _onMapEvent(MapEvent event) {
+  void onMapEvent(MapEvent event) {
     final zoom = _mapController.camera.zoom;
     if (_lastZoom < 0 || (zoom - _lastZoom).abs() >= 0.01) {
       final newScale = _computeMarkerScale(zoom);
@@ -378,11 +380,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
 
     if (event is MapEventMoveEnd || event is MapEventRotateEnd) {
-      _updateMapData();
+      updateMapData();
     }
   }
 
-  void _recenterMap() {
+  void recenterMap() {
     if (_userLocation != null) {
       _mapController.move(_userLocation!, 14);
     }
@@ -426,7 +428,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               initialZoom: _userLocation != null ? 14 : 5,
               minZoom: 5,
               maxZoom: 18,
-              onMapEvent: _onMapEvent,
+              onMapEvent: onMapEvent,
               onTap: (tapPosition, point) {
                 ref.read(mapProvider.notifier).clearSelections();
               },
@@ -496,7 +498,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         child: Transform.scale(
                           scale: _markerScale,
                           alignment: Alignment.bottomCenter,
-                          child: _buildMarkerWidget(markerData),
+                          child: buildMarkerWidget(markerData),
                         ),
                       ),
                     );
@@ -550,7 +552,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           child: Transform.scale(
                             scale: _markerScale,
                             alignment: Alignment.bottomCenter,
-                            child: _buildAdvisoryMarkerWidget(advisory),
+                            child: buildAdvisoryMarkerWidget(advisory),
                           ),
                         ),
                       );
@@ -733,7 +735,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Filters',
+                          context.l10n.filtersTitle,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -744,7 +746,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
                         // Time range filter
                         Text(
-                          'Time Range',
+                          context.l10n.timeRangeTitle,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -758,7 +760,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             final isSelected = filters.daysBack == days;
                             return ChoiceChip(
                               label: Text(
-                                days == 1 ? '24 hours' : '$days days',
+                                days == 1 ? context.l10n.twentyFourHours : context.l10n.daysNumber(days),
                                 style: TextStyle(
                                   color: isSelected ? Colors.white : AppColors.textSecondary,
                                   fontWeight: FontWeight.w600,
@@ -769,7 +771,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                                 if (selected) {
                                   ref.read(mapFiltersProvider.notifier).update(
                                     filters.copyWith(daysBack: days));
-                                  _updateMapData();
+                                  updateMapData();
                                 }
                               },
                               selectedColor: AppColors.primaryBlue,
@@ -782,13 +784,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
                         // Risk zones toggle
                         SwitchListTile(
-                          title: const Text(
-                            'Show Risk Zones',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          title: Text(
+                            context.l10n.showRiskZonesTitle,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          subtitle: const Text(
-                            'Display hazard hotspots',
-                            style: TextStyle(fontSize: 12),
+                          subtitle: Text(
+                            context.l10n.displayHazardHotspots,
+                            style: const TextStyle(fontSize: 12),
                           ),
                           value: filters.showRiskZones,
                           activeColor: AppColors.primaryBlue,
@@ -807,9 +809,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             // Give users feedback when there are no verified zones available.
                             if (value == true && ref.read(mapProvider).riskZones.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('No verified risk zones in this area yet.'),
-                                  duration: Duration(seconds: 3),
+                                SnackBar(
+                                  content: Text(context.l10n.noVerifiedRiskZones),
+                                  duration: const Duration(seconds: 3),
                                 ),
                               );
                             }
@@ -818,20 +820,20 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
                         // High risk only toggle
                         SwitchListTile(
-                          title: const Text(
-                            'High Risk Only',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          title: Text(
+                            context.l10n.highRiskOnlyTitle,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          subtitle: const Text(
-                            'Show only critical reports',
-                            style: TextStyle(fontSize: 12),
+                          subtitle: Text(
+                            context.l10n.showOnlyCriticalReports,
+                            style: const TextStyle(fontSize: 12),
                           ),
                           value: filters.showOnlyHighRisk,
                           activeColor: AppColors.error,
                           onChanged: (value) {
                             ref.read(mapFiltersProvider.notifier).update(
                               filters.copyWith(showOnlyHighRisk: value));
-                            _updateMapData();
+                            updateMapData();
                           },
                         ),
                       ],
@@ -877,8 +879,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      SizedBox(
+                    children: [
+                      const SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
@@ -886,10 +888,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           strokeWidth: 2,
                         ),
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Text(
-                        'Loading...',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                        context.l10n.loadingText,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -902,13 +904,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
             _buildMarkerDetailsSheet(mapState.selectedMarker!),
 
           if (mapState.selectedAdvisory != null)
-            _buildAdvisoryDetailsSheet(mapState.selectedAdvisory!),
+            buildAdvisoryDetailsSheet(mapState.selectedAdvisory!),
         ],
       ),
     );
   }
 
-  Widget _buildMarkerWidget(MapMarkerData marker) {
+  Widget buildMarkerWidget(MapMarkerData marker) {
     return Column(
       children: [
         SizedBox(
@@ -936,7 +938,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   ],
                 ),
                 child: Icon(
-                  _getHazardIcon(marker.hazardType),
+                  getHazardIcon(marker.hazardType),
                   color: Colors.white,
                   size: 20,
                 ),
@@ -970,7 +972,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     );
   }
 
-  IconData _getHazardIcon(String hazardType) {
+  IconData getHazardIcon(String hazardType) {
     switch (hazardType) {
       case 'High Waves':
         return Icons.waves;
@@ -985,7 +987,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
-  Color _getAdvisoryColor(String category) {
+  Color getAdvisoryColor(String category) {
     switch (advisoryCategoryFromString(category)) {
       case AdvisoryCategory.food:
         return AppColors.success;
@@ -1006,7 +1008,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
-  IconData _getAdvisoryIcon(String category) {
+  IconData getAdvisoryIcon(String category) {
     switch (advisoryCategoryFromString(category)) {
       case AdvisoryCategory.food:
         return Icons.restaurant;
@@ -1027,8 +1029,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
-  Widget _buildAdvisoryMarkerWidget(OfficialAdvisory advisory) {
-    final color = _getAdvisoryColor(advisory.category);
+  Widget buildAdvisoryMarkerWidget(OfficialAdvisory advisory) {
+    final color = getAdvisoryColor(advisory.category);
     final languageCode = Localizations.localeOf(context).languageCode;
     final categoryLabel = advisoryCategoryLabelForLanguage(
       advisoryCategoryFromString(advisory.category),
@@ -1057,7 +1059,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               children: [
                 Center(
                   child: Icon(
-                    _getAdvisoryIcon(advisory.category),
+                    getAdvisoryIcon(advisory.category),
                     color: Colors.white,
                     size: 20,
                   ),
@@ -1091,8 +1093,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget _buildAdvisoryDetailsSheet(OfficialAdvisory advisory) {
-    final color = _getAdvisoryColor(advisory.category);
+  Widget buildAdvisoryDetailsSheet(OfficialAdvisory advisory) {
+    final color = getAdvisoryColor(advisory.category);
     final languageCode = Localizations.localeOf(context).languageCode;
     final categoryLabel = advisoryCategoryLabelForLanguage(
       advisoryCategoryFromString(advisory.category),
@@ -1150,7 +1152,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        _getAdvisoryIcon(advisory.category),
+                        getAdvisoryIcon(advisory.category),
                         color: color,
                         size: 28,
                       ),
@@ -1294,28 +1296,28 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             _openDirectionsTo(lat, lon);
                           },
                           icon: const Icon(Icons.directions, size: 18),
-                          label: Text(advisoryLabelForLanguage('directions', languageCode)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+                           label: Text(advisoryLabelForLanguage('directions', languageCode)),
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: AppColors.secondaryCyan,
+                             foregroundColor: Colors.white,
+                             elevation: 0,
+                             shape: RoundedRectangleBorder(
+                               borderRadius: BorderRadius.circular(12),
+                             ),
+                             padding: const EdgeInsets.symmetric(vertical: 14),
+                           ),
+                         ),
+                       ),
+                     ],
+                   ],
+                 ),
+               ],
+             ),
+           ),
+         ),
+       ),
+     );
+   }
 
   Widget _buildMarkerDetailsSheet(MapMarkerData marker) {
     return Positioned(
@@ -1325,8 +1327,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: [
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 20,
@@ -1341,7 +1343,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle bar
                 Center(
                   child: Container(
                     width: 40,
@@ -1353,82 +1354,27 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Hazard type with icon
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Color(marker.urgencyColor).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        _getHazardIcon(marker.hazardType),
-                        color: Color(marker.urgencyColor),
-                        size: 28,
-                      ),
+                    Icon(
+                      getHazardIcon(marker.hazardType),
+                      color: Color(marker.urgencyColor),
+                      size: 28,
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            marker.hazardType,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Color(marker.urgencyColor).withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${marker.urgencyLevel} Urgency',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(marker.urgencyColor),
-                                  ),
-                                ),
-                              ),
-                              if (marker.isHighRisk) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'HIGH RISK',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.error,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
+                      child: Text(
+                        marker.hazardType,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Time
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Icon(Icons.access_time, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
@@ -1504,24 +1450,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   }
 }
 
-// Custom painter for marker triangle pointer
 class _TrianglePainter extends CustomPainter {
   final Color color;
-
-  _TrianglePainter(this.color);
+  const _TrianglePainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
+    final paint = Paint()..color = color;
     final path = ui.Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
+      ..moveTo(0, 0)
       ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
       ..close();
-
     canvas.drawPath(path, paint);
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/upload_progress_controller.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 class UploadProgressOverlay extends StatelessWidget {
   const UploadProgressOverlay({super.key});
@@ -141,7 +142,7 @@ class UploadProgressOverlay extends StatelessWidget {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: UploadProgressController.instance.clear,
-                          child: const Text('Close'),
+                          child: Text(context.l10n.close),
                         ),
                       ),
                     ],

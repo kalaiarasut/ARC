@@ -18,9 +18,9 @@ class ProfileModuleScreen extends StatefulWidget {
 }
 
 class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
+  String? _photoPath;
   String? _name;
   String? _phone;
-  String? _photoPath;
 
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -99,14 +99,14 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to take photo: $e')),
+                      SnackBar(content: Text(context.l10n.failedToTakePhoto(e.toString()))),
                     );
                   }
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined, color: AppColors.primaryBlue),
-                title: const Text('Choose from gallery'),
+                title: Text(context.l10n.chooseFromGallery),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   try {
@@ -116,7 +116,7 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to pick photo: $e')),
+                      SnackBar(content: Text(context.l10n.failedToPickPhoto(e.toString()))),
                     );
                   }
                 },

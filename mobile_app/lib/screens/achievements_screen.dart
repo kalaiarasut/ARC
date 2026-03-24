@@ -5,6 +5,7 @@ import '../models/citizen_stats.dart';
 import '../providers/gamification_provider.dart';
 import '../theme/app_colors.dart';
 import 'leaderboard_screen.dart';
+import '../l10n/l10n.dart';
 
 class AchievementsScreen extends ConsumerWidget {
   const AchievementsScreen({super.key});
@@ -18,14 +19,14 @@ class AchievementsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Achievements'),
+        title: Text(context.l10n.achievementsTitle),
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.leaderboard_outlined),
-            tooltip: 'Leaderboard',
+            tooltip: context.l10n.leaderboardTitle,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
@@ -35,10 +36,10 @@ class AchievementsScreen extends ConsumerWidget {
       ),
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading stats: $e')),
+        error: (e, _) => Center(child: Text(context.l10n.error(e.toString()))),
         data: (stats) => allBadgesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error loading badges: $e')),
+          error: (e, _) => Center(child: Text(context.l10n.error(e.toString()))),
           data: (allBadges) => RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(citizenStatsProvider);
@@ -47,22 +48,22 @@ class AchievementsScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildStatsCard(stats),
+                _buildStatsCard(context, stats),
                 const SizedBox(height: 20),
-                _buildSectionTitle(context, 'Earned Badges', stats.badges.length, isDark),
+                _buildSectionTitle(context, context.l10n.earnedBadges, stats.badges.length, isDark),
                 const SizedBox(height: 12),
                 _buildEarnedBadges(context, stats.badges),
                 const SizedBox(height: 24),
                 _buildSectionTitle(
                   context,
-                  'Locked Badges',
+                  context.l10n.lockedBadges,
                   allBadges.length - stats.badges.length,
                   isDark,
                 ),
                 const SizedBox(height: 12),
                 _buildLockedBadges(context, allBadges, stats.badges),
                 const SizedBox(height: 24),
-                _buildSectionTitle(context, 'Points History', stats.recentPoints.length, isDark),
+                _buildSectionTitle(context, context.l10n.pointsHistory, stats.recentPoints.length, isDark),
                 const SizedBox(height: 12),
                 _buildPointsHistory(context, stats.recentPoints),
                 const SizedBox(height: 32),
@@ -74,7 +75,7 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsCard(CitizenStats stats) {
+  Widget _buildStatsCard(BuildContext context, CitizenStats stats) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -108,9 +109,9 @@ class AchievementsScreen extends ConsumerWidget {
                       color: Colors.white,
                     ),
                   ),
-                  const Text(
-                    'Total Points',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.totalPoints,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white70,
                     ),
@@ -144,16 +145,16 @@ class AchievementsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildMiniStat('Reports', stats.totalReports),
+              _buildMiniStat(context.l10n.profileTab, stats.totalReports),
               const SizedBox(width: 16),
-              _buildMiniStat('Verified', stats.verifiedCount),
+              _buildMiniStat(context.l10n.verified, stats.verifiedCount),
               const SizedBox(width: 16),
               _buildMiniStat(
-                'Rate',
+                context.l10n.rate,
                 '${(stats.verificationRate * 100).toStringAsFixed(0)}%',
               ),
               const SizedBox(width: 16),
-              _buildMiniStat('Badges', stats.badges.length),
+              _buildMiniStat(context.l10n.badges, stats.badges.length),
             ],
           ),
         ],
@@ -228,14 +229,14 @@ class AchievementsScreen extends ConsumerWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             children: [
-              Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
-              SizedBox(height: 8),
+              const Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
+              const SizedBox(height: 8),
               Text(
-                'Submit your first report to earn a badge!',
-                style: TextStyle(color: Colors.grey),
+                context.l10n.submitFirstReportBadge,
+                style: const TextStyle(color: Colors.grey),
               ),
             ],
           ),
@@ -276,10 +277,10 @@ class AchievementsScreen extends ConsumerWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            '🎉 All badges earned!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            context.l10n.allBadgesEarned,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       );
@@ -315,8 +316,8 @@ class AchievementsScreen extends ConsumerWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Center(
-          child: Text('No points history yet', style: TextStyle(color: Colors.grey)),
+        child: Center(
+          child: Text(context.l10n.noPointsHistoryYet, style: const TextStyle(color: Colors.grey)),
         ),
       );
     }
@@ -351,11 +352,11 @@ class AchievementsScreen extends ConsumerWidget {
               ),
             ),
             title: Text(
-              entry.reasonLabel,
+              entry.reasonLabel(context.l10n),
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
             trailing: Text(
-              _timeAgo(entry.createdAt),
+              _timeAgo(context, entry.createdAt),
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           );
@@ -376,7 +377,7 @@ class AchievementsScreen extends ConsumerWidget {
             Text(desc),
             const SizedBox(height: 12),
             Text(
-              earned ? '✅ Earned!' : '🔒 Not yet earned',
+              earned ? context.l10n.earned : context.l10n.notYetEarned,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: earned ? Colors.green : Colors.grey,
@@ -387,7 +388,7 @@ class AchievementsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -410,12 +411,12 @@ class AchievementsScreen extends ConsumerWidget {
     return map[name] ?? Icons.emoji_events;
   }
 
-  String _timeAgo(DateTime dt) {
+  String _timeAgo(BuildContext context, DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return context.l10n.justNow;
+    if (diff.inMinutes < 60) return context.l10n.minutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return context.l10n.hoursAgo(diff.inHours);
+    return context.l10n.daysAgo(diff.inDays);
   }
 }
 

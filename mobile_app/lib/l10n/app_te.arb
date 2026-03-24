@@ -1,0 +1,677 @@
+{
+  "@@locale": "te",
+  "appTitle": "సివిల్ అలర్ట్ సిస్టమ్",
+  "profile": "ప్రొఫైల్",
+  "profileAndReports": "రిపోర్టులు",
+  "edit": "సవరించండి",
+  "user": "వినియోగదారు",
+  "phoneNotSet": "ఫోన్ సెట్ చేయబడలేదు",
+  "syncNow": "ఇప్పుడే సింక్ చేయండి",
+  "nothingToSync": "సింక్ చేయడానికి ఏమీ లేదు",
+  "syncDone": "సింక్ పూర్తైంది: {succeeded} విజయవంతం, {failed} విఫలం",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "ఆఫ్లైన్ రిపోర్టులు",
+  "noPendingReports": "పెండింగ్ రిపోర్టులు లేవు",
+  "attemptsLabel": "ప్రయత్నాలు: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "మళ్లీ ప్రయత్నించండి",
+  "remove": "తొలగించండి",
+  "myReports": "నా రిపోర్టులు",
+  "noUploadedReportsYet": "ఇప్పటివరకు ఎలాంటి రిపోర్టులు అప్లోడ్ కాలేదు",
+  "failedToLoadReports": "రిపోర్టులను లోడ్ చేయలేకపోయాం",
+  "youreOffline": "మీరు ఆఫ్లైన్లో ఉన్నారు",
+  "connectToInternetToLoadMyReports": "నా నివేదికలను లోడ్ చేయడానికి ఇంటర్నెట్‌కు కనెక్ట్ చేయండి.",
+  "settings": "సెట్టింగ్స్",
+  "helpFaq": "సహాయం / FAQ",
+  "aboutTransparency": "సమాచారం మరియు పారదర్శకత",
+  "language": "భాష",
+  "privacyControls": "భాష మరియు గోప్యత నియంత్రణలు",
+  "privacy": "గోప్యత",
+  "chooseLanguage": "భాషను ఎంచుకోండి",
+  "save": "సేవ్ చేయండి",
+  "continueLabel": "కొనసాగించండి",
+  "languageComingSoon": "ఈ భాష త్వరలో అందుబాటులోకి వస్తుంది.",
+  "updates": "అప్డేట్స్",
+  "pendingCount": "{count} పెండింగ్",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "ఇప్పటికీ అప్డేట్స్ లేవు",
+  "failedToLoadUpdates": "అప్డేట్స్ లోడ్ కాలేదు",
+  "helpTitle": "సహాయం / FAQ",
+  "aboutTitle": "సమాచారం మరియు పారదర్శకత",
+  "privacyTitle": "గోప్యత నియంత్రణలు",
+  "privacyReducePrecisionTitle": "మ్యాప్ లొకేషన్ ఖచ్చితత్వాన్ని తగ్గించండి",
+  "privacyReducePrecisionSubtitle": "ప్రారంభించబడితే, మీ రిపోర్ట్ మార్కర్‌లు మ్యాప్‌లో తగ్గిన స్థాన ఖచ్చితత్వంతో చూపబడతాయి.",
+  "faqQ1": "నేను ప్రమాదాన్ని ఎలా నివేదించగలను?",
+  "faqA1": "నివేదిక తెరువు, మీరు చూసే వాటిని వివరించండి మరియు సమర్పించండి.మీరు ఆఫ్‌లైన్‌లో ఉన్నట్లయితే, మీరు తిరిగి ఆన్‌లైన్‌లో ఉన్నప్పుడు అది క్యూలో ఉంచబడుతుంది మరియు అప్‌లోడ్ చేయబడుతుంది.",
+  "faqQ2": "నేను గ్యాలరీ నుండి ఎందుకు అప్‌లోడ్ చేయలేను?",
+  "faqA2": "నివేదికలను విశ్వసనీయంగా ఉంచడానికి, యాప్ లైవ్ క్యాప్చర్ (కెమెరా/రికార్డింగ్)ని మాత్రమే అనుమతిస్తుంది కాబట్టి పాత మీడియాను అప్‌లోడ్ చేయడం సాధ్యం కాదు.",
+  "faqQ3": "నా స్థానం ఎలా ఉపయోగించబడింది?",
+  "faqA3": "మీ స్థానం ప్రతిస్పందనదారులకు ప్రమాదాలు ఎక్కడ జరుగుతున్నాయో అర్థం చేసుకోవడానికి సహాయపడుతుంది.పబ్లిక్ వీక్షణ కోసం, స్థానాలు తగ్గిన ఖచ్చితత్వంతో చూపబడవచ్చు.",
+  "loginTitle": "లాగిన్ / సైన్ అప్",
+  "signUpWithMobile": "మీ రిజిస్టర్డ్ మొబైల్ నంబర్‌తో సైన్ అప్ చేయండి",
+  "otpIntro": "మీ నంబర్‌ను ధృవీకరించడానికి మేము OTP పంపుతాము",
+  "mobileNumberLabel": "మొబైల్ నంబర్ *",
+  "sendingLabel": "పంపిస్తున్నాం...",
+  "sendOtp": "OTP పంపండి",
+  "failedToSendOtp": "OTPని పంపడంలో విఫలమైంది.",
+  "checkSupabasePhoneConfig": "Supabase తనిఖీ చేయండి: ప్రమాణీకరణ → ప్రొవైడర్లు → ఫోన్ (ప్రారంభించబడింది) మరియు SMS ప్రొవైడర్ కాన్ఫిగర్ చేయబడింది (Twilio).",
+  "enterOtp": "OTP నమోదు చేయండి",
+  "sentToNumber": "Sent to {mobileNumber}",
+  "pleaseEnter6DigitOtp": "దయచేసి 6 అంకెల OTP నమోదు చేయండి",
+  "otpVerificationFailed": "OTP ధృవీకరణ విఫలమైంది.",
+  "signInFailedWithError": "Sign-in failed: {error}",
+  "didntReceiveOtp": "OTP రాలేదా? ",
+  "otpResentSuccessfully": "OTP విజయవంతంగా తిరిగి పంపబడింది",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
+  "resendWithTimer": "మళ్లీ పంపండి (00:30)",
+  "savingLabel": "సేవ్ అవుతోంది...",
+  "signedInSuccessfully": "మీరు విజయవంతంగా\nలాగిన్ అయ్యారు",
+  "directingToDashboard": "మేము మిమ్మల్ని డాష్‌బోర్డ్‌కి మళ్లించే వరకు దయచేసి వేచి ఉండండి...",
+  "whatsYourName": "మీ పేరు ఏమిటి?",
+  "personalizeExperience": "మీ అనుభవాన్ని వ్యక్తిగతీకరించడంలో మాకు సహాయపడండి",
+  "enterYourName": "మీ పేరు నమోదు చేయండి",
+  "pleaseEnterValidName": "దయచేసి చెల్లుబాటు అయ్యే పేరును నమోదు చేయండి (కనీసం 2 అక్షరాలు)",
+  "onboarding1Title": "విపత్తుల సమయంలో\nమీ నమ్మకమైన తోడు",
+  "onboarding1Description": "నిజ-సమయ హెచ్చరికలను పొందండి మరియు సముద్ర ప్రమాదాలు సంభవించినప్పుడు వాటిని నివేదించడం ద్వారా భద్రతకు సహకరించండి.",
+  "onboarding2Title": "భద్రతను బలపరుస్తూ,\nఒక్కో అడుగు ముందుకు",
+  "onboarding2Description": "ప్రాణాలను కాపాడేందుకు నిజ-సమయ ప్రమాద సమాచారాన్ని పంచుకుంటూ, సముద్రంపై అప్రమత్తంగా ఉండే కళ్ల నెట్‌వర్క్‌లో చేరండి.",
+  "onboarding3Title": "సిద్ధత ఇప్పుడు\nమీ చేతుల్లో",
+  "onboarding3Description": "సముద్ర ప్రమాదాలను నివేదించండి, కీలకమైన హెచ్చరికలను స్వీకరించండి మరియు చాలా ఆలస్యం కాకముందే సమాచారంతో ఉండండి.",
+  "skip": "దాటవేయి",
+  "splashTitle": "పౌర హెచ్చరిక",
+  "splashSubtitle": "ఫోకస్డ్ హజార్డ్ డిటెక్షన్",
+  "hiWelcome": "నమస్తే, స్వాగతం",
+  "togetherForOceanSafety": "కోసం కలిసి\nసముద్ర భద్రత,\nకలిసి బలంగా",
+  "seeUpdates": "అప్డేట్స్ చూడండి",
+  "unusualActivity": "రిపోర్టులు",
+  "seeAll": "అన్నీ చూడండి",
+  "filterNow": "ఇప్పుడు",
+  "filterLastWeek": "గత వారం",
+  "filterLastMonth": "గత నెల",
+  "locationServicesOffTitle": "స్థాన సేవలు ఆఫ్",
+  "enableLocationServicesForReporting": "దయచేసి ప్రమాదాలను నివేదించడానికి స్థాన సేవలను (GPS) ప్రారంభించండి.అధికారులు త్వరగా స్పందించడంలో మీ స్థానం సహాయపడుతుంది.",
+  "enableLocationServicesForCurrentLocation": "స్థాన సేవలు నిలిపివేయబడ్డాయి.మీ ప్రస్తుత స్థానాన్ని చూపడానికి GPSని ప్రారంభించండి.",
+  "permissionRequiredTitle": "అనుమతి అవసరం",
+  "locationPermissionDeniedAllowInSettings": "స్థాన అనుమతి నిరాకరించబడింది.దయచేసి సెట్టింగ్‌లలో యాక్సెస్‌ని అనుమతించండి.",
+  "locationPermissionDeniedAllowForCurrentLocation": "స్థాన అనుమతి నిరాకరించబడింది.మీ ప్రస్తుత స్థానాన్ని చూపడానికి యాక్సెస్‌ను అనుమతించండి.",
+  "locationPermissionBlockedEnableInSettings": "స్థాన అనుమతి బ్లాక్ చేయబడింది.యాప్ సెట్టింగ్‌లలో దీన్ని ప్రారంభించండి.",
+  "locationPermissionPermanentlyDeniedForReporting": "స్థాన అనుమతి శాశ్వతంగా తిరస్కరించబడింది.దయచేసి ప్రమాదాలను నివేదించడానికి యాప్ సెట్టింగ్‌లలో దీన్ని ప్రారంభించండి.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "స్థాన అనుమతి శాశ్వతంగా తిరస్కరించబడింది.దయచేసి మీ ప్రస్తుత స్థానాన్ని చూపడానికి యాప్ సెట్టింగ్‌లలో దీన్ని ప్రారంభించండి.",
+  "cancel": "రద్దు చేయి",
+  "notNow": "ఇప్పుడు కాదు",
+  "openSettings": "సెట్టింగ్‌లను తెరవండి",
+  "errorGettingLocationWithError": "Error getting location: {error}",
+  "gettingLocation": "స్థానాన్ని పొందుతోంది...",
+  "gettingYourLocation": "మీ స్థానాన్ని పొందుతోంది...",
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
+  "recordingAudioTapToStop": "ఆడియోను రికార్డ్ చేస్తోంది... ఆపడానికి మళ్లీ నొక్కండి.",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
+  "pleaseSelectHazardType": "దయచేసి ప్రమాద రకాన్ని ఎంచుకోండి",
+  "pleaseDescribeSituation": "దయచేసి పరిస్థితిని వివరించండి",
+  "waitingForLocation": "స్థానం కోసం వేచి ఉంది...",
+  "pleaseEnterPeopleAtRisk": "దయచేసి ప్రమాదంలో ఉన్న వ్యక్తుల అంచనాను నమోదు చేయండి",
+  "noInternetReportQueued": "ఇంటర్నెట్ కనెక్షన్ లేదు.నివేదిక క్యూలో ఉంటుంది.",
+  "profileNeededTitle": "ప్రొఫైల్ అవసరం",
+  "profileNeededBody": "దయచేసి నివేదికను సమర్పించే ముందు మీ ఫోన్ నంబర్‌ను జోడించండి.",
+  "addNow": "ఇప్పుడు జోడించండి",
+  "reportSavedMediaUploadFailedRetry": "నివేదిక సేవ్ చేయబడింది!మీడియా అప్‌లోడ్ విఫలమైంది, తర్వాత మళ్లీ ప్రయత్నిస్తుంది.",
+  "reportSubmittedSuccessfully": "నివేదిక విజయవంతంగా సమర్పించబడింది!🎉",
+  "errorWithError": "Error: {error}",
+  "retryGps": "GPSని మళ్లీ ప్రయత్నించండి",
+  "reportHazard": "ప్రమాదాన్ని నివేదించండి",
+  "whatAreYouSeeing": "మీరు ఏమి చూస్తున్నారు?",
+  "reportHelpsKeepSafe": "మీ నివేదిక ప్రతి ఒక్కరినీ సురక్షితంగా ఉంచడంలో సహాయపడుతుంది",
+  "hazardTypeRequired": "ప్రమాద రకం *",
+  "descriptionRequired": "వివరణ *",
+  "describeWhatYouSeeHint": "మీరు చూస్తున్నది వివరించండి...",
+  "location": "స్థానం",
+  "time": "సమయం",
+  "addMediaOptional": "మీడియా జోడించండి (ఐచ్చికం)",
+  "camera": "కెమెరా",
+  "record": "రికార్డ్",
+  "recordAudio": "ఆడియో రికార్డ్ చేయండి",
+  "stopAudio": "ఆడియో ఆపండి",
+  "highRiskSituation": "అధిక ప్రమాద స్థితి",
+  "peopleAtRiskEstimate": "ప్రమాదంలో ఉన్న వారి అంచనా",
+  "urgencyLow": "తక్కువ",
+  "urgencyMedium": "మధ్యస్థ",
+  "urgencyHigh": "ఎక్కువ",
+  "submitReport": "రిపోర్టు పంపండి",
+  "close": "మూసివేయండి",
+  "moreDetails": "మరిన్ని వివరాలు",
+  "hazardHighWaves": "ఎత్తైన అలలు",
+  "hazardTsunami": "సునామీ",
+  "hazardStorm": "తుఫాను",
+  "hazardFlood": "వరద",
+  "hazardOther": "ఇతర",
+  "homeTab": "హోమ్",
+  "mapTab": "మ్యాప్",
+  "updatesTab": "అప్డేట్స్",
+  "profileTab": "రిపోర్టులు",
+  "liveNews": "లైవ్ వార్తలు",
+  "sampleHazardHeadline": "పసిఫిక్ తీరంలో ఎత్తైన అలలు",
+  "sampleDate": "ఆది, 11 జూన్ 2024",
+  "sampleTimeAgo": "3 నిమిషాల క్రితం",
+  "@sentToNumber": {
+    "placeholders": {
+      "mobileNumber": {}
+    }
+  },
+  "@signInFailedWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@failedToResendOtpWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorGettingLocationWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@maximumAttachmentsAllowed": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "@errorPickingImageWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorPickingVideoWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStoppingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStartingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "queuedReportStuck": "ఆగిపోయింది",
+  "queuedReportPendingUpload": "అప్‌లోడ్ పెండింగ్‌లో ఉంది",
+  "queuedReportReadyToRetry": "మళ్లీ ప్రయత్నించడానికి సిద్ధంగా ఉంది",
+  "queuedReportWaitingForRetry": "మళ్లీ ప్రయత్నించడానికి వేచి ఉంది",
+  "removeQueuedReportTitle": "క్యూలో ఉన్న నివేదికను తీసివేయాలా?",
+  "removeQueuedReportContent": "ఇది ఆఫ్‌లైన్ కాపీని తొలగించి భవిష్యత్తు ప్రయత్నాలను ఆపివేస్తుంది.",
+  "queuedReportRemoved": "క్యూలో ఉన్న నివేదిక తీసివేయబడింది",
+  "themeLight": "వెలుతురు",
+  "themeDark": "చీకటి",
+  "themeSystem": "సిస్టమ్",
+  "notifications": "నోటిఫికేషన్‌లు",
+  "logOutTitle": "లాగౌట్ చేయాలా?",
+  "logOut": "లాగౌట్",
+  "similarReportExists": "దగ్గరలో ఇలాంటి నివేదిక ఉంది. మీ నివేదిక దానికి లింక్ చేయబడింది.",
+  "sendingReportsTooQuickly": "మీరు చాలా వేగంగా రిపోర్టులు పంపుతున్నారు. 30 సెకన్లు ఆపండి.",
+  "hourlyReportLimitReached": "గంటకు రిపోర్ట్ పరిమితి ముగిసింది. తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "couldNotOpenMaps": "మ్యాప్ తెరవలేకపోయాము",
+  "navigate": "నావిగేట్ చేయండి",
+  "reportDetailsNotAvailable": "నివేదిక వివరాలు ఇంకా అందుబాటులో లేవు",
+  "viewQueue": "క్యూ చూడండి",
+  "achievements": "సాధనలు",
+  "leaderboard": "లీడర్‌బోర్డ్",
+  "chooseFromGallery": "గ్యాలరీ నుండి ఎంచుకోండి",
+  "downloadOfflineRegion": "ఆఫ్‌లైన్ ప్రాంతాన్ని డౌన్‌లోడ్ చేయండి",
+  "radius": "వ్యాసార్థం",
+  "download": "డౌన్‌లోడ్",
+  "deleteRegionTitle": "ప్రాంతాన్ని తీసివేయాలా?",
+  "deleteRegionContent": "\"{name}\" మరియు దాని {count} కాష్ చేయబడిన టైల్స్‌ని తీసివేయాలా?",
+  "@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "delete": "తొలగించు",
+  "media": "మీడియా",
+  "failedToLoadImage": "చిత్రాన్ని లోడ్ చేయలేకపోయాము",
+  "unsupportedMediaType": "మద్దతు లేని మీడియా రకం",
+  "noVerifiedRiskZones": "ఈ ప్రాంతంలో ఇంకా ధృవీకరించబడిన ప్రమాద ప్రాంతాలు లేవు.",
+  "filterAllHazards": "అన్ని ప్రమాదాలు",
+  "filterRipCurrent": "రిప్ కరెంట్",
+  "filterPollution": "కాలుష్యం",
+  "filterEarthquake": "భూకంపం",
+  "mobileNumberHint": "12345 67890",
+  "distanceInKm": "{r} కి.మీ.",
+  "@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  },
+  "filterCommunity": "సంఘం",
+  "filterMySubmitted": "నా సమర్పణలు",
+  "noReportsYet": "ఇంకా నివేదికలు లేవు",
+  "noSubmittedReportsYet": "ఇంకా నివేదికలు సమర్పించబడలేదు",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "సలహా కనుగొనబడలేదు.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} మీ దూరంలో ఉంది",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "తక్కువ",
+  "@low": {},
+  "justNow": "ఇప్పుడే",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "లీడర్‌బోర్డ్",
+  "@leaderboardTitle": {},
+  "error": "లోపం: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "లీడర్‌బోర్డ్ డేటా ఇంకా లేదు",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "ర్యాంక్‌లను అధిరోహించడానికి నివేదించడం ప్రారంభించండి!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "మీరు",
+  "@you": {},
+  "achievementsTitle": "విజయాలు",
+  "@achievementsTitle": {},
+  "earnedBadges": "సంపాదించిన బ్యాడ్జీలు",
+  "@earnedBadges": {},
+  "lockedBadges": "లాక్ చేయబడిన బ్యాడ్జ్‌లు",
+  "@lockedBadges": {},
+  "pointsHistory": "పాయింట్ల చరిత్ర",
+  "@pointsHistory": {},
+  "totalPoints": "మొత్తం పాయింట్లు",
+  "@totalPoints": {},
+  "verified": "ధృవీకరించబడింది",
+  "@verified": {},
+  "rate": "రేట్ చేయండి",
+  "@rate": {},
+  "badges": "బ్యాడ్జీలు",
+  "@badges": {},
+  "submitFirstReportBadge": "బ్యాడ్జ్‌ని సంపాదించడానికి మీ మొదటి నివేదికను సమర్పించండి!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 అన్ని బ్యాడ్జ్‌లు సంపాదించబడ్డాయి!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "ఇంకా పాయింట్ల చరిత్ర లేదు",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ సంపాదించారు!",
+  "@earned": {},
+  "notYetEarned": "🔒 ఇంకా సంపాదించలేదు",
+  "@notYetEarned": {},
+  "ok": "సరే",
+  "@ok": {},
+  "filterAllUrgencies": "అన్ని అత్యవసరాలు",
+  "@filterAllUrgencies": {},
+  "@urgencyHigh": {},
+  "@urgencyMedium": {},
+  "@locationServicesOffTitle": {},
+  "@enableLocationServicesForCurrentLocation": {},
+  "@notNow": {},
+  "@openSettings": {},
+  "@permissionRequiredTitle": {},
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "@locationPermissionBlockedEnableInSettings": {},
+  "@gettingYourLocation": {},
+  "filtersTitle": "ఫిల్టర్లు",
+  "@filtersTitle": {},
+  "timeRangeTitle": "సమయ పరిధి",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 గంటలు",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "రిస్క్ జోన్‌లను చూపించు",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "ప్రమాదకర హాట్‌స్పాట్‌లను ప్రదర్శించండి",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "అధిక ప్రమాదం మాత్రమే",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "క్లిష్టమైన నివేదికలను మాత్రమే చూపించు",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "మీడియా వ్యూయర్",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "లోడ్ అవుతోంది...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "అధిక ప్రమాదం",
+  "@highRiskBadge": {},
+  "mediaTitle": "మీడియా",
+  "@mediaTitle": {},
+  "@failedToLoadImage": {},
+  "playLabel": "ఆడండి",
+  "@playLabel": {},
+  "pauseLabel": "పాజ్ చేయండి",
+  "@pauseLabel": {},
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "నోటిఫికేషన్‌లు",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "noNotificationsYet": "ఇంకా నోటిఫికేషన్‌లు లేవు",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "ఆఫ్‌లైన్ ప్రాంతాన్ని డౌన్‌లోడ్ చేయండి",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "ఆఫ్‌లైన్ ఉపయోగం కోసం మీ ప్రస్తుత స్థానం చుట్టూ ఉన్న మ్యాప్ టైల్స్ డౌన్‌లోడ్ చేస్తుంది.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "ప్రాంతం పేరు",
+  "@regionNameLabel": {},
+  "radiusLabel": "వ్యాసార్థం",
+  "@radiusLabel": {},
+  "cancelLabel": "రద్దు చేయి",
+  "@cancelLabel": {},
+  "downloadLabel": "డౌన్‌లోడ్ చేయండి",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "తొలగించు",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "ఆఫ్‌లైన్ మ్యాప్స్",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "టైల్స్ డౌన్‌లోడ్ అవుతోంది...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "మీరు ఆన్‌లైన్‌లో వీక్షించే మ్యాప్ టైల్స్ ఆఫ్‌లైన్ ఉపయోగం కోసం స్వయంచాలకంగా కాష్ చేయబడతాయి.పూర్తి ఆఫ్‌లైన్ కవరేజీ కోసం ప్రాంతాలను డౌన్‌లోడ్ చేయండి.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "ఇంకా ఆఫ్‌లైన్ ప్రాంతాలు లేవు",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "ప్రాంతాన్ని డౌన్‌లోడ్ చేయడానికి + నొక్కండి",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "పునఃప్రయత్న స్థితి, ఎర్రర్ కారణాన్ని సమీక్షించండి మరియు ఇక్కడ నిలిచిపోయిన అంశాలను తీసివేయండి.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "ఇలాంటి నివేదిక ఇప్పటికే సమీపంలో ఉంది.మేము మీ సమర్పణను దానికి లింక్ చేసాము.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "మీ అప్‌లోడ్ టైమ్‌లైన్ పూర్తయింది మరియు సేవ్ చేయబడింది.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "పూర్తయింది",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "మీరు చాలా త్వరగా నివేదికలను పంపుతున్నారు.దయచేసి 30 సెకన్లు వేచి ఉండి, మళ్లీ ప్రయత్నించండి.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "గంట వారీ నివేదిక పరిమితిని చేరుకున్నారు.దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "మీ నివేదికను అప్‌లోడ్ చేస్తోంది",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "నివేదిక వివరాలను సిద్ధం చేస్తోంది",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "నివేదిక వివరాలు అప్‌లోడ్ చేయబడ్డాయి",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "నకిలీ నివేదిక కనుగొనబడింది, ఇప్పటికే ఉన్న నివేదికకు లింక్ చేయబడింది",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "మీడియాను అప్‌లోడ్ చేస్తోంది",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "మీడియా అప్‌లోడ్ విఫలమైంది, మళ్లీ ప్రయత్నించడానికి క్యూలో ఉంది",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "తుది నివేదిక",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "దయచేసి మరొక నివేదికను పంపే ముందు వేచి ఉండండి",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "గంట వారీ నివేదిక పరిమితిని చేరుకున్నారు",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "మళ్లీ ప్రయత్నించే స్థితి, ఎర్రర్ కారణం మరియు నిలిచిపోయిన అంశాలను తీసివేయడానికి క్యూను తెరవండి.",
+  "@openQueueToReview": {},
+  "arcAbbr": "ARC",
+  "@arcAbbr": {},
+  "arcFull": "హెచ్చరిక • నివేదిక • సమన్వయం",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingQueuedReports": "వరుసలో ఉన్న నివేదికలను సమకాలీకరించడం",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "జోడింపులను అప్‌లోడ్ చేస్తోంది",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "నవీకరణను నివేదించండి",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "ఈ యాప్ పౌరులు సముద్ర ప్రమాదాలను నివేదించడంలో సహాయపడుతుంది మరియు అధికారులు నిజ-సమయ పరిస్థితులను అర్థం చేసుకోవడంలో సహాయపడుతుంది.\n\nవ్యక్తిగత వివరాల పబ్లిక్ ఎక్స్‌పోజర్‌ను పరిమితం చేయడం ద్వారా మరియు పబ్లిక్ వీక్షణల కోసం గోప్యత-సురక్షిత మ్యాప్ డేటాను ఉపయోగించడం ద్వారా మేము గోప్యతకు ప్రాధాన్యత ఇస్తాము.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "మేము సేకరించేది: మీ ఫోన్ (లాగిన్ కోసం), మీ రిపోర్ట్ వివరణ, సమయం మరియు స్థానం.\n\nమేము దానిని ఎలా ఉపయోగిస్తాము: మీ నివేదికను నిల్వ చేయడానికి మరియు మ్యాప్ మరియు అప్‌డేట్‌ల ఫీడ్‌లో ధృవీకరించబడిన, గోప్యత-సురక్షిత సమాచారాన్ని చూపడానికి.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "నివేదిక సమర్పించబడింది",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "నివేదిక ధృవీకరించబడింది",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "అధిక-ప్రమాద నివేదిక ధృవీకరించబడింది",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "నివేదిక తిరస్కరించబడింది",
+  "@reportRejectedReason": {}
+}

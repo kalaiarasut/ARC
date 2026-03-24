@@ -29,17 +29,13 @@ class AboutTransparencyScreen extends StatelessWidget {
           _section(
             context: context,
             title: context.l10n.aboutTransparency,
-            body:
-                'This app helps citizens report ocean hazards and helps authorities understand real-time conditions.\n\n'
-                'We prioritize privacy by limiting public exposure of personal details and by using privacy-safe map data for public views.',
+            body: context.l10n.aboutTransparencyBody,
           ),
           const SizedBox(height: 12),
           _section(
             context: context,
             title: context.l10n.privacy,
-            body:
-                'What we collect: your phone (for login), your report description, time, and location.\n\n'
-                'How we use it: to store your report and show verified, privacy-safe information on the map and updates feed.',
+            body: context.l10n.privacyBody,
           ),
         ],
       ),

@@ -1,0 +1,677 @@
+{
+  "@@locale": "gu",
+  "appTitle": "સિવિલ એલર્ટ સિસ્ટમ",
+  "profile": "પ્રોફાઇલ",
+  "profileAndReports": "રિપોર્ટ્સ",
+  "edit": "ફેરફાર કરો",
+  "user": "વપરાશકર્તા",
+  "phoneNotSet": "ફોન નંબર સેટ નથી",
+  "syncNow": "હમણાં સિંક કરો",
+  "nothingToSync": "સિંક કરવા માટે કંઈ નથી",
+  "syncDone": "સિંક પૂર્ણ થયું: {succeeded} સફળ, {failed} નિષ્ફળ",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "ઑફલાઇન રિપોર્ટ્સ",
+  "noPendingReports": "કોઈ પડતર રિપોર્ટ્સ નથી",
+  "attemptsLabel": "પ્રયાસો: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "ફરી પ્રયાસ કરો",
+  "remove": "દૂર કરો",
+  "myReports": "મારા રિપોર્ટ્સ",
+  "noUploadedReportsYet": "હજી સુધી કોઈ રિપોર્ટ્સ અપલોડ થયા નથી",
+  "failedToLoadReports": "રિપોર્ટ્સ લોડ કરવામાં નિષ્ફળ",
+  "youreOffline": "તમે ઑફલાઇન છો",
+  "connectToInternetToLoadMyReports": "મારા રિપોર્ટ્સ જોવા માટે ઇન્ટરનેટ સાથે કનેક્ટ કરો.",
+  "settings": "સેટિંગ્સ",
+  "helpFaq": "મદદ / FAQ",
+  "aboutTransparency": "વિશે અને પારદર્શિતા",
+  "language": "ભાષા",
+  "privacyControls": "ભાષા અને ગોપનીયતા સેટિંગ્સ",
+  "privacy": "ગોપનીયતા",
+  "chooseLanguage": "ભાષા પસંદ કરો",
+  "save": "સેવ કરો",
+  "continueLabel": "ચાલુ રાખો",
+  "languageComingSoon": "આ ભાષા ટૂંક સમયમાં આવી રહી છે.",
+  "updates": "અપડેટ્સ",
+  "pendingCount": "{count} પડતર",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "હજી સુધી કોઈ અપડેટ્સ નથી",
+  "failedToLoadUpdates": "અપડેટ્સ લોડ કરવામાં નિષ્ફળ",
+  "helpTitle": "મદદ / FAQ",
+  "aboutTitle": "વિશે અને પારદર્શિતા",
+  "privacyTitle": "ગોપનીયતા સેટિંગ્સ",
+  "privacyReducePrecisionTitle": "નકશા સ્થાન સચોટતા ઘટાડો",
+  "privacyReducePrecisionSubtitle": "જો સક્ષમ હોય, તો તમારા રિપોર્ટ મેકર્સ નકશા પર ઓછી સચોટતાસાથે બતાવવામાં આવશે.",
+  "faqQ1": "હું સંકટની કેવી રીતે રિપોર્ટ કરું?",
+  "faqA1": "રિપોર્ટ ખોલો, તમે જે જુઓ છો તે વર્ણન કરો અને સબમિટ કરો.",
+  "faqQ2": "હું ગેલેરીમાંથી કેમ અપલોડ કરી શકતો નથી?",
+  "faqA2": "રિપોર્ટને વિશ્વાસપાત્ર રાખવા માટે, એપ્લિકેશન ફક્ત લાઇવ કેપ્ચરની મંજૂરી આપે છે.",
+  "faqQ3": "મારું સ્થાન કેવી રીતે વપરાય છે?",
+  "faqA3": "તમારું સ્થાન સમજવામાં મદદ કરે છે કે ક્યાં સંકટ આવી રહ્યું છે.",
+  "loginTitle": "લૉગ-ઇન / સાઇન-અપ",
+  "signUpWithMobile": "તમારા નોંધાયેલ મોબાઇલ નંબરથી સાઇન અપ કરો",
+  "otpIntro": "તમારો નંબર ચકાસવા માટે અમે તમને એક OTP મોકલીશું",
+  "mobileNumberLabel": "મોબાઇલ નંબર *",
+  "sendingLabel": "મોકલી રહ્યું છે...",
+  "sendOtp": "OTP મોકલો",
+  "failedToSendOtp": "OTP મોકલવામાં નિષ્ફળ.",
+  "checkSupabasePhoneConfig": "સુપરબેસ તપાસો.",
+  "enterOtp": "OTP લખો",
+  "sentToNumber": "Sent to {mobileNumber}",
+  "pleaseEnter6DigitOtp": "કૃપા કરીને 6-અંકનો OTP લખો",
+  "otpVerificationFailed": "OTP ચકાસણી નિષ્ફળ.",
+  "signInFailedWithError": "Sign-in failed: {error}",
+  "didntReceiveOtp": "OTP મળ્યો નથી? ",
+  "otpResentSuccessfully": "OTP સફળતાપૂર્વક ફરીથી મોકલાયો",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
+  "resendWithTimer": "ફરીથી મોકલો (00:30)",
+  "savingLabel": "શેવ થઈ રહ્યું છે...",
+  "signedInSuccessfully": "તમે સફળતાપૂર્વક\nલૉગ-ઇન થયા છો",
+  "directingToDashboard": "કૃપા કરીને રાહ જુઓ, અમે તમને ડેશબોર્ડ પર લઈ જઈ રહ્યા છીએ...",
+  "whatsYourName": "તમારું નામ શું છે?",
+  "personalizeExperience": "તમારા અનુભવને વ્યક્તિગત કરવામાં અમને સહાય કરો",
+  "enterYourName": "તમારું નામ લખો",
+  "pleaseEnterValidName": "કૃપા કરીને માન્ય નામ લખો (ઓછામાં ઓછા 2 અક્ષરો)",
+  "onboarding1Title": "આપત્તિના સમયે\nતમારો વિશ્વાસુ સાથી",
+  "onboarding1Description": "રિયલ-ટાઇમ એલર્ટ મેળવો અને દરિયામાં આવતા જોખમો વિશે જાણ કરી સુરક્ષામાં યોગદાન આપો.",
+  "onboarding2Title": "સુરક્ષા મજબૂત બનાવીએ,\nસ્ટેપ બાય સ્ટેપ",
+  "onboarding2Description": "દરિયાઈ સલામતી માટે જોડાયેલ લોકોની કમ્યુનિટીમાં જોડાઓ અને જોખમો વિશે માહિતી શેર કરો.",
+  "onboarding3Title": "તૈયારી હવે\nતમારા હાથ પર",
+  "onboarding3Description": "જોખમો વિશે રિપોર્ટ કરો, એલર્ટ મેળવો અને સમય રહેતા માહિતગાર થાવ.",
+  "skip": "છોડો",
+  "splashTitle": "સિવિલ એલર્ટ",
+  "splashSubtitle": "સચોટ જોખમ ઓળખ",
+  "hiWelcome": "નમસ્તે, સ્વાગત છે 👋",
+  "togetherForOceanSafety": "દરિયાઈ સુરક્ષા માટે\nએક થઈને,\nમજબૂત બનીએ",
+  "seeUpdates": "અપડેટ્સ જુઓ",
+  "unusualActivity": "રિપોર્ટ્સ",
+  "seeAll": "બધા જુઓ",
+  "filterNow": "હમણાં",
+  "filterLastWeek": "ગયા અઠવાડિયે",
+  "filterLastMonth": "ગયા મહિને",
+  "locationServicesOffTitle": "સ્થાન સેવાઓ બંધ છે",
+  "enableLocationServicesForReporting": "જોખમો રિપોર્ટ કરવા માટે કૃપા કરીને સ્થાન સેવાઓ ચાલુ કરો.",
+  "enableLocationServicesForCurrentLocation": "તમારું વર્તમાન સ્થાન જોવા માટે GPS ચાલુ કરો.",
+  "permissionRequiredTitle": "પરવાનગી જરૂરી",
+  "locationPermissionDeniedAllowInSettings": "સ્થાન પરવાનગી નકારવામાં આવી છે. સેટિંગ્સમાં પરવાનગી આપો.",
+  "locationPermissionDeniedAllowForCurrentLocation": "તમારું વર્તમાન સ્થાન માટે પરવાનગી આપો.",
+  "locationPermissionBlockedEnableInSettings": "સ્થાન પરવાનગી બ્લોક કરવામાં આવી છે.",
+  "locationPermissionPermanentlyDeniedForReporting": "સ્થાન પરવાનગી કાયમી રૂપે નકારી છે.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "તમારું વર્તમાન સ્થાન જોવા માટે પરવાનગી કાયમી રૂપે નકારી છે.",
+  "cancel": "રદ કરો",
+  "notNow": "હમણાં નહીં",
+  "openSettings": "સેટિંગ્સ ખોલો",
+  "errorGettingLocationWithError": "Error getting location: {error}",
+  "gettingLocation": "સ્થાન લઈ રહ્યું છે...",
+  "gettingYourLocation": "તમારું સ્થાન મેળવી રહ્યું છે...",
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
+  "recordingAudioTapToStop": "ઑડિઓ રેકોર્ડ થઈ રહ્યું છે… રોકવા માટે ફરીથી ટેપ કરો.",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
+  "pleaseSelectHazardType": "કૃપા કરીને જોખમનો પ્રકાર પસંદ કરો",
+  "pleaseDescribeSituation": "કૃપા કરીને પરિસ્થિતિનું વર્ણન કરો",
+  "waitingForLocation": "સ્થાન માટે રાહ જોઈ રહ્યું છે...",
+  "pleaseEnterPeopleAtRisk": "જોખમમાં હોય તેવા લોકોનો અંદાજ દાખલ કરો",
+  "noInternetReportQueued": "ઇન્ટરનેટ કનેક્શન નથી. રિપોર્ટ પડતર રહેશે.",
+  "profileNeededTitle": "પ્રોફાઇલ જરૂરી છે",
+  "profileNeededBody": "રિપોર્ટ સબમિટ કરતા પહેલાં તમારો ફોન નંબર ઉમેરો.",
+  "addNow": "હમણાં ઉમેરો",
+  "reportSavedMediaUploadFailedRetry": "રિપોર્ટ સેવ થયો! મીડિયા અપલોડ નિષ્ફળ ગયું, પછી ફરી પ્રયાસ કરીશું.",
+  "reportSubmittedSuccessfully": "રિપોર્ટ સફળતાપૂર્વક સબમિટ થયો! 🎉",
+  "errorWithError": "Error: {error}",
+  "retryGps": "GPS ફરી પ્રયાસ કરો",
+  "reportHazard": "જોખમ અંગે રિપોર્ટ કરો",
+  "whatAreYouSeeing": "તમે શું જુઓ છો?",
+  "reportHelpsKeepSafe": "તમારો રિપોર્ટ દરેકને સુરક્ષિત રાખવામાં મદદ કરે છે",
+  "hazardTypeRequired": "જોખમનો પ્રકાર *",
+  "descriptionRequired": "વર્ણન *",
+  "describeWhatYouSeeHint": "તમે જે જુઓ છો તેનું વર્ણન કરો...",
+  "location": "સ્થાન",
+  "time": "સમય",
+  "addMediaOptional": "મીડિયા ઉમેરો (વૈકલ્પિક)",
+  "camera": "કેમેરા",
+  "record": "રેકોર્ડ",
+  "recordAudio": "ઑડિઓ રેકોર્ડ કરો",
+  "stopAudio": "ઑડિઓ રોકો",
+  "highRiskSituation": "ઉચ્ચ જોખમની સ્થિતિ",
+  "peopleAtRiskEstimate": "જોખમમાં હોય તેવા લોકો (અંદાજપડતું)",
+  "urgencyLow": "ઓછું",
+  "urgencyMedium": "મધ્યમ",
+  "urgencyHigh": "વધારે",
+  "submitReport": "રિપોર્ટ સબમિટ કરો",
+  "close": "બંધ કરો",
+  "moreDetails": "વધુ વિગતો",
+  "hazardHighWaves": "ઉંચા મોજા",
+  "hazardTsunami": "સુનામી",
+  "hazardStorm": "તોફાન",
+  "hazardFlood": "પૂર",
+  "hazardOther": "અન્ય",
+  "homeTab": "હોમ",
+  "mapTab": "નકશો",
+  "updatesTab": "અપડેટ્સ",
+  "profileTab": "રિપોર્ટ્સ",
+  "liveNews": "જીવંત સમાચાર",
+  "sampleHazardHeadline": "પેસિફિક કિનારે ઉંચા મોજા",
+  "sampleDate": "રવિ, 11 જૂન 2024",
+  "sampleTimeAgo": "3 મિનિટ પહેલા",
+  "@sentToNumber": {
+    "placeholders": {
+      "mobileNumber": {}
+    }
+  },
+  "@signInFailedWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@failedToResendOtpWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorGettingLocationWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@maximumAttachmentsAllowed": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "@errorPickingImageWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorPickingVideoWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStoppingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStartingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "queuedReportStuck": "અટવાયેલું",
+  "queuedReportPendingUpload": "અપલોડ બાકી છે",
+  "queuedReportReadyToRetry": "ફરી પ્રયાસ કરવા માટે તૈયાર",
+  "queuedReportWaitingForRetry": "ફરી પ્રયાસની રાહ જોવાય છે",
+  "removeQueuedReportTitle": "કતારમાં રહેલ રિપોર્ટ દૂર કરવો છે?",
+  "removeQueuedReportContent": "આ ઑફલાઇન કૉપિ કાઢી નાખશે અને ભવિષ્યના પ્રયાસો રોકશે.",
+  "queuedReportRemoved": "કતારમાં રહેલ રિપોર્ટ દૂર કર્યો",
+  "themeLight": "લાઇટ",
+  "themeDark": "ડાર્ક",
+  "themeSystem": "સિસ્ટમ",
+  "notifications": "સૂચનાઓ",
+  "logOutTitle": "લૉગ આઉટ કરવું છે?",
+  "logOut": "લૉગ આઉટ",
+  "similarReportExists": "નજીકમાં સમાન રિપોર્ટ છે. અમે તમારો રિપોર્ટ તેમાં જોડી દીધો છે.",
+  "sendingReportsTooQuickly": "તમે ખૂબ ઝડપથી રિપોર્ટ મોકલી રહ્યા છો. 30 સેકન્ડ રાહ જુઓ.",
+  "hourlyReportLimitReached": "કલાક દીઠ રિપોર્ટની મર્યાદા પૂરી થઈ. પછી પ્રયાસ કરો.",
+  "couldNotOpenMaps": "નકશા ખોલી શકાયા નથી",
+  "navigate": "નેવિગેટ કરો",
+  "reportDetailsNotAvailable": "રિપોર્ટની વિગતો હજુ ઉપલબ્ધ નથી",
+  "viewQueue": "કતાર જુઓ",
+  "achievements": "સિદ્ધિઓ",
+  "leaderboard": "લીડરબોર્ડ",
+  "chooseFromGallery": "ગેલેરીમાંથી પસંદ કરો",
+  "downloadOfflineRegion": "ઑફલાઇન વિસ્તાર ડાઉનલોડ કરો",
+  "radius": "ત્રિજ્યા",
+  "download": "ડાઉનલોડ",
+  "deleteRegionTitle": "વિસ્તાર દૂર કરવો છે?",
+  "deleteRegionContent": "\"{name}\" અને તેની {count} કેશ્ડ ટાઇલ્સને દૂર કરવી છે?",
+  "@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "delete": "દૂર કરો",
+  "media": "મીડિયા",
+  "failedToLoadImage": "ચિત્ર લોડ કરવામાં નિષ્ફળ",
+  "unsupportedMediaType": "અસમર્થિત મીડિયા પ્રકાર",
+  "noVerifiedRiskZones": "આ વિસ્તારમાં હજુ કોઈ ચકાસાયેલ જોખમી ક્ષેત્રો નથી.",
+  "filterAllHazards": "બધા જોખમો",
+  "filterRipCurrent": "રિપ કરંટ",
+  "filterPollution": "પ્રદૂષણ",
+  "filterEarthquake": "ભૂકંપ",
+  "mobileNumberHint": "12345 67890",
+  "distanceInKm": "{r} કિમી",
+  "@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  },
+  "filterCommunity": "સમુદાય",
+  "filterMySubmitted": "મારું સબમિટ કરેલ",
+  "noReportsYet": "હજુ કોઈ રિપોર્ટ નથી",
+  "noSubmittedReportsYet": "હજુ સુધી કોઈ રિપોર્ટ સબમિટ કરાયો નથી",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "એડવાઈઝરી મળી નથી.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} મીટર દૂર",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "નીચું",
+  "@low": {},
+  "justNow": "હમણાં જ",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "લીડરબોર્ડ",
+  "@leaderboardTitle": {},
+  "error": "ભૂલ: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "હજુ સુધી કોઈ લીડરબોર્ડ ડેટા નથી",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "રેન્ક પર ચઢવા માટે જાણ કરવાનું શરૂ કરો!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "તમે",
+  "@you": {},
+  "achievementsTitle": "સિદ્ધિઓ",
+  "@achievementsTitle": {},
+  "earnedBadges": "મેળવેલ બેજ",
+  "@earnedBadges": {},
+  "lockedBadges": "લૉક કરેલ બેજેસ",
+  "@lockedBadges": {},
+  "pointsHistory": "પોઈન્ટ્સ ઈતિહાસ",
+  "@pointsHistory": {},
+  "totalPoints": "કુલ પોઈન્ટ",
+  "@totalPoints": {},
+  "verified": "ચકાસાયેલ",
+  "@verified": {},
+  "rate": "દર",
+  "@rate": {},
+  "badges": "બેજ",
+  "@badges": {},
+  "submitFirstReportBadge": "બેજ મેળવવા માટે તમારી પ્રથમ રિપોર્ટ સબમિટ કરો!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 બધા બેજ કમાયા!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "હજુ સુધી કોઈ પોઈન્ટ ઈતિહાસ નથી",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ કમાયા!",
+  "@earned": {},
+  "notYetEarned": "🔒 હજી કમાયા નથી",
+  "@notYetEarned": {},
+  "ok": "ઠીક છે",
+  "@ok": {},
+  "filterAllUrgencies": "તમામ તાકીદ",
+  "@filterAllUrgencies": {},
+  "@urgencyHigh": {},
+  "@urgencyMedium": {},
+  "@locationServicesOffTitle": {},
+  "@enableLocationServicesForCurrentLocation": {},
+  "@notNow": {},
+  "@openSettings": {},
+  "@permissionRequiredTitle": {},
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "@locationPermissionBlockedEnableInSettings": {},
+  "@gettingYourLocation": {},
+  "filtersTitle": "ફિલ્ટર્સ",
+  "@filtersTitle": {},
+  "timeRangeTitle": "સમય શ્રેણી",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 કલાક",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "જોખમ ઝોન બતાવો",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "જોખમી હોટસ્પોટ્સ દર્શાવો",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "માત્ર ઉચ્ચ જોખમ",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "માત્ર જટિલ અહેવાલો બતાવો",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "મીડિયા દર્શક",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "લોડ કરી રહ્યું છે...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "ઉચ્ચ જોખમ",
+  "@highRiskBadge": {},
+  "mediaTitle": "મીડિયા",
+  "@mediaTitle": {},
+  "@failedToLoadImage": {},
+  "playLabel": "રમો",
+  "@playLabel": {},
+  "pauseLabel": "વિરામ",
+  "@pauseLabel": {},
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "સૂચનાઓ",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "noNotificationsYet": "હજુ સુધી કોઈ સૂચનાઓ નથી",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "ઑફલાઇન પ્રદેશ ડાઉનલોડ કરો",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "ઑફલાઇન ઉપયોગ માટે તમારા વર્તમાન સ્થાનની આસપાસ નકશા ટાઇલ્સ ડાઉનલોડ કરે છે.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "પ્રદેશનું નામ",
+  "@regionNameLabel": {},
+  "radiusLabel": "ત્રિજ્યા",
+  "@radiusLabel": {},
+  "cancelLabel": "રદ કરો",
+  "@cancelLabel": {},
+  "downloadLabel": "ડાઉનલોડ કરો",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "કાઢી નાખો",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "ઑફલાઇન નકશા",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "ટાઇલ્સ ડાઉનલોડ કરી રહ્યાં છીએ...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "તમે ઑનલાઇન જુઓ છો તે નકશા ટાઇલ્સ ઑફલાઇન ઉપયોગ માટે આપમેળે કૅશ કરવામાં આવે છે.સંપૂર્ણ ઑફલાઇન કવરેજ માટે પ્રદેશો ડાઉનલોડ કરો.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "હજી સુધી કોઈ ઑફલાઇન પ્રદેશો નથી",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "પ્રદેશ ડાઉનલોડ કરવા માટે + પર ટૅપ કરો",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "પુનઃપ્રયાસની સ્થિતિ, ભૂલના કારણની સમીક્ષા કરો અને અટવાયેલી વસ્તુઓને અહીં દૂર કરો.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "સમાન રિપોર્ટ પહેલેથી જ નજીકમાં અસ્તિત્વમાં છે.અમે તમારા સબમિશનને તેની સાથે લિંક કર્યું છે.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "તમારી અપલોડ સમયરેખા પૂર્ણ અને સાચવવામાં આવી છે.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "થઈ ગયું",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "તમે ખૂબ ઝડપથી રિપોર્ટ્સ મોકલી રહ્યાં છો.કૃપા કરીને 30 સેકન્ડ રાહ જુઓ અને ફરી પ્રયાસ કરો.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "કલાકદીઠ રિપોર્ટ મર્યાદા પહોંચી.કૃપા કરીને પછીથી ફરી પ્રયાસ કરો.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "તમારો રિપોર્ટ અપલોડ કરી રહ્યાં છીએ",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "રિપોર્ટની વિગતો તૈયાર કરી રહ્યાં છીએ",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "રિપોર્ટ વિગતો અપલોડ કરી",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "ડુપ્લિકેટ રિપોર્ટ મળ્યો, હાલના રિપોર્ટ સાથે લિંક કરેલ છે",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "મીડિયા અપલોડ કરી રહ્યું છે",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "મીડિયા અપલોડ નિષ્ફળ થયું, ફરી પ્રયાસ માટે કતારબદ્ધ",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "અહેવાલને અંતિમ સ્વરૂપ આપી રહ્યું છે",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "અન્ય રિપોર્ટ મોકલતા પહેલા કૃપા કરીને રાહ જુઓ",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "કલાકદીઠ રિપોર્ટ મર્યાદા પહોંચી",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "પુનઃપ્રયાસની સ્થિતિ, ભૂલનું કારણ અને અટવાયેલી વસ્તુઓને દૂર કરવા માટે કતાર ખોલો.",
+  "@openQueueToReview": {},
+  "arcAbbr": "એઆરસી",
+  "@arcAbbr": {},
+  "arcFull": "ચેતવણી • અહેવાલ • સંકલન",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingQueuedReports": "કતારબદ્ધ અહેવાલો સમન્વયિત કરી રહ્યાં છે",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "જોડાણો અપલોડ કરી રહ્યાં છીએ",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "રિપોર્ટ અપડેટ",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "આ એપ્લિકેશન નાગરિકોને સમુદ્રના જોખમોની જાણ કરવામાં મદદ કરે છે અને સત્તાવાળાઓને વાસ્તવિક સમયની પરિસ્થિતિઓ સમજવામાં મદદ કરે છે.\n\nઅમે વ્યક્તિગત વિગતોના જાહેર સંપર્કને મર્યાદિત કરીને અને જાહેર દૃશ્યો માટે ગોપનીયતા-સલામત નકશા ડેટાનો ઉપયોગ કરીને ગોપનીયતાને પ્રાથમિકતા આપીએ છીએ.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "અમે શું એકત્રિત કરીએ છીએ: તમારો ફોન (લૉગિન માટે), તમારું રિપોર્ટ વર્ણન, સમય અને સ્થાન.\n\nઅમે તેનો ઉપયોગ કેવી રીતે કરીએ છીએ: તમારો રિપોર્ટ સંગ્રહિત કરવા અને નકશા અને અપડેટ્સ ફીડ પર ચકાસાયેલ, ગોપનીયતા-સલામત માહિતી બતાવવા માટે.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "રિપોર્ટ સબમિટ કરવામાં આવ્યો",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "રિપોર્ટ ચકાસાયેલ",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "ઉચ્ચ-જોખમ રિપોર્ટ ચકાસાયેલ",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "રિપોર્ટ નકારવામાં આવ્યો",
+  "@reportRejectedReason": {}
+}

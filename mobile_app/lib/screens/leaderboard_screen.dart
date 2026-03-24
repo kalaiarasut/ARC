@@ -5,6 +5,7 @@ import '../models/citizen_stats.dart';
 import '../providers/gamification_provider.dart';
 import '../core/supabase_config.dart';
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 class LeaderboardScreen extends ConsumerWidget {
   const LeaderboardScreen({super.key});
@@ -18,30 +19,30 @@ class LeaderboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Leaderboard'),
+        title: Text(context.l10n.leaderboardTitle),
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
         elevation: 0,
       ),
       body: leaderboardAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(context.l10n.error(e.toString()))),
         data: (entries) {
           if (entries.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.leaderboard_outlined, size: 56, color: Colors.grey),
-                  SizedBox(height: 12),
+                  const Icon(Icons.leaderboard_outlined, size: 56, color: Colors.grey),
+                  const SizedBox(height: 12),
                   Text(
-                    'No leaderboard data yet',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    context.l10n.noLeaderboardData,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Start reporting to climb the ranks!',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    context.l10n.startReportingToClimb,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
@@ -54,7 +55,7 @@ class LeaderboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 if (entries.length >= 3) ...[
-                  _buildPodium(entries.take(3).toList(), currentUserId),
+                  _buildPodium(context, entries.take(3).toList(), currentUserId),
                   const SizedBox(height: 20),
                 ],
                 _buildRankList(context, entries, currentUserId),
@@ -66,23 +67,24 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPodium(List<LeaderboardEntry> top3, String? currentUserId) {
+  Widget _buildPodium(BuildContext context, List<LeaderboardEntry> top3, String? currentUserId) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // 2nd place
-        Expanded(child: _buildPodiumItem(top3[1], 2, currentUserId, height: 100)),
+        Expanded(child: _buildPodiumItem(context, top3[1], 2, currentUserId, height: 100)),
         const SizedBox(width: 8),
         // 1st place
-        Expanded(child: _buildPodiumItem(top3[0], 1, currentUserId, height: 130)),
+        Expanded(child: _buildPodiumItem(context, top3[0], 1, currentUserId, height: 130)),
         const SizedBox(width: 8),
         // 3rd place
-        Expanded(child: _buildPodiumItem(top3[2], 3, currentUserId, height: 80)),
+        Expanded(child: _buildPodiumItem(context, top3[2], 3, currentUserId, height: 80)),
       ],
     );
   }
 
   Widget _buildPodiumItem(
+    BuildContext context,
     LeaderboardEntry entry,
     int position,
     String? currentUserId, {
@@ -135,7 +137,7 @@ class LeaderboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '${entry.totalPoints} pts',
+            context.l10n.pointsAbbrev(entry.totalPoints),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
@@ -143,7 +145,7 @@ class LeaderboardScreen extends ConsumerWidget {
             ),
           ),
           Text(
-            '${entry.reportCount} reports',
+            context.l10n.reportCountDesc(entry.reportCount),
             style: TextStyle(
               fontSize: 10,
               color: position == 1 ? Colors.black54 : Colors.white70,
@@ -157,9 +159,9 @@ class LeaderboardScreen extends ConsumerWidget {
                 color: Colors.white.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'YOU',
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+              child: Text(
+                context.l10n.you,
+                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
         ],
@@ -224,8 +226,8 @@ class LeaderboardScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'YOU',
-                        style: TextStyle(
+                        context.l10n.you,
+                        style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryBlue,
@@ -235,11 +237,11 @@ class LeaderboardScreen extends ConsumerWidget {
                 ],
               ),
               subtitle: Text(
-                '${entry.reportCount} reports',
+                context.l10n.reportCountDesc(entry.reportCount),
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               trailing: Text(
-                '${entry.totalPoints} pts',
+                context.l10n.pointsAbbrev(entry.totalPoints),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

@@ -1,3 +1,5 @@
+import '../l10n/app_localizations.dart';
+
 /// Model for gamification data returned by `get_citizen_stats` RPC.
 class CitizenStats {
   final int totalPoints;
@@ -96,12 +98,12 @@ class PointEntry {
     );
   }
 
-  String get reasonLabel {
+  String reasonLabel(AppLocalizations l10n) {
     switch (reason) {
-      case 'report_submitted': return 'Report submitted';
-      case 'report_verified': return 'Report verified';
-      case 'high_risk_verified': return 'High-risk report verified';
-      case 'report_rejected': return 'Report rejected';
+      case 'report_submitted': return l10n.reportSubmittedReason;
+      case 'report_verified': return l10n.reportVerifiedReason;
+      case 'high_risk_verified': return l10n.highRiskVerifiedReason;
+      case 'report_rejected': return l10n.reportRejectedReason;
       default: return reason;
     }
   }

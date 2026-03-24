@@ -3,6 +3,8 @@ import '../theme/app_colors.dart';
 import '../core/supabase_config.dart';
 import '../services/advisory_service.dart';
 import '../models/advisory_category.dart';
+import '../l10n/l10n.dart';
+import '../l10n/app_localizations.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -24,6 +26,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _loading = true);
     try {
+      final l10n = context.l10n;
       final languageCode = Localizations.localeOf(context).languageCode;
       final advisories = await AdvisoryService().getLatest(limit: 20);
 
@@ -53,8 +56,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   : status == 'rejected'
                       ? AppColors.error
                       : AppColors.primaryBlue,
-              title: 'Report ${status.toString().toUpperCase()}',
-              body: 'Your ${r['hazard_type']} report has been $status.',
+              title: l10n.reportStatusTitle(status.toString().toUpperCase()),
+              body: l10n.reportStatusBody(r['hazard_type'], status),
               time: DateTime.tryParse(r['updated_at'] ?? '') ?? DateTime.now(),
               type: _NotifType.report,
             );
@@ -92,12 +95,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  String _timeAgo(DateTime dt) {
+  String _timeAgo(DateTime dt, AppLocalizations l10n) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return l10n.justNow;
+    if (diff.inMinutes < 60) return l10n.minutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
+    return l10n.daysAgo(diff.inDays);
   }
 
   @override
@@ -112,7 +115,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Notifications',
+          context.l10n.notificationsTitle,
           style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
       ),
@@ -126,7 +129,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Icon(Icons.notifications_off_outlined, size: 56, color: Colors.grey[400]),
                       const SizedBox(height: 12),
                       Text(
-                        'No notifications yet',
+                        context.l10n.noNotificationsYet,
                         style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 16),
                       ),
                     ],
@@ -137,59 +140,56 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: _items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final item = _items[index];
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 40,
-                              height: 40,
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 color: item.iconColor.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(item.icon, color: item.iconColor, size: 20),
+                              child: Icon(item.icon, color: item.iconColor, size: 24),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     item.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                       color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item.body,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 12.5,
                                       color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _timeAgo(item.time, context.l10n),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _timeAgo(item.time),
-                              style: TextStyle(fontSize: 11, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                             ),
                           ],
                         ),

@@ -3,6 +3,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart';
 
 import '../theme/app_colors.dart';
+import '../l10n/l10n.dart';
 
 enum MediaKind { image, video, audio, unknown }
 
@@ -84,7 +85,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Media'),
+        title: Text(context.l10n.mediaTitle),
       ),
       body: SafeArea(
         child: _error != null
@@ -114,7 +115,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
               widget.url,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-                  const Text('Failed to load image', style: TextStyle(color: Colors.white70)),
+                  Text(context.l10n.failedToLoadImage, style: const TextStyle(color: Colors.white70)),
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
                 return const Center(child: CircularProgressIndicator(color: Colors.white));
@@ -241,7 +242,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                       }
                     },
                     icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                    label: Text(playing ? 'Pause' : 'Play'),
+                    label: Text(playing ? context.l10n.pauseLabel : context.l10n.playLabel),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
                       foregroundColor: Colors.white,
@@ -256,10 +257,10 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
         );
 
       case MediaKind.unknown:
-        return const Center(
+        return Center(
           child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Text('Unsupported media type', style: TextStyle(color: Colors.white70)),
+            padding: const EdgeInsets.all(20),
+            child: Text(context.l10n.unsupportedMediaType, style: const TextStyle(color: Colors.white70)),
           ),
         );
     }

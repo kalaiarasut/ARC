@@ -4,6 +4,8 @@ import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import '../theme/app_colors.dart';
 import '../services/tile_caching_service.dart';
+import '../l10n/l10n.dart';
+import '../l10n/app_localizations.dart';
 
 class OfflineMapsScreen extends StatefulWidget {
   const OfflineMapsScreen({super.key});
@@ -56,26 +58,26 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Download Offline Region'),
+          title: Text(context.l10n.downloadOfflineRegionTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Downloads map tiles around your current location for offline use.',
+                context.l10n.downloadOfflineRegionDesc,
                 style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Region Name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.regionNameLabel,
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Radius', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(context.l10n.radiusLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -95,7 +97,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                _estimateTiles(selectedRadius),
+                _estimateTiles(selectedRadius, context.l10n),
                 style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
               ),
             ],
@@ -103,7 +105,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancelLabel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, (name: nameController.text.trim(), radius: selectedRadius)),
@@ -111,7 +113,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                 backgroundColor: AppColors.primaryBlue,
                 foregroundColor: Theme.of(context).cardColor,
               ),
-              child: const Text('Download'),
+              child: Text(context.l10n.downloadLabel),
             ),
           ],
         ),
@@ -122,11 +124,11 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
     _startDownload(result.name, result.radius);
   }
 
-  String _estimateTiles(double radiusKm) {
+  String _estimateTiles(double radiusKm, AppLocalizations l10n) {
     // Rough estimate: ~4^(zoom) tiles per km² at zoom 16
     final areaSqKm = 3.14 * radiusKm * radiusKm;
     final estimate = (areaSqKm * 50).round(); // Rough approximation
-    return '~$estimate tiles (${(estimate * 0.015).toStringAsFixed(1)} MB est.)';
+    return l10n.estimatedTiles(estimate, (estimate * 0.015).toStringAsFixed(1));
   }
 
   void _startDownload(String name, double radiusKm) {
@@ -164,7 +166,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
         _loadRegions();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('"$name" downloaded successfully!'),
+            content: Text(context.l10n.downloadSuccessMsg(name)),
             backgroundColor: Colors.green,
           ),
         );
@@ -174,7 +176,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Download failed: $e'),
+            content: Text(context.l10n.downloadFailedMsg(e.toString())),
             backgroundColor: AppColors.error,
           ),
         );
@@ -186,13 +188,13 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Region?'),
-        content: Text('Remove "${region.name}" and its ${region.tileCount} cached tiles?'),
+        title: Text(context.l10n.deleteRegionTitle),
+        content: Text(context.l10n.deleteRegionDesc(region.name, region.tileCount)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancelLabel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text(context.l10n.deleteLabel, style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -216,7 +218,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Offline Maps',
+          context.l10n.offlineMapsTitle,
           style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -250,9 +252,9 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
-                              'Downloading tiles...',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                            Text(
+                              context.l10n.downloadingTiles,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             const Spacer(),
                             Text(
@@ -291,7 +293,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Map tiles you view online are automatically cached for offline use. Download regions for full offline coverage.',
+                          context.l10n.offlineMapInfoDesc,
                           style: TextStyle(fontSize: 12.5, color: AppColors.primaryBlue.withOpacity(0.8)),
                         ),
                       ),
@@ -309,12 +311,12 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                               Icon(Icons.map_outlined, size: 56, color: Colors.grey[400]),
                               const SizedBox(height: 12),
                               Text(
-                                'No offline regions yet',
+                                context.l10n.noOfflineRegionsYet,
                                 style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 16),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Tap + to download a region',
+                                context.l10n.tapToDownloadRegion,
                                 style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: 13),
                               ),
                             ],
@@ -330,38 +332,30 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryBlue.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.map, color: AppColors.primaryBlue, size: 20),
-                                  ),
-                                  const SizedBox(width: 12),
+                                  const Icon(Icons.map, size: 32, color: AppColors.primaryBlue),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           region.name,
-                                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: 4),
                                         Text(
-                                          '${region.tileCount} tiles · ${region.sizeMB.toStringAsFixed(1)} MB',
-                                          style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                          '${region.tileCount} tiles downloaded',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 13),
                                         ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
                                     onPressed: () => _deleteRegion(region),
                                   ),
                                 ],

@@ -535,7 +535,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _filterChip('Community', _mode == _ReportsMode.community, () {
+                  child: _filterChip(context.l10n.filterCommunity, _mode == _ReportsMode.community, () {
                     if (_mode == _ReportsMode.community) return;
                     setState(() => _mode = _ReportsMode.community);
                     _load();
@@ -543,7 +543,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _filterChip('My Submitted', _mode == _ReportsMode.mine, () {
+                  child: _filterChip(context.l10n.filterMySubmitted, _mode == _ReportsMode.mine, () {
                     if (_mode == _ReportsMode.mine) return;
                     setState(() => _mode = _ReportsMode.mine);
                     _load();
@@ -620,7 +620,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               Expanded(
                 child: Center(
                   child: Text(
-                    'No reports yet',
+                    context.l10n.noReportsYet,
                     style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
@@ -629,7 +629,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               Expanded(
                 child: Center(
                   child: Text(
-                    'No submitted reports yet',
+                    context.l10n.noSubmittedReportsYet,
                     style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                   ),
                 ),
@@ -761,7 +761,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               onTap: () {
                                 if (report.id == null || report.id!.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Report details are not available yet')),
+                                    SnackBar(content: Text(context.l10n.reportDetailsNotAvailable)),
                                   );
                                   return;
                                 }

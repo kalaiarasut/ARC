@@ -1,0 +1,677 @@
+{
+  "@@locale": "ml",
+  "appTitle": "സിവിൽ അലർട്ട് സിസ്റ്റം",
+  "profile": "പ്രൊഫൈൽ",
+  "profileAndReports": "റിപ്പോർട്ടുകൾ",
+  "edit": "തിരുത്തുക",
+  "user": "ഉപയോക്താവ്",
+  "phoneNotSet": "ഫോൺ നൽകിയിട്ടില്ല",
+  "syncNow": "ഇപ്പോൾ സിങ്ക് ചെയ്യുക",
+  "nothingToSync": "സിങ്ക് ചെയ്യാൻ ഒന്നുമില്ല",
+  "syncDone": "സിങ്ക് പൂർത്തിയായി: {succeeded} വിജയിച്ചു, {failed} പരാജയപ്പെട്ടു",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "ഓഫ്‌ലൈൻ റിപ്പോർട്ടുകൾ",
+  "noPendingReports": "കാത്തിരിക്കുന്ന റിപ്പോർട്ടുകളില്ല",
+  "attemptsLabel": "ശ്രമങ്ങൾ: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "വീണ്ടും ശ്രമിക്കുക",
+  "remove": "നീക്കുക",
+  "myReports": "എന്റെ റിപ്പോർട്ടുകൾ",
+  "noUploadedReportsYet": "ഇതുവരെ റിപ്പോർട്ടുകൾ അപ്‌ലോഡ് ചെയ്തിട്ടില്ല",
+  "failedToLoadReports": "റിപ്പോർട്ടുകൾ ലോഡ് ചെയ്യാനായില്ല",
+  "youreOffline": "നിങ്ങൾ ഓഫ്‌ലൈനിലാണ്",
+  "connectToInternetToLoadMyReports": "എൻ്റെ റിപ്പോർട്ടുകൾ ലോഡ് ചെയ്യാൻ ഇൻ്റർനെറ്റിലേക്ക് കണക്റ്റുചെയ്യുക.",
+  "settings": "സെറ്റിംഗ്സ്",
+  "helpFaq": "സഹായം / FAQ",
+  "aboutTransparency": "വിവരങ്ങളും പരസ്യതയും",
+  "language": "ഭാഷ",
+  "privacyControls": "ഭാഷയും സ്വകാര്യത നിയന്ത്രണങ്ങളും",
+  "privacy": "സ്വകാര്യത",
+  "chooseLanguage": "ഭാഷ തിരഞ്ഞെടുക്കുക",
+  "save": "സംരക്ഷിക്കുക",
+  "continueLabel": "തുടരുക",
+  "languageComingSoon": "ഈ ഭാഷ ഉടൻ ലഭ്യമാകും.",
+  "updates": "അപ്‌ഡേറ്റുകൾ",
+  "pendingCount": "{count} കാത്തിരിക്കുന്നു",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "ഇതുവരെ അപ്‌ഡേറ്റുകളില്ല",
+  "failedToLoadUpdates": "അപ്‌ഡേറ്റുകൾ ലോഡ് ചെയ്യാനായില്ല",
+  "helpTitle": "സഹായം / FAQ",
+  "aboutTitle": "വിവരങ്ങളും പരസ്യതയും",
+  "privacyTitle": "സ്വകാര്യത നിയന്ത്രണങ്ങൾ",
+  "privacyReducePrecisionTitle": "മാപ്പ് ലൊക്കേഷൻ കൃത്യത കുറയ്ക്കുക",
+  "privacyReducePrecisionSubtitle": "പ്രവർത്തനക്ഷമമാക്കിയാൽ, നിങ്ങളുടെ റിപ്പോർട്ട് മാർക്കറുകൾ മാപ്പിൽ കുറഞ്ഞ ലൊക്കേഷൻ കൃത്യതയോടെ കാണിക്കും.",
+  "faqQ1": "ഒരു അപകടം ഞാൻ എങ്ങനെ റിപ്പോർട്ട് ചെയ്യും?",
+  "faqA1": "റിപ്പോർട്ട് തുറക്കുക, നിങ്ങൾ കാണുന്നത് വിവരിക്കുക, സമർപ്പിക്കുക.നിങ്ങൾ ഓഫ്‌ലൈനിലാണെങ്കിൽ, നിങ്ങൾ ഓൺലൈനിൽ തിരിച്ചെത്തുമ്പോൾ അത് ക്യൂവിൽ നിൽക്കുകയും അപ്‌ലോഡ് ചെയ്യുകയും ചെയ്യും.",
+  "faqQ2": "എന്തുകൊണ്ടാണ് എനിക്ക് ഗാലറിയിൽ നിന്ന് അപ്‌ലോഡ് ചെയ്യാൻ കഴിയാത്തത്?",
+  "faqA2": "റിപ്പോർട്ടുകൾ വിശ്വസനീയമായി നിലനിർത്താൻ, തത്സമയ ക്യാപ്‌ചർ (ക്യാമറ/റെക്കോർഡിംഗ്) മാത്രമേ ആപ്പ് അനുവദിക്കൂ, അതിനാൽ പഴയ മീഡിയ അപ്‌ലോഡ് ചെയ്യാൻ കഴിയില്ല.",
+  "faqQ3": "എൻ്റെ സ്ഥാനം എങ്ങനെയാണ് ഉപയോഗിക്കുന്നത്?",
+  "faqA3": "എവിടെയാണ് അപകടങ്ങൾ സംഭവിക്കുന്നതെന്ന് മനസിലാക്കാൻ പ്രതികരിക്കുന്നവരെ നിങ്ങളുടെ ലൊക്കേഷൻ സഹായിക്കുന്നു.പൊതു കാഴ്‌ചയ്‌ക്കായി, ലൊക്കേഷനുകൾ കുറച്ച് കൃത്യതയോടെ കാണിച്ചേക്കാം.",
+  "loginTitle": "ലോഗിൻ / സൈൻ അപ്പ്",
+  "signUpWithMobile": "നിങ്ങളുടെ രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ ഉപയോഗിച്ച് സൈൻ അപ്പ് ചെയ്യുക",
+  "otpIntro": "നിങ്ങളുടെ നമ്പർ സ്ഥിരീകരിക്കാൻ ഞങ്ങൾ OTP അയക്കും",
+  "mobileNumberLabel": "മൊബൈൽ നമ്പർ *",
+  "sendingLabel": "അയയ്ക്കുന്നു...",
+  "sendOtp": "OTP അയയ്ക്കുക",
+  "failedToSendOtp": "OTP അയയ്‌ക്കുന്നതിൽ പരാജയപ്പെട്ടു.",
+  "checkSupabasePhoneConfig": "സുപാബേസ് പരിശോധിക്കുക: പ്രാമാണീകരണം → ദാതാക്കൾ → ഫോൺ (പ്രാപ്‌തമാക്കി), SMS പ്രൊവൈഡർ കോൺഫിഗർ ചെയ്‌തു (Twilio).",
+  "enterOtp": "OTP നൽകുക",
+  "sentToNumber": "Sent to {mobileNumber}",
+  "pleaseEnter6DigitOtp": "ദയവായി 6 അക്ക OTP നൽകുക",
+  "otpVerificationFailed": "OTP പരിശോധിച്ചുറപ്പിക്കൽ പരാജയപ്പെട്ടു.",
+  "signInFailedWithError": "Sign-in failed: {error}",
+  "didntReceiveOtp": "OTP ലഭിച്ചില്ലേ? ",
+  "otpResentSuccessfully": "OTP വീണ്ടും അയച്ചു",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
+  "resendWithTimer": "വീണ്ടും അയക്കുക (00:30)",
+  "savingLabel": "സംരക്ഷിക്കുന്നു...",
+  "signedInSuccessfully": "നിങ്ങൾ വിജയകരമായി\nലോഗിൻ ചെയ്തു",
+  "directingToDashboard": "ഞങ്ങൾ നിങ്ങളെ ഡാഷ്‌ബോർഡിലേക്ക് നയിക്കുന്നതുവരെ കാത്തിരിക്കുക...",
+  "whatsYourName": "നിങ്ങളുടെ പേര് എന്താണ്?",
+  "personalizeExperience": "നിങ്ങളുടെ അനുഭവം വ്യക്തിപരമാക്കാൻ ഞങ്ങളെ സഹായിക്കൂ",
+  "enterYourName": "നിങ്ങളുടെ പേര് നൽകുക",
+  "pleaseEnterValidName": "ദയവായി ഒരു സാധുവായ പേര് നൽകുക (കുറഞ്ഞത് 2 പ്രതീകങ്ങളെങ്കിലും)",
+  "onboarding1Title": "ദുരന്ത സമയങ്ങളിൽ\nനിങ്ങളുടെ വിശ്വസ്ത കൂട്ടായി",
+  "onboarding1Description": "തത്സമയ അലേർട്ടുകൾ നേടുകയും അവ സംഭവിക്കുമ്പോൾ സമുദ്രത്തിലെ അപകടങ്ങൾ റിപ്പോർട്ട് ചെയ്തുകൊണ്ട് സുരക്ഷയ്ക്ക് സംഭാവന നൽകുകയും ചെയ്യുക.",
+  "onboarding2Title": "സുരക്ഷയെ ശക്തിപ്പെടുത്തി,\nഒരു ചുവടു വീതം",
+  "onboarding2Description": "ജീവൻ രക്ഷിക്കാൻ തത്സമയ അപകട വിവരങ്ങൾ പങ്കുവെച്ച് കടലിലെ ജാഗ്രതയുള്ള കണ്ണുകളുടെ ശൃംഖലയിൽ ചേരുക.",
+  "onboarding3Title": "സജ്ജത ഇപ്പോൾ\nനിങ്ങളുടെ വിരൽതുമ്പിൽ",
+  "onboarding3Description": "സമുദ്രത്തിലെ അപകടങ്ങൾ റിപ്പോർട്ടുചെയ്യുക, നിർണായകമായ അലേർട്ടുകൾ സ്വീകരിക്കുക, വൈകുന്നതിന് മുമ്പ് വിവരം അറിയിക്കുക.",
+  "skip": "സ്കിപ്പ്",
+  "splashTitle": "സിവിൽ അലേർട്ട്",
+  "splashSubtitle": "ഫോക്കസ്ഡ് ഹസാർഡ് ഡിറ്റക്ഷൻ",
+  "hiWelcome": "നമസ്കാരം, സ്വാഗതം",
+  "togetherForOceanSafety": "വേണ്ടി ഒരുമിച്ച്\nസമുദ്ര സുരക്ഷ,\nഒരുമിച്ച് ശക്തമായി",
+  "seeUpdates": "അപ്‌ഡേറ്റുകൾ കാണുക",
+  "unusualActivity": "റിപ്പോർട്ടുകൾ",
+  "seeAll": "എല്ലാം കാണുക",
+  "filterNow": "ഇപ്പോൾ",
+  "filterLastWeek": "കഴിഞ്ഞ ആഴ്ച",
+  "filterLastMonth": "കഴിഞ്ഞ മാസം",
+  "locationServicesOffTitle": "ലൊക്കേഷൻ സേവനങ്ങൾ ഓഫാണ്",
+  "enableLocationServicesForReporting": "അപകടങ്ങൾ റിപ്പോർട്ട് ചെയ്യാൻ ലൊക്കേഷൻ സേവനങ്ങൾ (GPS) പ്രവർത്തനക്ഷമമാക്കുക.വേഗത്തിൽ പ്രതികരിക്കാൻ നിങ്ങളുടെ ലൊക്കേഷൻ അധികാരികളെ സഹായിക്കുന്നു.",
+  "enableLocationServicesForCurrentLocation": "ലൊക്കേഷൻ സേവനങ്ങൾ ഓഫാണ്.നിങ്ങളുടെ നിലവിലെ സ്ഥാനം കാണിക്കാൻ GPS പ്രവർത്തനക്ഷമമാക്കുക.",
+  "permissionRequiredTitle": "അനുമതി ആവശ്യമാണ്",
+  "locationPermissionDeniedAllowInSettings": "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു.ക്രമീകരണങ്ങളിൽ ആക്‌സസ് അനുവദിക്കുക.",
+  "locationPermissionDeniedAllowForCurrentLocation": "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു.നിങ്ങളുടെ നിലവിലെ ലൊക്കേഷൻ കാണിക്കാൻ ആക്സസ് അനുവദിക്കുക.",
+  "locationPermissionBlockedEnableInSettings": "ലൊക്കേഷൻ അനുമതി തടഞ്ഞു.ആപ്പ് ക്രമീകരണങ്ങളിൽ ഇത് പ്രവർത്തനക്ഷമമാക്കുക.",
+  "locationPermissionPermanentlyDeniedForReporting": "ലൊക്കേഷൻ അനുമതി ശാശ്വതമായി നിരസിക്കപ്പെട്ടു.അപകടങ്ങൾ റിപ്പോർട്ട് ചെയ്യുന്നതിനായി ആപ്പ് ക്രമീകരണങ്ങളിൽ ഇത് പ്രവർത്തനക്ഷമമാക്കുക.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "ലൊക്കേഷൻ അനുമതി ശാശ്വതമായി നിരസിക്കപ്പെട്ടു.നിങ്ങളുടെ നിലവിലെ ലൊക്കേഷൻ കാണിക്കാൻ ആപ്പ് ക്രമീകരണങ്ങളിൽ ഇത് പ്രവർത്തനക്ഷമമാക്കുക.",
+  "cancel": "റദ്ദാക്കുക",
+  "notNow": "ഇപ്പോൾ വേണ്ട",
+  "openSettings": "ക്രമീകരണങ്ങൾ തുറക്കുക",
+  "errorGettingLocationWithError": "Error getting location: {error}",
+  "gettingLocation": "ലൊക്കേഷൻ ലഭിക്കുന്നു...",
+  "gettingYourLocation": "നിങ്ങളുടെ സ്ഥാനം നേടുന്നു...",
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
+  "recordingAudioTapToStop": "ഓഡിയോ റെക്കോർഡ് ചെയ്യുന്നു... നിർത്താൻ വീണ്ടും ടാപ്പ് ചെയ്യുക.",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
+  "pleaseSelectHazardType": "ദയവായി ഒരു അപകട തരം തിരഞ്ഞെടുക്കുക",
+  "pleaseDescribeSituation": "ദയവായി സാഹചര്യം വിവരിക്കുക",
+  "waitingForLocation": "ലൊക്കേഷനായി കാത്തിരിക്കുന്നു...",
+  "pleaseEnterPeopleAtRisk": "അപകടസാധ്യതയുള്ള ആളുകളുടെ കണക്ക് നൽകുക",
+  "noInternetReportQueued": "ഇൻ്റർനെറ്റ് കണക്ഷനില്ല.റിപ്പോർട്ട് ക്യൂവിൽ ആയിരിക്കും.",
+  "profileNeededTitle": "പ്രൊഫൈൽ ആവശ്യമാണ്",
+  "profileNeededBody": "ഒരു റിപ്പോർട്ട് സമർപ്പിക്കുന്നതിന് മുമ്പ് ദയവായി നിങ്ങളുടെ ഫോൺ നമ്പർ ചേർക്കുക.",
+  "addNow": "ഇപ്പോൾ ചേർക്കുക",
+  "reportSavedMediaUploadFailedRetry": "റിപ്പോർട്ട് സംരക്ഷിച്ചു!മീഡിയ അപ്‌ലോഡ് പരാജയപ്പെട്ടു, പിന്നീട് വീണ്ടും ശ്രമിക്കും.",
+  "reportSubmittedSuccessfully": "റിപ്പോർട്ട് സമർപ്പിച്ചു!🎉",
+  "errorWithError": "Error: {error}",
+  "retryGps": "GPS വീണ്ടും ശ്രമിക്കുക",
+  "reportHazard": "അപകടം റിപ്പോർട്ട് ചെയ്യുക",
+  "whatAreYouSeeing": "നിങ്ങൾ എന്താണ് കാണുന്നത്?",
+  "reportHelpsKeepSafe": "നിങ്ങളുടെ റിപ്പോർട്ട് എല്ലാവരേയും സുരക്ഷിതമായി നിലനിർത്താൻ സഹായിക്കുന്നു",
+  "hazardTypeRequired": "അപകട തരം *",
+  "descriptionRequired": "വിവരണം *",
+  "describeWhatYouSeeHint": "നിങ്ങൾ കാണുന്നത് വിവരിക്കുക...",
+  "location": "സ്ഥലം",
+  "time": "സമയം",
+  "addMediaOptional": "മീഡിയ ചേർക്കുക (ഐച്ഛികം)",
+  "camera": "ക്യാമറ",
+  "record": "റെക്കോർഡ്",
+  "recordAudio": "ഓഡിയോ റെക്കോർഡ് ചെയ്യുക",
+  "stopAudio": "ഓഡിയോ നിർത്തുക",
+  "highRiskSituation": "ഉയർന്ന അപകട സ്ഥിതി",
+  "peopleAtRiskEstimate": "അപകടത്തിൽ ഉള്ളവരുടെ കണക്ക്",
+  "urgencyLow": "കുറവ്",
+  "urgencyMedium": "ഇടത്തരം",
+  "urgencyHigh": "ഉയർന്ന്",
+  "submitReport": "റിപ്പോർട്ട് സമർപ്പിക്കുക",
+  "close": "അടയ്ക്കുക",
+  "moreDetails": "കൂടുതൽ വിവരങ്ങൾ",
+  "hazardHighWaves": "ഉയർന്ന തിരകൾ",
+  "hazardTsunami": "സുനാമി",
+  "hazardStorm": "കൊടുങ്കാറ്റ്",
+  "hazardFlood": "പ്രളയം",
+  "hazardOther": "മറ്റ്",
+  "homeTab": "ഹോം",
+  "mapTab": "മാപ്",
+  "updatesTab": "അപ്‌ഡേറ്റുകൾ",
+  "profileTab": "റിപ്പോർട്ടുകൾ",
+  "liveNews": "തത്സമയ വാർത്തകൾ",
+  "sampleHazardHeadline": "പസഫിക് തീരത്ത് വലിയ തിരമാലകൾ",
+  "sampleDate": "ഞായർ, 11 ജൂൺ 2024",
+  "sampleTimeAgo": "3 മിനിറ്റ് മുമ്പ്",
+  "@sentToNumber": {
+    "placeholders": {
+      "mobileNumber": {}
+    }
+  },
+  "@signInFailedWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@failedToResendOtpWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorGettingLocationWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@maximumAttachmentsAllowed": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "@errorPickingImageWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorPickingVideoWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStoppingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStartingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "queuedReportStuck": "കുടുങ്ങി",
+  "queuedReportPendingUpload": "അപ്‌ലോഡ് ചെയ്യാനുണ്ട്",
+  "queuedReportReadyToRetry": "വീണ്ടും ശ്രമിക്കാൻ തയ്യാറാണ്",
+  "queuedReportWaitingForRetry": "വീണ്ടും ശ്രമിക്കാൻ കാത്തിരിക്കുന്നു",
+  "removeQueuedReportTitle": "ക്യൂവിലുള്ള റിപ്പോർട്ട് നീക്കം ചെയ്യണോ?",
+  "removeQueuedReportContent": "ഇത് ഓഫ്‌ലൈൻ കോപ്പി മായ്ക്കുകയും ഭാവിയിലുള്ള ശ്രമങ്ങൾ നിർത്തുകയും ചെയ്യും.",
+  "queuedReportRemoved": "ക്യൂവിലുള്ള റിപ്പോർട്ട് മാറ്റി",
+  "themeLight": "ലൈറ്റ്",
+  "themeDark": "ഡാർക്ക്",
+  "themeSystem": "സിസ്റ്റം",
+  "notifications": "അറിയിപ്പുകൾ",
+  "logOutTitle": "ലോഗ് ഔട്ട് ചെയ്യണോ?",
+  "logOut": "ലോഗ് ഔട്ട്",
+  "similarReportExists": "അടുത്തായി സമാനമായ റിപ്പോർട്ട് ഉണ്ട്. നിങ്ങളുടെ റിപ്പോർട്ട് അതിനോട് ചേർത്തു.",
+  "sendingReportsTooQuickly": "നിങ്ങൾ വളരെ വേഗത്തിൽ റിപ്പോർട്ടുകൾ അയയ്ക്കുന്നു. 30 സെക്കൻഡ് കാത്തിരിക്കുക.",
+  "hourlyReportLimitReached": "മണിക്കൂർ റിപ്പോർട്ട് പരിധി കഴിഞ്ഞു. പിന്നീട് ശ്രമിക്കുക.",
+  "couldNotOpenMaps": "മാപ്പ് തുറക്കാനായില്ല",
+  "navigate": "നാവിഗേറ്റ് ചെയ്യുക",
+  "reportDetailsNotAvailable": "റിപ്പോർട്ട് വിവരങ്ങൾ ഇതുവരെ ലഭ്യമല്ല",
+  "viewQueue": "ക്യൂ കാണുക",
+  "achievements": "നേട്ടങ്ങൾ",
+  "leaderboard": "ലീഡർബോർഡ്",
+  "chooseFromGallery": "ഗാലറിയിൽ നിന്ന് തിരഞ്ഞെടുക്കുക",
+  "downloadOfflineRegion": "ഓഫ്‌ലൈൻ പ്രദേശം ഡൗൺലോഡ് ചെയ്യുക",
+  "radius": "ചുറ്റളവ്",
+  "download": "ഡൗൺലോഡ്",
+  "deleteRegionTitle": "പ്രദേശം മായ്ക്കണോ?",
+  "deleteRegionContent": "\"{name}\" എന്നതും അതിലെ {count} ക്യാഷ് ചെയ്ത ടൈലുകളും മായ്ക്കണോ?",
+  "@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "delete": "മായ്ക്കുക",
+  "media": "മീഡിയ",
+  "failedToLoadImage": "ചിത്രം ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല",
+  "unsupportedMediaType": "പിന്തുണയ്ക്കാത്ത മീഡിയ തരം",
+  "noVerifiedRiskZones": "ഇവിടെ ഇതുവരെ സ്ഥിരീകരിച്ച അപകട മേഖലകളില്ല.",
+  "filterAllHazards": "എല്ലാ അപകടങ്ങളും",
+  "filterRipCurrent": "റിപ്പ് കറന്റ്",
+  "filterPollution": "മലിനീകരണം",
+  "filterEarthquake": "ഭൂകമ്പം",
+  "mobileNumberHint": "12345 67890",
+  "distanceInKm": "{r} കി.മീ.",
+  "@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  },
+  "filterCommunity": "സമൂഹം",
+  "filterMySubmitted": "ഞാൻ സമർപ്പിച്ചത്",
+  "noReportsYet": "റിപ്പോർട്ടുകളൊന്നുമില്ല",
+  "noSubmittedReportsYet": "നിലവിൽ റിപ്പോർട്ടുകളൊന്നും സമർപ്പിച്ചിട്ടില്ല",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "ഉപദേശം കണ്ടെത്തിയില്ല.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} മീറ്റർ അകലെ",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "കുറവ്",
+  "@low": {},
+  "justNow": "ഇപ്പോള്",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "ലീഡർബോർഡ്",
+  "@leaderboardTitle": {},
+  "error": "പിശക്: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "ഇതുവരെ ലീഡർബോർഡ് ഡാറ്റയില്ല",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "റാങ്കുകൾ കയറാൻ റിപ്പോർട്ടിംഗ് ആരംഭിക്കുക!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "നിങ്ങൾ",
+  "@you": {},
+  "achievementsTitle": "നേട്ടങ്ങൾ",
+  "@achievementsTitle": {},
+  "earnedBadges": "സമ്പാദിച്ച ബാഡ്ജുകൾ",
+  "@earnedBadges": {},
+  "lockedBadges": "പൂട്ടിയ ബാഡ്ജുകൾ",
+  "@lockedBadges": {},
+  "pointsHistory": "പോയിൻ്റ് ചരിത്രം",
+  "@pointsHistory": {},
+  "totalPoints": "ആകെ പോയിൻ്റുകൾ",
+  "@totalPoints": {},
+  "verified": "പരിശോധിച്ചുറപ്പിച്ചു",
+  "@verified": {},
+  "rate": "നിരക്ക്",
+  "@rate": {},
+  "badges": "ബാഡ്ജുകൾ",
+  "@badges": {},
+  "submitFirstReportBadge": "ഒരു ബാഡ്ജ് നേടാൻ നിങ്ങളുടെ ആദ്യ റിപ്പോർട്ട് സമർപ്പിക്കുക!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 എല്ലാ ബാഡ്ജുകളും നേടി!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "ഇതുവരെ പോയിൻ്റ് ചരിത്രമില്ല",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ സമ്പാദിച്ചു!",
+  "@earned": {},
+  "notYetEarned": "🔒 ഇതുവരെ നേടിയിട്ടില്ല",
+  "@notYetEarned": {},
+  "ok": "ശരി",
+  "@ok": {},
+  "filterAllUrgencies": "എല്ലാ അടിയന്തിര സാഹചര്യങ്ങളും",
+  "@filterAllUrgencies": {},
+  "@urgencyHigh": {},
+  "@urgencyMedium": {},
+  "@locationServicesOffTitle": {},
+  "@enableLocationServicesForCurrentLocation": {},
+  "@notNow": {},
+  "@openSettings": {},
+  "@permissionRequiredTitle": {},
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "@locationPermissionBlockedEnableInSettings": {},
+  "@gettingYourLocation": {},
+  "filtersTitle": "ഫിൽട്ടറുകൾ",
+  "@filtersTitle": {},
+  "timeRangeTitle": "സമയ പരിധി",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 മണിക്കൂർ",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "റിസ്ക് സോണുകൾ കാണിക്കുക",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "അപകട ഹോട്ട്‌സ്‌പോട്ടുകൾ പ്രദർശിപ്പിക്കുക",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "ഉയർന്ന അപകടസാധ്യത മാത്രം",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "നിർണായക റിപ്പോർട്ടുകൾ മാത്രം കാണിക്കുക",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "മീഡിയ വ്യൂവർ",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "ലോഡ് ചെയ്യുന്നു...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "ഉയർന്ന റിസ്ക്",
+  "@highRiskBadge": {},
+  "mediaTitle": "മാധ്യമങ്ങൾ",
+  "@mediaTitle": {},
+  "@failedToLoadImage": {},
+  "playLabel": "കളിക്കുക",
+  "@playLabel": {},
+  "pauseLabel": "താൽക്കാലികമായി നിർത്തുക",
+  "@pauseLabel": {},
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "അറിയിപ്പുകൾ",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "noNotificationsYet": "ഇതുവരെ അറിയിപ്പുകളൊന്നുമില്ല",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "ഓഫ്‌ലൈൻ മേഖല ഡൗൺലോഡ് ചെയ്യുക",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "ഓഫ്‌ലൈൻ ഉപയോഗത്തിനായി നിങ്ങളുടെ നിലവിലെ സ്ഥലത്തിന് ചുറ്റുമുള്ള മാപ്പ് ടൈലുകൾ ഡൗൺലോഡ് ചെയ്യുന്നു.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "പ്രദേശത്തിൻ്റെ പേര്",
+  "@regionNameLabel": {},
+  "radiusLabel": "ആരം",
+  "@radiusLabel": {},
+  "cancelLabel": "റദ്ദാക്കുക",
+  "@cancelLabel": {},
+  "downloadLabel": "ഡൗൺലോഡ് ചെയ്യുക",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "ഇല്ലാതാക്കുക",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "ഓഫ്‌ലൈൻ മാപ്പുകൾ",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "ടൈലുകൾ ഡൗൺലോഡ് ചെയ്യുന്നു...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "നിങ്ങൾ ഓൺലൈനിൽ കാണുന്ന മാപ്പ് ടൈലുകൾ ഓഫ്‌ലൈൻ ഉപയോഗത്തിനായി സ്വയമേവ കാഷെ ചെയ്യപ്പെടും.പൂർണ്ണമായ ഓഫ്‌ലൈൻ കവറേജിനായി പ്രദേശങ്ങൾ ഡൗൺലോഡ് ചെയ്യുക.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "ഇതുവരെ ഓഫ്‌ലൈൻ മേഖലകളൊന്നുമില്ല",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "ഒരു പ്രദേശം ഡൗൺലോഡ് ചെയ്യാൻ + ടാപ്പുചെയ്യുക",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "ഇവിടെ വീണ്ടും ശ്രമത്തിൻ്റെ നിലയും പിശകിൻ്റെ കാരണവും അവലോകനം ചെയ്യുക, കുടുങ്ങിയ ഇനങ്ങൾ നീക്കം ചെയ്യുക.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "സമാനമായ റിപ്പോർട്ട് ഇതിനകം സമീപത്തുണ്ട്.നിങ്ങളുടെ സമർപ്പണം ഞങ്ങൾ ഇതിലേക്ക് ലിങ്ക് ചെയ്‌തു.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "നിങ്ങളുടെ അപ്‌ലോഡ് ടൈംലൈൻ പൂർത്തിയാക്കി സംരക്ഷിക്കപ്പെട്ടു.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "ചെയ്തു",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "നിങ്ങൾ വളരെ വേഗത്തിൽ റിപ്പോർട്ടുകൾ അയയ്ക്കുന്നു.ദയവായി 30 സെക്കൻഡ് കാത്തിരുന്ന് വീണ്ടും ശ്രമിക്കുക.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "മണിക്കൂർ റിപ്പോർട്ട് പരിധി എത്തി.ദയവായി പിന്നീട് വീണ്ടും ശ്രമിക്കുക.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "നിങ്ങളുടെ റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുന്നു",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "റിപ്പോർട്ട് വിശദാംശങ്ങൾ തയ്യാറാക്കുന്നു",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "റിപ്പോർട്ട് വിശദാംശങ്ങൾ അപ്‌ലോഡ് ചെയ്തു",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "ഡ്യൂപ്ലിക്കേറ്റ് റിപ്പോർട്ട് കണ്ടെത്തി, നിലവിലുള്ള റിപ്പോർട്ടുമായി ലിങ്ക് ചെയ്‌തു",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "മീഡിയ അപ്‌ലോഡ് ചെയ്യുന്നു",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "മീഡിയ അപ്‌ലോഡ് പരാജയപ്പെട്ടു, വീണ്ടും ശ്രമിക്കാനായി ക്യൂവിൽ",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "അന്തിമ റിപ്പോർട്ട്",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "മറ്റൊരു റിപ്പോർട്ട് അയയ്ക്കുന്നതിന് മുമ്പ് ദയവായി കാത്തിരിക്കുക",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "മണിക്കൂർ റിപ്പോർട്ട് പരിധി എത്തി",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "വീണ്ടും ശ്രമിക്കുന്നതിനുള്ള നിലയും പിശകിൻ്റെ കാരണവും അവലോകനം ചെയ്യാനും കുടുങ്ങിയ ഇനങ്ങൾ നീക്കംചെയ്യാനും ക്യൂ തുറക്കുക.",
+  "@openQueueToReview": {},
+  "arcAbbr": "ARC",
+  "@arcAbbr": {},
+  "arcFull": "അലേർട്ട് • റിപ്പോർട്ട് • കോർഡിനേറ്റ് ചെയ്യുക",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingQueuedReports": "ക്യൂവിലുള്ള റിപ്പോർട്ടുകൾ സമന്വയിപ്പിക്കുന്നു",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "അറ്റാച്ച്‌മെൻ്റുകൾ അപ്‌ലോഡ് ചെയ്യുന്നു",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "അപ്ഡേറ്റ് റിപ്പോർട്ട് ചെയ്യുക",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "കടൽ അപകടങ്ങൾ റിപ്പോർട്ട് ചെയ്യാൻ പൗരന്മാരെ സഹായിക്കുകയും തത്സമയ സാഹചര്യങ്ങൾ മനസ്സിലാക്കാൻ അധികാരികളെ സഹായിക്കുകയും ചെയ്യുന്നതാണ് ഈ ആപ്പ്.\n\nവ്യക്തിഗത വിവരങ്ങളുടെ പരസ്യപ്പെടുത്തൽ പരിമിതപ്പെടുത്തിക്കൊണ്ടും പൊതു കാഴ്ചകൾക്കായി സ്വകാര്യത-സുരക്ഷിത മാപ്പ് ഡാറ്റ ഉപയോഗിച്ചുകൊണ്ടും ഞങ്ങൾ സ്വകാര്യതയ്ക്ക് മുൻഗണന നൽകുന്നു.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "ഞങ്ങൾ ശേഖരിക്കുന്നവ: നിങ്ങളുടെ ഫോൺ (ലോഗിൻ ചെയ്യുന്നതിന്), നിങ്ങളുടെ റിപ്പോർട്ട് വിവരണം, സമയം, സ്ഥലം എന്നിവ.\n\nഞങ്ങൾ ഇത് എങ്ങനെ ഉപയോഗിക്കുന്നു: നിങ്ങളുടെ റിപ്പോർട്ട് സംഭരിക്കാനും മാപ്പിലും അപ്‌ഡേറ്റ് ഫീഡിലും പരിശോധിച്ചുറപ്പിച്ച സ്വകാര്യത-സുരക്ഷിത വിവരങ്ങൾ കാണിക്കാനും.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "റിപ്പോർട്ട് സമർപ്പിച്ചു",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "റിപ്പോർട്ട് സ്ഥിരീകരിച്ചു",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "ഉയർന്ന അപകടസാധ്യതയുള്ള റിപ്പോർട്ട് സ്ഥിരീകരിച്ചു",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "റിപ്പോർട്ട് നിരസിച്ചു",
+  "@reportRejectedReason": {}
+}

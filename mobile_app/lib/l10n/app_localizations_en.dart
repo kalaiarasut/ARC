@@ -289,7 +289,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterLastMonth => 'Last month';
 
   @override
-  String get locationServicesOffTitle => 'Location Services Off';
+  String get locationServicesOffTitle => 'Location Services Disabled';
 
   @override
   String get enableLocationServicesForReporting =>
@@ -297,7 +297,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enableLocationServicesForCurrentLocation =>
-      'Location services are off. Enable GPS to show your current location.';
+      'Please enable location services to view your current location.';
 
   @override
   String get permissionRequiredTitle => 'Permission Required';
@@ -308,11 +308,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationPermissionDeniedAllowForCurrentLocation =>
-      'Location permission denied. Allow access to show your current location.';
+      'Allow location permission to view your current location';
 
   @override
   String get locationPermissionBlockedEnableInSettings =>
-      'Location permission is blocked. Enable it in app settings.';
+      'Location permissions blocked. Enable them in Settings.';
 
   @override
   String get locationPermissionPermanentlyDeniedForReporting =>
@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationPermissionPermanentlyDeniedForCurrentLocation =>
-      'Location permission is permanently denied. Please enable it in app settings to show your current location.';
+      'Location permissions are permanently denied. Please allow them in settings.';
 
   @override
   String get cancel => 'Cancel';
@@ -464,7 +464,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get urgencyMedium => 'Medium';
 
   @override
-  String get urgencyHigh => 'High';
+  String get urgencyHigh => 'High (Critical)';
 
   @override
   String get submitReport => 'Submit Report';
@@ -513,4 +513,530 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sampleTimeAgo => '3 min ago';
+
+  @override
+  String get queuedReportStuck => 'Stuck';
+
+  @override
+  String get queuedReportPendingUpload => 'Pending upload';
+
+  @override
+  String get queuedReportReadyToRetry => 'Ready to retry';
+
+  @override
+  String get queuedReportWaitingForRetry => 'Waiting for retry';
+
+  @override
+  String get removeQueuedReportTitle => 'Remove queued report?';
+
+  @override
+  String get removeQueuedReportContent =>
+      'This will delete the offline copy and stop future retries for this report.';
+
+  @override
+  String get queuedReportRemoved => 'Queued report removed';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get logOutTitle => 'Log out?';
+
+  @override
+  String get logOut => 'Log out';
+
+  @override
+  String get similarReportExists =>
+      'Similar report already exists nearby. We linked your submission to it.';
+
+  @override
+  String get sendingReportsTooQuickly =>
+      'You are sending reports too quickly. Please wait 30 seconds and try again.';
+
+  @override
+  String get hourlyReportLimitReached =>
+      'Hourly report limit reached. Please try again later.';
+
+  @override
+  String get couldNotOpenMaps => 'Could not open maps';
+
+  @override
+  String get navigate => 'Navigate';
+
+  @override
+  String get reportDetailsNotAvailable =>
+      'Report details are not available yet';
+
+  @override
+  String get viewQueue => 'View queue';
+
+  @override
+  String get achievements => 'Achievements';
+
+  @override
+  String get leaderboard => 'Leaderboard';
+
+  @override
+  String get chooseFromGallery => 'Choose from gallery';
+
+  @override
+  String get downloadOfflineRegion => 'Download Offline Region';
+
+  @override
+  String get radius => 'Radius';
+
+  @override
+  String get download => 'Download';
+
+  @override
+  String get deleteRegionTitle => 'Delete Region?';
+
+  @override
+  String deleteRegionContent(Object name, Object count) {
+    return 'Remove \"$name\" and its $count cached tiles?';
+  }
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get media => 'Media';
+
+  @override
+  String get failedToLoadImage => 'Failed to load image';
+
+  @override
+  String get unsupportedMediaType => 'Unsupported media type';
+
+  @override
+  String get noVerifiedRiskZones => 'No verified risk zones in this area yet.';
+
+  @override
+  String get filterAllHazards => 'All Hazards';
+
+  @override
+  String get filterRipCurrent => 'Rip Current';
+
+  @override
+  String get filterPollution => 'Pollution';
+
+  @override
+  String get filterEarthquake => 'Earthquake';
+
+  @override
+  String get mobileNumberHint => '12345 67890';
+
+  @override
+  String distanceInKm(Object r) {
+    return '$r km';
+  }
+
+  @override
+  String get filterCommunity => 'Community';
+
+  @override
+  String get filterMySubmitted => 'My Submitted';
+
+  @override
+  String get noReportsYet => 'No reports yet';
+
+  @override
+  String get noSubmittedReportsYet => 'No submitted reports yet';
+
+  @override
+  String failedToLoadAdvisory(String error) {
+    return 'Failed to load advisory: $error';
+  }
+
+  @override
+  String get advisoryNotFound => 'Advisory not found.';
+
+  @override
+  String distanceKmAway(String km) {
+    return '$km km away';
+  }
+
+  @override
+  String distanceMAway(String m) {
+    return '$m m away';
+  }
+
+  @override
+  String get low => 'LOW';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int minutes) {
+    return '${minutes}m ago';
+  }
+
+  @override
+  String hoursAgo(int hours) {
+    return '${hours}h ago';
+  }
+
+  @override
+  String daysAgo(int days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String get leaderboardTitle => 'Leaderboard';
+
+  @override
+  String error(String errorMsg) {
+    return 'Error: $errorMsg';
+  }
+
+  @override
+  String get noLeaderboardData => 'No leaderboard data yet';
+
+  @override
+  String get startReportingToClimb => 'Start reporting to climb the ranks!';
+
+  @override
+  String pointsAbbrev(int points) {
+    return '$points pts';
+  }
+
+  @override
+  String reportCountDesc(int count) {
+    return '$count reports';
+  }
+
+  @override
+  String get you => 'YOU';
+
+  @override
+  String get achievementsTitle => 'Achievements';
+
+  @override
+  String get earnedBadges => 'Earned Badges';
+
+  @override
+  String get lockedBadges => 'Locked Badges';
+
+  @override
+  String get pointsHistory => 'Points History';
+
+  @override
+  String get totalPoints => 'Total Points';
+
+  @override
+  String get verified => 'Verified';
+
+  @override
+  String get rate => 'Rate';
+
+  @override
+  String get badges => 'Badges';
+
+  @override
+  String get submitFirstReportBadge =>
+      'Submit your first report to earn a badge!';
+
+  @override
+  String get allBadgesEarned => '🎉 All badges earned!';
+
+  @override
+  String get noPointsHistoryYet => 'No points history yet';
+
+  @override
+  String get earned => '✅ Earned!';
+
+  @override
+  String get notYetEarned => '🔒 Not yet earned';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get filterAllUrgencies => 'All Urgencies';
+
+  @override
+  String get filtersTitle => 'Filters';
+
+  @override
+  String get timeRangeTitle => 'Time Range';
+
+  @override
+  String get twentyFourHours => '24 hours';
+
+  @override
+  String daysNumber(int days) {
+    return '$days days';
+  }
+
+  @override
+  String get showRiskZonesTitle => 'Show Risk Zones';
+
+  @override
+  String get displayHazardHotspots => 'Display hazard hotspots';
+
+  @override
+  String get highRiskOnlyTitle => 'High Risk Only';
+
+  @override
+  String get showOnlyCriticalReports => 'Show only critical reports';
+
+  @override
+  String get mediaViewerTitle => 'Media Viewer';
+
+  @override
+  String mediaViewerError(String error) {
+    return 'Failed to load media: $error';
+  }
+
+  @override
+  String get loadingText => 'Loading...';
+
+  @override
+  String urgencyLevelText(String level) {
+    return '$level Urgency';
+  }
+
+  @override
+  String get highRiskBadge => 'HIGH RISK';
+
+  @override
+  String get mediaTitle => 'Media';
+
+  @override
+  String get playLabel => 'Play';
+
+  @override
+  String get pauseLabel => 'Pause';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String reportStatusTitle(String status) {
+    return 'Report $status';
+  }
+
+  @override
+  String reportStatusBody(String hazardType, String status) {
+    return 'Your $hazardType report has been $status.';
+  }
+
+  @override
+  String get noNotificationsYet => 'No notifications yet';
+
+  @override
+  String get downloadOfflineRegionTitle => 'Download Offline Region';
+
+  @override
+  String get downloadOfflineRegionDesc =>
+      'Downloads map tiles around your current location for offline use.';
+
+  @override
+  String get regionNameLabel => 'Region Name';
+
+  @override
+  String get radiusLabel => 'Radius';
+
+  @override
+  String get cancelLabel => 'Cancel';
+
+  @override
+  String get downloadLabel => 'Download';
+
+  @override
+  String downloadSuccessMsg(String name) {
+    return '\"$name\" downloaded successfully!';
+  }
+
+  @override
+  String downloadFailedMsg(String error) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String deleteRegionDesc(String name, int count) {
+    return 'Remove \"$name\" and its $count cached tiles?';
+  }
+
+  @override
+  String get deleteLabel => 'Delete';
+
+  @override
+  String get offlineMapsTitle => 'Offline Maps';
+
+  @override
+  String get downloadingTiles => 'Downloading tiles...';
+
+  @override
+  String get offlineMapInfoDesc =>
+      'Map tiles you view online are automatically cached for offline use. Download regions for full offline coverage.';
+
+  @override
+  String get noOfflineRegionsYet => 'No offline regions yet';
+
+  @override
+  String get tapToDownloadRegion => 'Tap + to download a region';
+
+  @override
+  String estimatedTiles(int estimate, String sizeMB) {
+    return '~$estimate tiles ($sizeMB MB est.)';
+  }
+
+  @override
+  String regionTileSize(int count, String sizeMB) {
+    return '$count tiles · $sizeMB MB';
+  }
+
+  @override
+  String queuedReportsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count queued reports',
+      one: '1 queued report',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String stuckItemsManualAttention(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items need manual attention.',
+      one: '1 item needs manual attention.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewRetryStatus =>
+      'Review retry status, error reason, and remove stuck items here.';
+
+  @override
+  String get duplicateReportDetected =>
+      'Similar report already exists nearby. We linked your submission to it.';
+
+  @override
+  String get uploadTimelineCompleted =>
+      'Your upload timeline has been completed and saved.';
+
+  @override
+  String get doneLabel => 'Done';
+
+  @override
+  String get rateLimitMinInterval =>
+      'You are sending reports too quickly. Please wait 30 seconds and try again.';
+
+  @override
+  String get rateLimitHourly =>
+      'Hourly report limit reached. Please try again later.';
+
+  @override
+  String get uploadingReportTitle => 'Uploading your report';
+
+  @override
+  String get preparingReportDesc => 'Preparing report details';
+
+  @override
+  String get reportDetailsUploaded => 'Report details uploaded';
+
+  @override
+  String get duplicateReportLinked =>
+      'Duplicate report detected, linked to existing report';
+
+  @override
+  String uploadedAttachmentCounter(int current, int total) {
+    return 'Uploaded attachment $current/$total';
+  }
+
+  @override
+  String get uploadingMedia => 'Uploading media';
+
+  @override
+  String get mediaUploadFailedQueued => 'Media upload failed, queued for retry';
+
+  @override
+  String get finalizingReport => 'Finalizing report';
+
+  @override
+  String get pleaseWaitBeforeSending =>
+      'Please wait before sending another report';
+
+  @override
+  String get hourlyReportLimitTitle => 'Hourly report limit reached';
+
+  @override
+  String uploadFailedError(String error) {
+    return 'Upload failed: $error';
+  }
+
+  @override
+  String get openQueueToReview =>
+      'Open the queue to review retry status, error reason, and remove stuck items.';
+
+  @override
+  String get arcAbbr => 'ARC';
+
+  @override
+  String get arcFull => 'ALERT  •  REPORT  •  COORDINATE';
+
+  @override
+  String failedToTakePhoto(String error) {
+    return 'Failed to take photo: $error';
+  }
+
+  @override
+  String failedToPickPhoto(String error) {
+    return 'Failed to pick photo: $error';
+  }
+
+  @override
+  String get syncingQueuedReports => 'Syncing queued reports';
+
+  @override
+  String preparingPendingReports(int count) {
+    return 'Preparing $count pending report(s)';
+  }
+
+  @override
+  String uploadingReportCount(int current, int total) {
+    return 'Uploading report $current of $total';
+  }
+
+  @override
+  String get uploadingAttachments => 'Uploading attachments';
+
+  @override
+  String get reportUpdateTitle => 'Report update';
+
+  @override
+  String get aboutTransparencyBody =>
+      'This app helps citizens report ocean hazards and helps authorities understand real-time conditions.\n\nWe prioritize privacy by limiting public exposure of personal details and by using privacy-safe map data for public views.';
+
+  @override
+  String get privacyBody =>
+      'What we collect: your phone (for login), your report description, time, and location.\n\nHow we use it: to store your report and show verified, privacy-safe information on the map and updates feed.';
+
+  @override
+  String get reportSubmittedReason => 'Report submitted';
+
+  @override
+  String get reportVerifiedReason => 'Report verified';
+
+  @override
+  String get highRiskVerifiedReason => 'High-risk report verified';
+
+  @override
+  String get reportRejectedReason => 'Report rejected';
 }

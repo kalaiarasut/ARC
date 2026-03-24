@@ -101,7 +101,7 @@ class ReportSyncService {
       if (eligibleJobs.isNotEmpty) {
         UploadProgressController.instance.start(
           flowType: UploadFlowType.sync,
-          title: 'Syncing queued reports',
+          title: 'Syncing queued reports', // Background push service, can't easily access context here
           subtitle: 'Preparing ${eligibleJobs.length} pending report(s)',
           totalSteps: totalSteps,
         );

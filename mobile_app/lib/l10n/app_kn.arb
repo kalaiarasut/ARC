@@ -1,0 +1,677 @@
+{
+  "@@locale": "kn",
+  "appTitle": "ಸಿವಿಲ್ ಅಲರ್ಟ್ ಸಿಸ್ಟಮ್",
+  "profile": "ಪ್ರೊಫೈಲ್",
+  "profileAndReports": "ವರದಿಗಳು",
+  "edit": "ತಿದ್ದುಪಡಿ ಮಾಡಿ",
+  "user": "ಬಳಕೆದಾರ",
+  "phoneNotSet": "ಫೋನ್ ಸೆಟ್ ಮಾಡಲಾಗಿಲ್ಲ",
+  "syncNow": "ಈಗ ಸಿಂಕ್ ಮಾಡಿ",
+  "nothingToSync": "ಸಿಂಕ್ ಮಾಡಲು ಏನೂ ಇಲ್ಲ",
+  "syncDone": "ಸಿಂಕ್ ಮುಗಿದಿದೆ: {succeeded} ಯಶಸ್ವಿ, {failed} ವಿಫಲ",
+  "@syncDone": {
+    "placeholders": {
+      "succeeded": {},
+      "failed": {}
+    }
+  },
+  "offlineReports": "ಆಫ್‌ಲೈನ್ ವರದಿಗಳು",
+  "noPendingReports": "ಯಾವುದೇ ಬಾಕಿ ವರದಿಗಳಿಲ್ಲ",
+  "attemptsLabel": "ಪ್ರಯತ್ನಗಳು: {count}",
+  "@attemptsLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "retry": "ಮರುಪ್ರಯತ್ನಿಸಿ",
+  "remove": "ತೆಗೆದುಹಾಕಿ",
+  "myReports": "ನನ್ನ ವರದಿಗಳು",
+  "noUploadedReportsYet": "ಇನ್ನೂ ಯಾವುದೇ ವರದಿಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗಿಲ್ಲ",
+  "failedToLoadReports": "ವರದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+  "youreOffline": "ನೀವು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ",
+  "connectToInternetToLoadMyReports": "ನನ್ನ ವರದಿಗಳನ್ನು ನೋಡಲು ಇಂಟರ್ನೆಟ್‌ಗೆ ಸಂಪರ್ಕಪಡಿಸಿ.",
+  "settings": "ಸೆಟ್ಟಿಂಗ್ಸ್",
+  "helpFaq": "ಸಹಾಯ / FAQ",
+  "aboutTransparency": "ಮಾಹಿತಿ ಮತ್ತು ಪಾರದರ್ಶಕತೆ",
+  "language": "ಭಾಷೆ",
+  "privacyControls": "ಭಾಷೆ ಮತ್ತು ಗೌಪ್ಯತೆ ನಿಯಂತ್ರಣಗಳು",
+  "privacy": "ಗೌಪ್ಯತೆ",
+  "chooseLanguage": "ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ",
+  "save": "ಉಳಿಸಿ",
+  "continueLabel": "ಮುಂದುವರೆಯಿರಿ",
+  "languageComingSoon": "ಈ ಭಾಷೆಯು ಶೀಘ್ರದಲ್ಲೇ ಬರಲಿದೆ.",
+  "updates": "ಅಪ್‌ಡೇಟ್‌ಗಳು",
+  "pendingCount": "{count} ಬಾಕಿ",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "noUpdatesYet": "ಇಂದಿನವರೆಗೂ ಯಾವುದೇ ನವೀಕರಣಗಳಿಲ್ಲ",
+  "failedToLoadUpdates": "ಅಪ್‌ಡೇಟ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+  "helpTitle": "ಸಹಾಯ / FAQ",
+  "aboutTitle": "ಮಾಹಿತಿ ಮತ್ತು ಪಾರದರ್ಶಕತೆ",
+  "privacyTitle": "ಗೌಪ್ಯತೆ ನಿಯಂತ್ರಣಗಳು",
+  "privacyReducePrecisionTitle": "ಮ್ಯಾಪ್ ಸ್ಥಳ ನಿಖರತೆಯನ್ನು ಕಡಿಮೆ ಮಾಡಿ",
+  "privacyReducePrecisionSubtitle": "ಸಕ್ರಿಯಗೊಳಿಸಿದಲ್ಲಿ, ನಿಮ್ಮ ವರದಿ ಮಾಡುವವರು ನಕ್ಷೆಯಲ್ಲಿ ಕಡಿಮೆ ನಿಖರತೆಯೊಂದಿಗೆ ತೋರಿಸಲಾಗುವುದು.",
+  "faqQ1": "ನಾನು ಅಪಾಯವನ್ನು ಹೇಗೆ ವರದಿ ಮಾಡುವುದು?",
+  "faqA1": "ವರದಿಯನ್ನು ತೆರೆಯಿರಿ, ನೀವು ನೋಡುವುದನ್ನು ವಿವರಿಸಿ ಮತ್ತು ಸಲ್ಲಿಸಿ.",
+  "faqQ2": "ಗ್ಯಾಲರಿಯಿಂದ ನಾನು ಏಕೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ?",
+  "faqA2": "ವರದಿಗಳನ್ನು ವಿಶ್ವಾಸಾರ್ಹವಾಗಿಡಲು, ಅಪ್ಲಿಕೇಶನ್ ಕೇವಲ ಲೈವ್ ಕ್ಯಾಪ್ಚರ್ ಅನ್ನು ಅನುಮತಿಸುತ್ತದೆ.",
+  "faqQ3": "ನನ್ನ ಸ್ಥಳವನ್ನು ಹೇಗೆ ಬಳಸಲಾಗುತ್ತದೆ?",
+  "faqA3": "ಅಪಾಯಗಳು ಎಲ್ಲಿ ಸಂಭವಿಸುತ್ತಿವೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ನಿಮ್ಮ ಸ್ಥಳ ಸಹಾಯ ಮಾಡುತ್ತದೆ.",
+  "loginTitle": "ಲಾಗಿನ್ / ಸೈನ್-ಅಪ್",
+  "signUpWithMobile": "ನಿಮ್ಮ ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯೊಂದಿಗೆ ಸೈನ್-ಅಪ್ ಮಾಡಿ",
+  "otpIntro": "ನಿಮ್ಮ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸಲು ನಾವು ನಿಮಗೆ ಒಟಿಪಿ (OTP) ಕಳುಹಿಸುತ್ತೇವೆ",
+  "mobileNumberLabel": "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ *",
+  "sendingLabel": "ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ...",
+  "sendOtp": "ಒಟಿಪಿ(OTP) ಕಳುಹಿಸಿ",
+  "failedToSendOtp": "OTP ಕಳುಹಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+  "checkSupabasePhoneConfig": "ಸೂಪರ್‌ಬೇಸ್ ಪರೀಕ್ಷಿಸಿ.",
+  "enterOtp": "ಒಟಿಪಿ(OTP) ನಮೂದಿಸಿ",
+  "sentToNumber": "Sent to {mobileNumber}",
+  "pleaseEnter6DigitOtp": "ದಯವಿಟ್ಟು 6 ಅಂಕಿಯ ಒಟಿಪಿ(OTP) ನಮೂದಿಸಿ",
+  "otpVerificationFailed": "ಒಟಿಪಿ(OTP) ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ.",
+  "signInFailedWithError": "Sign-in failed: {error}",
+  "didntReceiveOtp": "ಒಟಿಪಿ(OTP) ಸ್ವೀಕರಿಸಿಲ್ಲವೇ? ",
+  "otpResentSuccessfully": "ಒಟಿಪಿ(OTP)ಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮತ್ತೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+  "failedToResendOtpWithError": "Failed to resend OTP: {error}",
+  "resendWithTimer": "ಮತ್ತೆ ಕಳುಹಿಸಿ (00:30)",
+  "savingLabel": "ಉಳಿಸಲಾಗುತ್ತಿದೆ...",
+  "signedInSuccessfully": "ನೀವು ಯಶಸ್ವಿಯಾಗಿ\nಸೈನ್-ಇನ್ ಆಗಿರುವಿರಿ",
+  "directingToDashboard": "ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ, ನಾವು ನಿಮ್ಮನ್ನು ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ನಿರ್ದೇಶಿಸುತ್ತಿದ್ದೇವೆ...",
+  "whatsYourName": "ನಿಮ್ಮ ಹೆಸರೇನು?",
+  "personalizeExperience": "ನಿಮ್ಮ ಅನುಭವವನ್ನು ವೈಯಕ್ತೀಕರಿಸಲು ನಮಗೆ ಸಹಾಯ ಮಾಡಿ",
+  "enterYourName": "ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",
+  "pleaseEnterValidName": "ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (ಕನಿಷ್ಠ 2 ಅಕ್ಷರಗಳು)",
+  "onboarding1Title": "ವಿಪತ್ತಿನ ಸಮಯದಲ್ಲಿ\nನಿಮ್ಮ ವಿಶ್ವಾಸಾರ್ಹ ಪಾಲುದಾರ",
+  "onboarding1Description": "ನೈಜ-ಸಮಯದ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಿರಿ ಮತ್ತು ಸಂಭವಿಸುವಾಗ ಸಾಗರ ಅಪಾಯಗಳನ್ನು ವರದಿ ಮಾಡುವ ಮೂಲಕ ಸುರಕ್ಷತೆಗೆ ಕೊಡುಗೆ ನೀಡಿ.",
+  "onboarding2Title": "ಸುರಕ್ಷತೆಯನ್ನು ಸಬಲಗೊಳಿಸೋಣ, \nಹಂತ-ಹಂತವಾಗಿ",
+  "onboarding2Description": "ಸಮುದ್ರದ ಮೇಲೆ ನಿಗಾ ಇಡುವ ಜನರ ನೆಟ್‌ವರ್ಕ್‌ಗೆ ಸೇರಿ, ಪ್ರಾಣ ಉಳಿಸುವ ಅಪಾಯದ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಿ.",
+  "onboarding3Title": "ಸಿದ್ಧತೆ ಈಗ \nನಿಮ್ಮ ಬೆರಳ ತುದಿಯಲ್ಲಿದೆ",
+  "onboarding3Description": "ಸಾಗರ ಅಪಾಯಗಳನ್ನು ವರದಿ ಮಾಡಿ, ಪ್ರಮುಖ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಿರಿ ಮತ್ತು ಸಮಯಾವಕಾಶ ಇರುವಾಗಲೇ ಎಚ್ಚರದಿಂದಿರಿ.",
+  "skip": "ಸ್ಕಿಪ್ ಮಾಡಿ",
+  "splashTitle": "ಸಿವಿಲ್ ಅಲರ್ಟ್",
+  "splashSubtitle": "ಬಲವಾದ ಅಪಾಯ ಪತ್ತೆಗಾರಿಕೆ",
+  "hiWelcome": "ಹಲೋ, ಸುಸ್ವಾಗತ 👋",
+  "togetherForOceanSafety": "ಸಾಗರ ಸುರಕ್ಷತೆಗಾಗಿ \nಒಗ್ಗೂಡೋಣ, \nಬಲಶಾಲಿಯಾಗೋಣ",
+  "seeUpdates": "ನವೀಕರಣಗಳನ್ನು ನೋಡಿ",
+  "unusualActivity": "ವರದಿಗಳು",
+  "seeAll": "ಎಲ್ಲವನ್ನೂ ನೋಡಿ",
+  "filterNow": "ಈಗ",
+  "filterLastWeek": "ಕಳೆದ ವಾರ",
+  "filterLastMonth": "ಕಳೆದ ತಿಂಗಳು",
+  "locationServicesOffTitle": "ಸ್ಥಳ ಸೇವೆಗಳು ಆಫ್ ಆಗಿವೆ",
+  "enableLocationServicesForReporting": "ಅಪಾಯಗಳನ್ನು ವರದಿ ಮಾಡಲು ದಯವಿಟ್ಟು ಸ್ಥಳ ಸೇವೆಗಳನ್ನು (GPS) ಆನ್ ಮಾಡಿ.",
+  "enableLocationServicesForCurrentLocation": "ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಸ್ಥಳವನ್ನು ನೋಡಲು GPS ಆನ್ ಮಾಡಿ.",
+  "permissionRequiredTitle": "ಅನುಮತಿಯ ಅಗತ್ಯವಿದೆ",
+  "locationPermissionDeniedAllowInSettings": "ಸ್ಥಳ ಅನುಮತಿಯನ್ನು ನಿರಾಕರಿಸಲಾಗಿದೆ. ಸೆಟ್ಟಿಂಗ್ಸ್‌ಗಳಲ್ಲಿ ಪ್ರವೇಶವನ್ನು ಅನುಮತಿಸಿ.",
+  "locationPermissionDeniedAllowForCurrentLocation": "ಸ್ಥಳ ಅನುಮತಿಯನ್ನು ನಿರಾಕರಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ವಿಳಾಸವನ್ನು ತೋರಿಸಲು ಪ್ರವೇಶವನ್ನು ಒದಗಿಸಿ.",
+  "locationPermissionBlockedEnableInSettings": "ಸ್ಥಳ ಅನುಮತಿಯನ್ನು ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ. ಆಪ್ ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಅದನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ.",
+  "locationPermissionPermanentlyDeniedForReporting": "ಸ್ಥಳ ಅನುಮತಿಯನ್ನು ಶಾಶ್ವತವಾಗಿ ನಿರಾಕರಿಸಲಾಗಿದೆ.",
+  "locationPermissionPermanentlyDeniedForCurrentLocation": "ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಸ್ಥಳವನ್ನು ತೋರಿಸಲು ಸ್ಥಳ ಅನುಮತಿಯನ್ನು ನಿರಾಕರಿಸಲಾಗಿದೆ.",
+  "cancel": "ರದ್ದು ಮಾಡು",
+  "notNow": "ಈಗ ಬೇಡ",
+  "openSettings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ",
+  "errorGettingLocationWithError": "Error getting location: {error}",
+  "gettingLocation": "ಸ್ಥಳವನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...",
+  "gettingYourLocation": "ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...",
+  "maximumAttachmentsAllowed": "Maximum {max} attachments allowed",
+  "errorPickingImageWithError": "Error picking image: {error}",
+  "errorPickingVideoWithError": "Error picking video: {error}",
+  "errorStoppingAudioWithError": "Error stopping audio: {error}",
+  "recordingAudioTapToStop": "ಆಡಿಯೋ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ… ನಿಲ್ಲಿಸಲು ಮತ್ತೊಮ್ಮೆ ಟ್ಯಾಪ್ ಮಾಡಿ.",
+  "errorStartingAudioWithError": "Error starting audio: {error}",
+  "pleaseSelectHazardType": "ದಯವಿಟ್ಟು ಅಪಾಯದ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+  "pleaseDescribeSituation": "ದಯವಿಟ್ಟು ಪರಿಸ್ಥಿತಿಯನ್ನು ವಿವರಿಸಿ",
+  "waitingForLocation": "ಸ್ಥಳಕ್ಕಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ...",
+  "pleaseEnterPeopleAtRisk": "ಅಪಾಯದಲ್ಲಿರುವ ಜನರ ಅಂದಾಜನ್ನು ನಮೂದಿಸಿ",
+  "noInternetReportQueued": "ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ. ವರದಿಯು ಸರತಿಯಲ್ಲಿರುತ್ತದೆ.",
+  "profileNeededTitle": "ಪ್ರೊಫೈಲ್ ಅಗತ್ಯವಿದೆ",
+  "profileNeededBody": "ವರದಿಯನ್ನು ಸಲ್ಲಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಸೇರಿಸಿ.",
+  "addNow": "ಈಗ ಸೇರಿಸಿ",
+  "reportSavedMediaUploadFailedRetry": "ವರದಿ ಉಳಿಸಲಾಗಿದೆ! ಮೀಡಿಯಾ ಅಪ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ, ನಂತರ ಪುನಃ ಪ್ರಯತ್ನಿಸುತ್ತೇವೆ.",
+  "reportSubmittedSuccessfully": "ವರದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ! 🎉",
+  "errorWithError": "Error: {error}",
+  "retryGps": "GPS ಅನ್ನು ಮರುಪ್ರಯತ್ನಿಸಿ",
+  "reportHazard": "ಅಪಾಯವನ್ನು ವರದಿ ಮಾಡಿ",
+  "whatAreYouSeeing": "ನೀವು ಏನು ನೋಡುತ್ತಿದ್ದೀರಿ?",
+  "reportHelpsKeepSafe": "ನಿಮ್ಮ ವರದಿಯು ಪ್ರತಿಯೊಬ್ಬರನ್ನು ಸುರಕ್ಷಿತವಾಗಿರಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ",
+  "hazardTypeRequired": "ಅಪಾಯದ ಪ್ರಕಾರ *",
+  "descriptionRequired": "ವಿವರಣೆ *",
+  "describeWhatYouSeeHint": "ನೀವು ನೋಡುವುದನ್ನು ವಿವರಿಸಿ...",
+  "location": "ಸ್ಥಳ",
+  "time": "ಸಮಯ",
+  "addMediaOptional": "ಮಾಧ್ಯಮವನ್ನು ಸೇರಿಸಿ (ಐಚ್ಛಿಕ)",
+  "camera": "ಕ್ಯಾಮರಾ",
+  "record": "ರೆಕಾರ್ಡ್ಸ್",
+  "recordAudio": "ಆಡಿಯೋ ರೆಕಾರ್ಡ್ ಮಾಡಿ",
+  "stopAudio": "ಆಡಿಯೋ ನಿಲ್ಲಿಸಿ",
+  "highRiskSituation": "ಹೆಚ್ಚಿನ ಅಪಾಯದ ಪರಿಸ್ಥಿತಿ",
+  "peopleAtRiskEstimate": "ಅಪಾಯದಲ್ಲಿರುವ ಜನರ ಅಂದಾಜು",
+  "urgencyLow": "ಕಡಿಮೆ",
+  "urgencyMedium": "ಮಧ್ಯಮ",
+  "urgencyHigh": "ಹೆಚ್ಚು",
+  "submitReport": "ವರದಿಯನ್ನು ಸಲ್ಲಿಸಿ",
+  "close": "ಮುಚ್ಚಿ",
+  "moreDetails": "ಹೆಚ್ಚಿನ ವಿವರಗಳು",
+  "hazardHighWaves": "ಎತ್ತರದ ಅಲೆಗಳು",
+  "hazardTsunami": "ಸುನಾಮಿ",
+  "hazardStorm": "ಚಂಡಮಾರುತ",
+  "hazardFlood": "ಪ್ರವಾಹ",
+  "hazardOther": "ಇತರೆ",
+  "homeTab": "ಹೋಮ್",
+  "mapTab": "ಮ್ಯಾಪ್",
+  "updatesTab": "ಅಪ್‌ಡೇಟ್‌ಗಳು",
+  "profileTab": "ವರದಿಗಳು",
+  "liveNews": "ಲೈವ್ ಸುದ್ದಿ",
+  "sampleHazardHeadline": "ಪೆಸಿಫಿಕ್ ಕರಾವಳಿಯಲ್ಲಿ ಎತ್ತರದ ಅಲೆಗಳು",
+  "sampleDate": "ಭಾನು, 11 ಜೂನ್ 2024",
+  "sampleTimeAgo": "3 ನಿಮಿಷಗಳ ಹಿಂದೆ",
+  "@sentToNumber": {
+    "placeholders": {
+      "mobileNumber": {}
+    }
+  },
+  "@signInFailedWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@failedToResendOtpWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorGettingLocationWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@maximumAttachmentsAllowed": {
+    "placeholders": {
+      "max": {}
+    }
+  },
+  "@errorPickingImageWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorPickingVideoWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStoppingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorStartingAudioWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@errorWithError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "queuedReportStuck": "ಸಿಲುಕಿದೆ",
+  "queuedReportPendingUpload": "ಅಪ್‌ಲೋಡ್ ಬಾಕಿ ಇದೆ",
+  "queuedReportReadyToRetry": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು ಸಿದ್ಧವಾಗಿದೆ",
+  "queuedReportWaitingForRetry": "ಮರುಪ್ರಯತ್ನಕ್ಕೆ ಕಾಯಲಾಗುತ್ತಿದೆ",
+  "removeQueuedReportTitle": "ಕ್ಯೂನಲ್ಲಿರುವ ವರದಿಯನ್ನು ತೆಗೆದುಹಾಕಬೇಕೆ?",
+  "removeQueuedReportContent": "ಇದು ಆಫ್‌ಲೈನ್ ಪ್ರತಿಯನ್ನು ಅಳಿಸುತ್ತದೆ ಮತ್ತು ಭವಿಷ್ಯದ ಮರುಪ್ರಯತ್ನಗಳನ್ನು ನಿಲ್ಲಿಸುತ್ತದೆ.",
+  "queuedReportRemoved": "ಕ್ಯೂನಲ್ಲಿದ್ದ ವರದಿಯನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ",
+  "themeLight": "ಬೆಳಕು",
+  "themeDark": "ಕತ್ತಲು",
+  "themeSystem": "ಸಿಸ್ಟಮ್",
+  "notifications": "ಅಧಿಸೂಚನೆಗಳು",
+  "logOutTitle": "ಲಾಗ್ ಔಟ್ ಮಾಡಬೇಕೆ?",
+  "logOut": "ಲಾಗ್ ಔಟ್",
+  "similarReportExists": "ಹತ್ತಿರದಲ್ಲಿ ಅಂತಹುದೇ ವರದಿ ಇದೆ. ನಿಮ್ಮ ವರದಿಯನ್ನು ಅದಕ್ಕೆ ಲಿಂಕ್ ಮಾಡಲಾಗಿದೆ.",
+  "sendingReportsTooQuickly": "ನೀವು ತುಂಬಾ ವೇಗವಾಗಿ ವರದಿಗಳನ್ನು ಕಳುಹಿಸುತ್ತಿದ್ದೀರಿ. 30 ಸೆಕೆಂಡು ಕಾಯಿರಿ.",
+  "hourlyReportLimitReached": "ಗಂಟೆಯ ವರದಿಯ ಮಿತಿ ತಲುಪಿದೆ. ನಂತರ ಪ್ರಯತ್ನಿಸಿ.",
+  "couldNotOpenMaps": "ಮ್ಯಾಪ್ ತೆರೆಯಲಾಗಲಿಲ್ಲ",
+  "navigate": "ನ್ಯಾವಿಗೇಟ್ ಮಾಡಿ",
+  "reportDetailsNotAvailable": "ವರದಿಯ ವಿವರಗಳು ಇನ್ನೂ ಲಭ್ಯವಿಲ್ಲ",
+  "viewQueue": "ಕ್ಯೂ ನೋಡಿ",
+  "achievements": "ಸಾಧನೆಗಳು",
+  "leaderboard": "ಲೀಡರ್ ಬೋರ್ಡ್",
+  "chooseFromGallery": "ಗ್ಯಾಲರಿಯಿಂದ ಆಯ್ಕೆಮಾಡಿ",
+  "downloadOfflineRegion": "ಆಫ್‌ಲೈನ್ ಪ್ರದೇಶವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+  "radius": "ತ್ರಿಜ್ಯ",
+  "download": "ಡೌನ್‌ಲೋಡ್",
+  "deleteRegionTitle": "ಪ್ರದೇಶವನ್ನು ಅಳಿಸಬೇಕೆ?",
+  "deleteRegionContent": "\"{name}\" ಮತ್ತು ಅದರ {count} ಕ್ಯಾಶ್ ಟೈಲ್ಸ್ ಅಳಿಸಬೇಕೆ?",
+  "@deleteRegionContent": {
+    "placeholders": {
+      "name": {},
+      "count": {}
+    }
+  },
+  "delete": "ಅಳಿಸಿ",
+  "media": "ಮಾಧ್ಯಮ",
+  "failedToLoadImage": "ಚಿತ್ರವನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+  "unsupportedMediaType": "ಬೆಂಬಲಿಸದ ಮಾಧ್ಯಮ ಪ್ರಕಾರ",
+  "noVerifiedRiskZones": "ಈ ಪ್ರದೇಶದಲ್ಲಿ ಇನ್ನೂ ಪರಿಶೀಲಿಸಿದ ಅಪಾಯಕಾರಿ ವಲಯಗಳಿಲ್ಲ.",
+  "filterAllHazards": "ಎಲ್ಲಾ ಅಪಾಯಗಳು",
+  "filterRipCurrent": "ರಿಪ್ ಕರೆಂಟ್",
+  "filterPollution": "ಮಾಲಿನ್ಯ",
+  "filterEarthquake": "ಭೂಕಂಪ",
+  "mobileNumberHint": "12345 67890",
+  "distanceInKm": "{r} ಕಿ.ಮೀ.",
+  "@distanceInKm": {
+    "placeholders": {
+      "r": {}
+    }
+  },
+  "filterCommunity": "ಸಮುದಾಯ",
+  "filterMySubmitted": "ನಾನು ಸಲ್ಲಿಸಿದ್ದು",
+  "noReportsYet": "ಇನ್ನೂ ವರದಿಗಳಿಲ್ಲ",
+  "noSubmittedReportsYet": "ಇನ್ನೂ ಯಾವುದೇ ವರದಿ ಸಲ್ಲಿಸಿಲ್ಲ",
+  "@noSubmittedReportsYet": {},
+  "@couldNotOpenMaps": {},
+  "failedToLoadAdvisory": "Failed to load advisory: {error}",
+  "@failedToLoadAdvisory": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "advisoryNotFound": "ಸಲಹೆ ಕಂಡುಬಂದಿಲ್ಲ.",
+  "@advisoryNotFound": {},
+  "distanceKmAway": "{km} km away",
+  "@distanceKmAway": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMAway": "{m} ಮೀ ದೂರ",
+  "@distanceMAway": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "low": "ಕಡಿಮೆ",
+  "@low": {},
+  "justNow": "ಈಗಷ್ಟೇ",
+  "@justNow": {},
+  "minutesAgo": "{minutes}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{hours}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{days}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leaderboardTitle": "ಲೀಡರ್‌ಬೋರ್ಡ್",
+  "@leaderboardTitle": {},
+  "error": "ದೋಷ: {errorMsg}",
+  "@error": {
+    "placeholders": {
+      "errorMsg": {
+        "type": "String"
+      }
+    }
+  },
+  "noLeaderboardData": "ಇನ್ನೂ ಯಾವುದೇ ಲೀಡರ್‌ಬೋರ್ಡ್ ಡೇಟಾ ಇಲ್ಲ",
+  "@noLeaderboardData": {},
+  "startReportingToClimb": "ಶ್ರೇಯಾಂಕಗಳನ್ನು ಏರಲು ವರದಿ ಮಾಡುವುದನ್ನು ಪ್ರಾರಂಭಿಸಿ!",
+  "@startReportingToClimb": {},
+  "pointsAbbrev": "{points} pts",
+  "@pointsAbbrev": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCountDesc": "{count} reports",
+  "@reportCountDesc": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "you": "ನೀವು",
+  "@you": {},
+  "achievementsTitle": "ಸಾಧನೆಗಳು",
+  "@achievementsTitle": {},
+  "earnedBadges": "ಗಳಿಸಿದ ಬ್ಯಾಡ್ಜ್‌ಗಳು",
+  "@earnedBadges": {},
+  "lockedBadges": "ಲಾಕ್ ಬ್ಯಾಡ್ಜ್‌ಗಳು",
+  "@lockedBadges": {},
+  "pointsHistory": "ಅಂಕಗಳ ಇತಿಹಾಸ",
+  "@pointsHistory": {},
+  "totalPoints": "ಒಟ್ಟು ಅಂಕಗಳು",
+  "@totalPoints": {},
+  "verified": "ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+  "@verified": {},
+  "rate": "ದರ",
+  "@rate": {},
+  "badges": "ಬ್ಯಾಡ್ಜ್‌ಗಳು",
+  "@badges": {},
+  "submitFirstReportBadge": "ಬ್ಯಾಡ್ಜ್ ಗಳಿಸಲು ನಿಮ್ಮ ಮೊದಲ ವರದಿಯನ್ನು ಸಲ್ಲಿಸಿ!",
+  "@submitFirstReportBadge": {},
+  "allBadgesEarned": "🎉 ಎಲ್ಲಾ ಬ್ಯಾಡ್ಜ್‌ಗಳನ್ನು ಗಳಿಸಲಾಗಿದೆ!",
+  "@allBadgesEarned": {},
+  "noPointsHistoryYet": "ಅಂಕಗಳ ಇತಿಹಾಸ ಇನ್ನೂ ಇಲ್ಲ",
+  "@noPointsHistoryYet": {},
+  "earned": "✅ ಗಳಿಸಲಾಗಿದೆ!",
+  "@earned": {},
+  "notYetEarned": "🔒 ಇನ್ನೂ ಗಳಿಸಿಲ್ಲ",
+  "@notYetEarned": {},
+  "ok": "ಸರಿ",
+  "@ok": {},
+  "filterAllUrgencies": "ಎಲ್ಲಾ ತುರ್ತುಗಳು",
+  "@filterAllUrgencies": {},
+  "@urgencyHigh": {},
+  "@urgencyMedium": {},
+  "@locationServicesOffTitle": {},
+  "@enableLocationServicesForCurrentLocation": {},
+  "@notNow": {},
+  "@openSettings": {},
+  "@permissionRequiredTitle": {},
+  "@locationPermissionPermanentlyDeniedForCurrentLocation": {},
+  "@locationPermissionDeniedAllowForCurrentLocation": {},
+  "@locationPermissionBlockedEnableInSettings": {},
+  "@gettingYourLocation": {},
+  "filtersTitle": "ಶೋಧಕಗಳು",
+  "@filtersTitle": {},
+  "timeRangeTitle": "ಸಮಯ ಶ್ರೇಣಿ",
+  "@timeRangeTitle": {},
+  "twentyFourHours": "24 ಗಂಟೆಗಳು",
+  "@twentyFourHours": {},
+  "daysNumber": "{days} days",
+  "@daysNumber": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "showRiskZonesTitle": "ಅಪಾಯದ ವಲಯಗಳನ್ನು ತೋರಿಸಿ",
+  "@showRiskZonesTitle": {},
+  "displayHazardHotspots": "ಅಪಾಯದ ಹಾಟ್‌ಸ್ಪಾಟ್‌ಗಳನ್ನು ಪ್ರದರ್ಶಿಸಿ",
+  "@displayHazardHotspots": {},
+  "highRiskOnlyTitle": "ಹೆಚ್ಚಿನ ಅಪಾಯ ಮಾತ್ರ",
+  "@highRiskOnlyTitle": {},
+  "showOnlyCriticalReports": "ನಿರ್ಣಾಯಕ ವರದಿಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಿ",
+  "@showOnlyCriticalReports": {},
+  "mediaViewerTitle": "ಮಾಧ್ಯಮ ವೀಕ್ಷಕ",
+  "@mediaViewerTitle": {},
+  "mediaViewerError": "Failed to load media: {error}",
+  "@mediaViewerError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingText": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+  "@loadingText": {},
+  "urgencyLevelText": "{level} Urgency",
+  "@urgencyLevelText": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "highRiskBadge": "ಹೆಚ್ಚಿನ ಅಪಾಯ",
+  "@highRiskBadge": {},
+  "mediaTitle": "ಮಾಧ್ಯಮ",
+  "@mediaTitle": {},
+  "@failedToLoadImage": {},
+  "playLabel": "ಪ್ಲೇ ಮಾಡಿ",
+  "@playLabel": {},
+  "pauseLabel": "ವಿರಾಮ",
+  "@pauseLabel": {},
+  "@unsupportedMediaType": {},
+  "notificationsTitle": "ಅಧಿಸೂಚನೆಗಳು",
+  "@notificationsTitle": {},
+  "reportStatusTitle": "Report {status}",
+  "@reportStatusTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusBody": "Your {hazardType} report has been {status}.",
+  "@reportStatusBody": {
+    "placeholders": {
+      "hazardType": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "noNotificationsYet": "ಇನ್ನೂ ಯಾವುದೇ ಅಧಿಸೂಚನೆಗಳಿಲ್ಲ",
+  "@noNotificationsYet": {},
+  "downloadOfflineRegionTitle": "ಆಫ್‌ಲೈನ್ ಪ್ರದೇಶವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+  "@downloadOfflineRegionTitle": {},
+  "downloadOfflineRegionDesc": "ಆಫ್‌ಲೈನ್ ಬಳಕೆಗಾಗಿ ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಸ್ಥಳದ ಸುತ್ತಲೂ ಮ್ಯಾಪ್ ಟೈಲ್ಸ್‌ಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡುತ್ತದೆ.",
+  "@downloadOfflineRegionDesc": {},
+  "regionNameLabel": "ಪ್ರದೇಶದ ಹೆಸರು",
+  "@regionNameLabel": {},
+  "radiusLabel": "ತ್ರಿಜ್ಯ",
+  "@radiusLabel": {},
+  "cancelLabel": "ರದ್ದುಮಾಡಿ",
+  "@cancelLabel": {},
+  "downloadLabel": "ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+  "@downloadLabel": {},
+  "downloadSuccessMsg": "\"{name}\" downloaded successfully!",
+  "@downloadSuccessMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailedMsg": "Download failed: {error}",
+  "@downloadFailedMsg": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteRegionTitle": {},
+  "deleteRegionDesc": "Remove \"{name}\" and its {count} cached tiles?",
+  "@deleteRegionDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteLabel": "ಅಳಿಸಿ",
+  "@deleteLabel": {},
+  "offlineMapsTitle": "ಆಫ್‌ಲೈನ್ ನಕ್ಷೆಗಳು",
+  "@offlineMapsTitle": {},
+  "downloadingTiles": "ಟೈಲ್‌ಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
+  "@downloadingTiles": {},
+  "offlineMapInfoDesc": "ನೀವು ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ವೀಕ್ಷಿಸುವ ನಕ್ಷೆಯ ಅಂಚುಗಳನ್ನು ಆಫ್‌ಲೈನ್ ಬಳಕೆಗಾಗಿ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ.ಸಂಪೂರ್ಣ ಆಫ್‌ಲೈನ್ ಕವರೇಜ್‌ಗಾಗಿ ಪ್ರದೇಶಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.",
+  "@offlineMapInfoDesc": {},
+  "noOfflineRegionsYet": "ಇನ್ನೂ ಯಾವುದೇ ಆಫ್‌ಲೈನ್ ಪ್ರದೇಶಗಳಿಲ್ಲ",
+  "@noOfflineRegionsYet": {},
+  "tapToDownloadRegion": "ಪ್ರದೇಶವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಲು + ಅನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ",
+  "@tapToDownloadRegion": {},
+  "estimatedTiles": "~{estimate} tiles ({sizeMB} MB est.)",
+  "@estimatedTiles": {
+    "placeholders": {
+      "estimate": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "regionTileSize": "{count} tiles · {sizeMB} MB",
+  "@regionTileSize": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "sizeMB": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedReportsCount": "{count, plural, =1{1 queued report} other{{count} queued reports}}",
+  "@queuedReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stuckItemsManualAttention": "{count, plural, =1{1 item needs manual attention.} other{{count} items need manual attention.}}",
+  "@stuckItemsManualAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRetryStatus": "ಮರುಪ್ರಯತ್ನ ಸ್ಥಿತಿ, ದೋಷದ ಕಾರಣವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಅಂಟಿಕೊಂಡಿರುವ ಐಟಂಗಳನ್ನು ಇಲ್ಲಿ ತೆಗೆದುಹಾಕಿ.",
+  "@reviewRetryStatus": {},
+  "duplicateReportDetected": "ಇದೇ ರೀತಿಯ ವರದಿಯು ಈಗಾಗಲೇ ಹತ್ತಿರದಲ್ಲಿದೆ.ನಿಮ್ಮ ಸಲ್ಲಿಕೆಯನ್ನು ನಾವು ಅದಕ್ಕೆ ಲಿಂಕ್ ಮಾಡಿದ್ದೇವೆ.",
+  "@duplicateReportDetected": {},
+  "uploadTimelineCompleted": "ನಿಮ್ಮ ಅಪ್‌ಲೋಡ್ ಟೈಮ್‌ಲೈನ್ ಪೂರ್ಣಗೊಂಡಿದೆ ಮತ್ತು ಉಳಿಸಲಾಗಿದೆ.",
+  "@uploadTimelineCompleted": {},
+  "doneLabel": "ಮುಗಿದಿದೆ",
+  "@doneLabel": {},
+  "rateLimitMinInterval": "ನೀವು ತುಂಬಾ ವೇಗವಾಗಿ ವರದಿಗಳನ್ನು ಕಳುಹಿಸುತ್ತಿದ್ದೀರಿ.ದಯವಿಟ್ಟು 30 ಸೆಕೆಂಡುಗಳು ನಿರೀಕ್ಷಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  "@rateLimitMinInterval": {},
+  "rateLimitHourly": "ಗಂಟೆಯ ವರದಿ ಮಿತಿಯನ್ನು ತಲುಪಿದೆ.ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  "@rateLimitHourly": {},
+  "uploadingReportTitle": "ನಿಮ್ಮ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ",
+  "@uploadingReportTitle": {},
+  "preparingReportDesc": "ವರದಿಯ ವಿವರಗಳನ್ನು ಸಿದ್ಧಪಡಿಸಲಾಗುತ್ತಿದೆ",
+  "@preparingReportDesc": {},
+  "reportDetailsUploaded": "ವರದಿ ವಿವರಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗಿದೆ",
+  "@reportDetailsUploaded": {},
+  "duplicateReportLinked": "ನಕಲಿ ವರದಿ ಪತ್ತೆಯಾಗಿದೆ, ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ವರದಿಗೆ ಲಿಂಕ್ ಮಾಡಲಾಗಿದೆ",
+  "@duplicateReportLinked": {},
+  "uploadedAttachmentCounter": "Uploaded attachment {current}/{total}",
+  "@uploadedAttachmentCounter": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingMedia": "ಮಾಧ್ಯಮವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ",
+  "@uploadingMedia": {},
+  "mediaUploadFailedQueued": "ಮಾಧ್ಯಮ ಅಪ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ, ಮರುಪ್ರಯತ್ನಕ್ಕಾಗಿ ಸರದಿಯಲ್ಲಿದೆ",
+  "@mediaUploadFailedQueued": {},
+  "finalizingReport": "ಅಂತಿಮಗೊಳಿಸುವ ವರದಿ",
+  "@finalizingReport": {},
+  "pleaseWaitBeforeSending": "ಇನ್ನೊಂದು ವರದಿಯನ್ನು ಕಳುಹಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ",
+  "@pleaseWaitBeforeSending": {},
+  "hourlyReportLimitTitle": "ಗಂಟೆಯ ವರದಿ ಮಿತಿಯನ್ನು ತಲುಪಿದೆ",
+  "@hourlyReportLimitTitle": {},
+  "uploadFailedError": "Upload failed: {error}",
+  "@uploadFailedError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openQueueToReview": "ಮರುಪ್ರಯತ್ನ ಸ್ಥಿತಿ, ದೋಷದ ಕಾರಣವನ್ನು ಪರಿಶೀಲಿಸಲು ಮತ್ತು ಅಂಟಿಕೊಂಡಿರುವ ಐಟಂಗಳನ್ನು ತೆಗೆದುಹಾಕಲು ಸರದಿಯನ್ನು ತೆರೆಯಿರಿ.",
+  "@openQueueToReview": {},
+  "arcAbbr": "ARC",
+  "@arcAbbr": {},
+  "arcFull": "ಎಚ್ಚರಿಕೆ • ವರದಿ • ಸಂಘಟಿಸಿ",
+  "@arcFull": {},
+  "failedToTakePhoto": "Failed to take photo: {error}",
+  "@failedToTakePhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToPickPhoto": "Failed to pick photo: {error}",
+  "@failedToPickPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingQueuedReports": "ಸರದಿಯಲ್ಲಿರುವ ವರದಿಗಳನ್ನು ಸಿಂಕ್ ಮಾಡಲಾಗುತ್ತಿದೆ",
+  "@syncingQueuedReports": {},
+  "preparingPendingReports": "Preparing {count} pending report(s)",
+  "@preparingPendingReports": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingReportCount": "Uploading report {current} of {total}",
+  "@uploadingReportCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadingAttachments": "ಲಗತ್ತುಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ",
+  "@uploadingAttachments": {},
+  "reportUpdateTitle": "ನವೀಕರಣವನ್ನು ವರದಿ ಮಾಡಿ",
+  "@reportUpdateTitle": {},
+  "aboutTransparencyBody": "ಈ ಆ್ಯಪ್ ನಾಗರಿಕರಿಗೆ ಸಾಗರದ ಅಪಾಯಗಳನ್ನು ವರದಿ ಮಾಡಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ ಮತ್ತು ಅಧಿಕಾರಿಗಳಿಗೆ ನೈಜ-ಸಮಯದ ಪರಿಸ್ಥಿತಿಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.\n\nವೈಯಕ್ತಿಕ ವಿವರಗಳ ಸಾರ್ವಜನಿಕ ಮಾನ್ಯತೆಯನ್ನು ಸೀಮಿತಗೊಳಿಸುವ ಮೂಲಕ ಮತ್ತು ಸಾರ್ವಜನಿಕ ವೀಕ್ಷಣೆಗಳಿಗಾಗಿ ಗೌಪ್ಯತೆ-ಸುರಕ್ಷಿತ ಮ್ಯಾప్ ಡೇಟಾವನ್ನು ಬಳಸುವ ಮೂಲಕ ನಾವು ಗೌಪ್ಯತೆಗೆ ಆದ್ಯತೆ ನೀಡುತ್ತೇವೆ.",
+  "@aboutTransparencyBody": {},
+  "privacyBody": "ನಾವು ಏನನ್ನು ಸಂಗ್ರಹಿಸುತ್ತೇವೆ: ನಿಮ್ಮ ಫೋನ್ (ಲಾಗಿನ್‌ಗಾಗಿ), ನಿಮ್ಮ ವರದಿ ವಿವರಣೆ, ಸಮಯ ಮತ್ತು ಸ್ಥಳ.\n\nನಾವು ಅದನ್ನು ಹೇಗೆ ಬಳಸುತ್ತೇವೆ: ನಿಮ್ಮ ವರದಿಯನ್ನು ಸಂಗ್ರಹಿಸಲು ಮತ್ತು ನಕ್ಷೆ ಹಾಗೂ ಅಪ್‌ಡೇಟ್‌ಗಳ ಫೀಡ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿದ, ಗೌಪ್ಯತೆ-ಸುರಕ್ಷಿತ ಮಾಹಿತಿಯನ್ನು ತೋರಿಸಲು.",
+  "@privacyBody": {},
+  "reportSubmittedReason": "ವರದಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+  "@reportSubmittedReason": {},
+  "reportVerifiedReason": "ವರದಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+  "@reportVerifiedReason": {},
+  "highRiskVerifiedReason": "ಹೆಚ್ಚಿನ ಅಪಾಯದ ವರದಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+  "@highRiskVerifiedReason": {},
+  "reportRejectedReason": "ವರದಿ ತಿರಸ್ಕರಿಸಲಾಗಿದೆ",
+  "@reportRejectedReason": {}
+}

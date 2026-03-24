@@ -1,11 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
-  Chip,
   Container,
-  Divider,
   Grid,
   IconButton,
   Link,
@@ -15,38 +12,13 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import ApiOutlinedIcon from '@mui/icons-material/ApiOutlined';
-import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
-import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
-import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
-import DatasetLinkedOutlinedIcon from '@mui/icons-material/DatasetLinkedOutlined';
-import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
-import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
-import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
-import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
-import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-
-type EndpointDoc = {
-  key: string;
-  title: string;
-  method: 'GET';
-  path: string;
-  purpose: string;
-  bestFor: string;
-  accent: string;
-  icon: React.ReactNode;
-  example: string;
-  queryHints: string[];
-};
-
-type CodeSample = {
-  key: string;
-  label: string;
-  language: string;
-  code: string;
-};
+import DatabaseIcon from '@mui/icons-material/StorageRounded';
+import ChevronRightIcon from '@mui/icons-material/ChevronRightRounded';
+import BookOpenIcon from '@mui/icons-material/MenuBookRounded';
+import KeyIcon from '@mui/icons-material/VpnKeyRounded';
+import CopyIcon from '@mui/icons-material/ContentCopyRounded';
+import InfoIcon from '@mui/icons-material/InfoRounded';
+import LaunchIcon from '@mui/icons-material/LaunchRounded';
 
 function maskKey(value: string) {
   if (!value) return '<YOUR_SUPABASE_ANON_KEY>';
@@ -54,15 +26,8 @@ function maskKey(value: string) {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
-function buildCurl(baseUrl: string, query: string) {
-  return `curl -X GET '${baseUrl}${query}' \\
--H 'apikey: <ANON_KEY>' \\
--H 'Authorization: Bearer <ANON_KEY>'`;
-}
-
 export function ApiReference() {
   const theme = useTheme();
-  const [activeSample, setActiveSample] = useState<'reports' | 'advisories' | 'python'>('reports');
   const [copyState, setCopyState] = useState<string | null>(null);
 
   const supabaseUrl = (
@@ -85,671 +50,456 @@ export function ApiReference() {
     ? `${supabaseUrl}/rest/v1`
     : 'https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co/rest/v1';
 
-  const endpoints: EndpointDoc[] = useMemo(
-    () => [
-      {
-        key: 'reports',
-        title: 'Verified Hazard Reports',
-        method: 'GET',
-        path: '/hazard_reports',
-        purpose:
-          'Query citizen-submitted hazard reports that have already passed verification rules enforced by Row-Level Security.',
-        bestFor: 'Situational awareness dashboards, research exports, and verified incident feeds.',
-        accent: '#088395',
-        icon: <WarningAmberRoundedIcon fontSize="small" />,
-        example:
-          '?select=*&status=eq.verified&order=created_at.desc&limit=50',
-        queryHints: [
-          'Filter by hazard type: hazard_type=eq.Flood',
-          'Filter by high risk: is_high_risk=is.true',
-          'Since a date: created_at=gte.2024-01-01T00:00:00Z',
-          'Bounding box: latitude / longitude gte/lte filters',
-        ],
-      },
-      {
-        key: 'advisories',
-        title: 'Official Advisories',
-        method: 'GET',
-        path: '/official_advisories',
-        purpose:
-          'Fetch authoritative alerts and advisories published by the disaster management center.',
-        bestFor: 'Partner portals, public alert mirrors, and institutional status boards.',
-        accent: '#3b82f6',
-        icon: <BoltOutlinedIcon fontSize="small" />,
-        example:
-          '?select=*&expires_at=gte.now()&order=published_at.desc',
-        queryHints: [
-          'Use expires_at=gte.now() to get active advisories',
-          'Sort by published_at.desc for newest-first',
-          'Project only required columns with select=title,body,region',
-          'Use order and limit for lightweight polling',
-        ],
-      },
-      {
-        key: 'zones',
-        title: 'Generated Risk Zones',
-        method: 'GET',
-        path: '/generated_risk_zones',
-        purpose:
-          'Read dynamic hotspot zones calculated from clustered report activity and backend risk analysis.',
-        bestFor: 'Heatmap overlays, institutional GIS sync, and verified hotspot monitoring.',
-        accent: '#10b981',
-        icon: <HubOutlinedIcon fontSize="small" />,
-        example:
-          '?select=*&level=eq.high_risk&status=eq.verified',
-        queryHints: [
-          'Filter by risk level: level=eq.high_risk',
-          'Restrict to verified zones: status=eq.verified',
-          'Use select to avoid pulling large geometry unnecessarily',
-          'Pair with report exports for deeper downstream analysis',
-        ],
-      },
-    ],
-    [],
-  );
-
-  const codeSamples: Record<CodeSample['key'], CodeSample> = useMemo(
-    () => ({
-      reports: {
-        key: 'reports',
-        label: 'cURL: Verified Reports',
-        language: 'bash',
-        code: buildCurl(
-          restBaseUrl,
-          "/hazard_reports?select=*&status=eq.verified&order=created_at.desc&limit=50",
-        ),
-      },
-      advisories: {
-        key: 'advisories',
-        label: 'cURL: Active Advisories',
-        language: 'bash',
-        code: buildCurl(
-          restBaseUrl,
-          "/official_advisories?select=*&expires_at=gte.now()&order=published_at.desc",
-        ),
-      },
-      python: {
-        key: 'python',
-        label: 'Python Example',
-        language: 'python',
-        code: `import requests
-
-PROJECT_URL = "${restBaseUrl}/hazard_reports"
-ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>"
-
-headers = {
-    "apikey": ANON_KEY,
-    "Authorization": f"Bearer {ANON_KEY}",
-    "Accept": "application/json",
-}
-
-params = {
-    "select": "*",
-    "status": "eq.verified",
-    "hazard_type": "eq.Flood",
-    "order": "created_at.desc",
-    "limit": "10",
-}
-
-response = requests.get(PROJECT_URL, headers=headers, params=params)
-data = response.json()
-
-for report in data:
-    print(f"[{report['created_at']}] {report['hazard_type']} at {report['latitude']},{report['longitude']}")`,
-      },
-    }),
-    [restBaseUrl],
-  );
-
   const copyText = async (key: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
       setCopyState(key);
-      window.setTimeout(() => setCopyState((current) => (current === key ? null : current)), 1500);
+      window.setTimeout(() => setCopyState((current) => (current === key ? null : current)), 2000);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const activeCodeSample = codeSamples[activeSample];
+  const curlExample = `curl -X GET '${restBaseUrl}/hazard_reports?status=eq.verified' \\
+  -H 'apikey: ${maskKey(anonKey)}' \\
+  -H 'Authorization: Bearer ${maskKey(anonKey)}'`;
+
+  const pythonExample = `# Fetch 10 latest verified floods
+import requests
+
+URL = "${restBaseUrl}/hazard_reports"
+HEADERS = {
+    "apikey": "${maskKey(anonKey)}",
+    "Authorization": "Bearer ${maskKey(anonKey)}"
+}
+
+PARAMS = {
+    "hazard_type": "eq.Flood",
+    "order": "created_at.desc",
+    "limit": "10"
+}
+
+res = requests.get(URL, params=PARAMS, headers=HEADERS)
+for report in res.json():
+    print(f"[{report['hazard_type']}] @ {report['latitude']},{report['longitude']}")`;
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        bgcolor: alpha(theme.palette.primary.main, 0.03),
+        minHeight: '100%',
+        bgcolor: '#f8fafc', // slate-50
+        p: { xs: 1, md: 3 },
       }}
     >
-      <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Paper
-          elevation={0}
+      <Paper
+        elevation={0}
+        sx={{
+          maxWidth: 'lg',
+          mx: 'auto',
+          minHeight: '100%',
+          bgcolor: '#ffffff',
+          borderRadius: '24px',
+          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+          border: '1px solid #e2e8f0', // slate-200
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        {/* Top Header */}
+        <Box
+          component="header"
           sx={{
-            borderRadius: 5,
-            overflow: 'hidden',
-            border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-            backgroundColor: theme.palette.background.default,
+            position: 'sticky',
+            top: 0,
+            zIndex: 40,
+            bgcolor: '#ffffff',
+            borderBottom: '1px solid #f1f5f9', // slate-100
+            px: { xs: 4, md: 8 },
+            py: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2
           }}
         >
-          <Box
-            sx={{
-              px: { xs: 2.5, md: 4 },
-              py: { xs: 3, md: 4 },
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.12)} 0%, ${alpha(
-                theme.palette.background.paper,
-                0.96,
-              )} 55%, ${alpha(theme.palette.info.main, 0.08)} 100%)`,
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
-            }}
-          >
-            <Stack
-              direction={{ xs: 'column', lg: 'row' }}
-              spacing={3}
-              justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', lg: 'center' }}
+          <Stack direction="row" alignItems="center" spacing={3}>
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: alpha('#088395', 0.1),
+                borderRadius: '12px',
+                display: 'flex',
+                color: '#0a4d68',
+              }}
             >
-              <Stack direction="row" spacing={2} alignItems="flex-start">
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: theme.palette.primary.contrastText,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                    boxShadow: `0 14px 28px ${alpha(theme.palette.primary.main, 0.24)}`,
-                  }}
-                >
-                  <ApiOutlinedIcon sx={{ fontSize: 28 }} />
-                </Box>
-                <Box>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
-                    <Chip size="small" color="primary" label="Admin Reference" />
-                    <Chip size="small" variant="outlined" label="PostgREST / Supabase" />
-                    <Chip size="small" variant="outlined" label="Institutional Export" />
-                  </Stack>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 800,
-                      letterSpacing: '-0.03em',
-                      mb: 1,
-                    }}
-                  >
-                    Institutional Export API
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ maxWidth: 900 }}
-                  >
-                    Direct access to verified hazard reports, official advisories, and generated risk
-                    zones for partner agencies, researchers, and institutional dashboards.
-                  </Typography>
-                </Box>
+              <DatabaseIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontFamily: '"Cabinet Grotesk", sans-serif',
+                  fontWeight: 800,
+                  color: '#0f172a', // slate-900
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Institutional Export API
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: '#94a3b8' }}>Documentation</Typography>
+                <ChevronRightIcon sx={{ fontSize: 14, color: '#94a3b8' }} />
+                <Typography variant="caption" sx={{ color: '#475569', fontWeight: 600 }}>Public Data Access</Typography>
               </Stack>
+            </Box>
+          </Stack>
+          
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<BookOpenIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                color: '#334155',
+                borderColor: '#e2e8f0',
+                borderRadius: '8px',
+                px: 2,
+                py: 1,
+                bgcolor: '#ffffff',
+                '&:hover': { bgcolor: '#f8fafc', borderColor: '#e2e8f0' },
+              }}
+              component="a"
+              href="https://postgrest.org/en/v12/references/api/tables_views.html"
+              target="_blank"
+            >
+              Full Reference
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<KeyIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                borderRadius: '8px',
+                px: 2,
+                py: 1,
+                background: 'linear-gradient(135deg, #0a4d68 0%, #088395 50%, #05bfdb 100%)',
+                boxShadow: '0 4px 12px rgba(8, 131, 149, 0.35)',
+                color: '#ffffff',
+                '&:hover': { opacity: 0.9, boxShadow: '0 4px 12px rgba(8, 131, 149, 0.45)' },
+              }}
+              onClick={() => copyText('anon_key', anonKey)}
+            >
+              Copy API Key
+            </Button>
+          </Stack>
+        </Box>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  startIcon={<LaunchOutlinedIcon />}
-                  component={Link}
-                  href="https://postgrest.org/en/v12/references/api/tables_views.html"
-                  target="_blank"
-                  rel="noreferrer"
-                  sx={{ textTransform: 'none', borderRadius: 2.5 }}
-                >
-                  PostgREST Reference
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<ContentCopyOutlinedIcon />}
-                  onClick={() => copyText('base-url', restBaseUrl)}
+        {/* Content Sections */}
+        <Grid container sx={{ flex: 1 }}>
+          {/* Left: Documentation */}
+          <Grid size={{ xs: 12, lg: 7 }} sx={{ p: { xs: 4, md: 8 } }}>
+            <Stack spacing={6}>
+              {/* Authentication */}
+              <Box component="section">
+                <Typography
+                  variant="h6"
                   sx={{
-                    textTransform: 'none',
-                    borderRadius: 2.5,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    fontFamily: '"Cabinet Grotesk", sans-serif',
+                    fontWeight: 800,
+                    color: '#0f172a',
+                    mb: 1.5,
                   }}
                 >
-                  {copyState === 'base-url' ? 'Copied Base URL' : 'Copy Base URL'}
-                </Button>
+                  Authentication
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.7, mb: 3 }}>
+                  Since public data (verified reports and active advisories) is accessible via Row-Level Security (RLS), simply include the public{' '}
+                  <Box component="code" sx={{ bgcolor: '#f1f5f9', px: 0.5, py: 0.25, borderRadius: 1, color: '#0a4d68', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    anon
+                  </Box>{' '}
+                  key in your request headers.
+                </Typography>
+                
+                <Box sx={{ bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', p: 3 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', mb: 2 }}>
+                    Required Headers
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#ffffff', p: 1.5, borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#334155' }}>apikey</Typography>
+                      <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#088395', fontWeight: 700 }}>&lt;YOUR_SUPABASE_ANON_KEY&gt;</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#ffffff', p: 1.5, borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                      <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#334155' }}>Authorization</Typography>
+                      <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#088395', fontWeight: 700 }}>Bearer &lt;YOUR_SUPABASE_ANON_KEY&gt;</Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Box>
+
+              {/* Endpoints */}
+              <Stack component="section" spacing={5}>
+                {/* hazard_reports */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#ecfdf5', color: '#059669', fontSize: '0.625rem', fontWeight: 800, borderRadius: '6px', border: '1px solid #d1fae5', textTransform: 'uppercase', tracking: 'tight' }}>
+                      GET
+                    </Box>
+                    <Typography variant="h6" sx={{ fontFamily: '"Cabinet Grotesk", sans-serif', fontWeight: 800, color: '#1e293b' }}>
+                      /hazard_reports
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" sx={{ color: '#475569', mb: 3 }}>
+                    Fetch user-submitted reports that have been formally verified by our emergency response team. Row Level Security limits unauthenticated requests to `status = 'verified'`.
+                  </Typography>
+                  <Box sx={{ overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#ffffff' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', p: 1.5 }}>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Parameter</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Type</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Example</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Description</Typography>
+                    </Box>
+                    <Stack divider={<Box sx={{ borderBottom: '1px solid #f1f5f9' }} />}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>hazard_type</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>String</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>eq.Flood</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Filter by hazard category</Typography>
+                      </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>is_high_risk</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Boolean</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>is.true</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Only severe warnings</Typography>
+                      </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>created_at</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>String (ISO)</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>gte.2024-01-01</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Filter reports since a specific date</Typography>
+                      </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>limit</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Int</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>50</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Batch size (max 1000)</Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+                </Box>
+
+                {/* official_advisories */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#ecfdf5', color: '#059669', fontSize: '0.625rem', fontWeight: 800, borderRadius: '6px', border: '1px solid #d1fae5', textTransform: 'uppercase', tracking: 'tight' }}>
+                      GET
+                    </Box>
+                    <Typography variant="h6" sx={{ fontFamily: '"Cabinet Grotesk", sans-serif', fontWeight: 800, color: '#1e293b' }}>
+                      /official_advisories
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" sx={{ color: '#475569', mb: 3 }}>
+                    Fetch authoritative broadcasts from the national disaster management agency.
+                  </Typography>
+                  <Box sx={{ overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#ffffff' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', p: 1.5 }}>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Parameter</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Type</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Example</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Description</Typography>
+                    </Box>
+                    <Stack divider={<Box sx={{ borderBottom: '1px solid #f1f5f9' }} />}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>expires_at</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>String (ISO)</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>gte.now()</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Filter for currently active advisories</Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+                </Box>
+
+                {/* generated_risk_zones */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: '#ecfdf5', color: '#059669', fontSize: '0.625rem', fontWeight: 800, borderRadius: '6px', border: '1px solid #d1fae5', textTransform: 'uppercase', tracking: 'tight' }}>
+                      GET
+                    </Box>
+                    <Typography variant="h6" sx={{ fontFamily: '"Cabinet Grotesk", sans-serif', fontWeight: 800, color: '#1e293b' }}>
+                      /generated_risk_zones
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" sx={{ color: '#475569', mb: 3 }}>
+                    Access calculated hotspots derived from real-time report clustering and sensor telemetry.
+                  </Typography>
+                  <Box sx={{ overflow: 'hidden', border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#ffffff' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', p: 1.5 }}>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Parameter</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Type</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Example</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Description</Typography>
+                    </Box>
+                    <Stack divider={<Box sx={{ borderBottom: '1px solid #f1f5f9' }} />}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>level</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>String</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>eq.high_risk</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Filter by calculated risk level</Typography>
+                      </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1.2fr) 1fr 1.5fr 2fr', p: 1.5, alignItems: 'center' }}>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#0a4d68' }}>status</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>String</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#94a3b8' }}>eq.verified</Typography>
+                        <Typography sx={{ fontSize: '0.75rem', color: '#334155' }}>Filter for formally verified zones</Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+
+                </Box>
               </Stack>
             </Stack>
-          </Box>
+          </Grid>
 
-          <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-            <Grid container spacing={2.5} sx={{ mb: 3 }}>
-              <Grid size={{ xs: 12, lg: 7.5 }}>
-                <Paper
-                  elevation={0}
+          {/* Right: Code Examples (Dark Section) */}
+          <Grid
+            size={{ xs: 12, lg: 5 }}
+            sx={{
+              bgcolor: '#0f172a',
+              borderLeft: { lg: '1px solid #f1f5f9' },
+              p: { xs: 4, md: 8 },
+            }}
+          >
+            <Stack spacing={8}>
+              {/* cURL Example */}
+              <Box>
+                <Stack direction="row" alignItems="center" justifyItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    cURL Request Example
+                  </Typography>
+                  <Tooltip title={copyState === 'curl' ? 'Copied' : 'Copy cURL'}>
+                    <IconButton size="small" onClick={() => copyText('curl', curlExample)} sx={{ color: '#64748b', '&:hover': { color: '#ffffff' } }}>
+                      <CopyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+                <Box
                   sx={{
+                    bgcolor: 'rgba(0, 0, 0, 0.2)',
+                    boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                    borderRadius: '12px',
                     p: 3,
-                    height: '100%',
-                    borderRadius: 4,
-                    border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-                    background: `linear-gradient(145deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.paper} 100%)`,
+                    fontFamily: 'monospace',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.7,
+                    color: '#e0f2fe',
+                    overflowX: 'auto',
+                    whiteSpace: 'pre',
                   }}
                 >
-                  <Typography variant="overline" color="primary.main" sx={{ fontWeight: 700 }}>
-                    Integration Surface
+                  <span style={{ color: '#f472b6' }}>curl</span> -X GET <span style={{ color: '#fcd34d' }}>'{restBaseUrl}/hazard_reports?status=eq.verified'</span> \
+                  <br />&nbsp;&nbsp;-H <span style={{ color: '#fcd34d' }}>'apikey: YOUR_KEY'</span> \
+                  <br />&nbsp;&nbsp;-H <span style={{ color: '#fcd34d' }}>'Authorization: Bearer YOUR_KEY'</span>
+                </Box>
+              </Box>
+
+              {/* Python Example */}
+              <Box>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Typography sx={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Python (Requests) Implementation
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mb: 1.5 }}>
-                    Export-ready by default
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5, maxWidth: 760 }}>
-                    The platform exposes a secure REST interface through Supabase PostgREST. Verified
-                    public data is available with the project anon key, while Row-Level Security
-                    constrains what unauthenticated clients can read.
-                  </Typography>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2.5 }}>
-                    <Chip icon={<ShieldOutlinedIcon />} label="RLS enforced" />
-                    <Chip icon={<DatasetLinkedOutlinedIcon />} label="REST / JSON" />
-                    <Chip icon={<PublicOutlinedIcon />} label="Institutional access patterns" />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ fontSize: '0.625rem', px: 1, py: 0.25, bgcolor: '#1e293b', borderRadius: '4px', color: '#94a3b8', border: '1px solid #334155', fontFamily: 'monospace' }}>
+                      v3.11+
+                    </Box>
+                    <Tooltip title={copyState === 'python' ? 'Copied' : 'Copy Python'}>
+                      <IconButton size="small" onClick={() => copyText('python', pythonExample)} sx={{ color: '#64748b', '&:hover': { color: '#ffffff' } }}>
+                        <CopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      bgcolor: alpha(theme.palette.background.paper, 0.92),
-                      border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                    }}
-                  >
-                    <Stack
-                      direction={{ xs: 'column', md: 'row' }}
-                      spacing={1.5}
-                      justifyContent="space-between"
-                    >
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                          Base URL
-                        </Typography>
-                        <Typography
-                          sx={{
-                            mt: 0.5,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.92rem',
-                            wordBreak: 'break-all',
-                            color: theme.palette.primary.dark,
-                          }}
-                        >
-                          {restBaseUrl}
-                        </Typography>
-                      </Box>
-                      <Tooltip title={copyState === 'base-url-inline' ? 'Copied' : 'Copy URL'}>
-                        <IconButton
-                          onClick={() => copyText('base-url-inline', restBaseUrl)}
-                          sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}
-                        >
-                          <ContentCopyOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Paper>
-                </Paper>
-              </Grid>
-
-              <Grid size={{ xs: 12, lg: 4.5 }}>
-                <Stack spacing={2.5} sx={{ height: '100%' }}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 4,
-                      border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
-                      bgcolor: alpha(theme.palette.warning.main, 0.06),
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                      <KeyOutlinedIcon sx={{ color: theme.palette.warning.main, mt: 0.25 }} />
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                          Authentication
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                          Use the public anon key in both `apikey` and `Authorization` headers for
-                          public institutional export endpoints.
-                        </Typography>
-                        <Box
-                          sx={{
-                            p: 1.5,
-                            borderRadius: 2.5,
-                            bgcolor: theme.palette.background.paper,
-                            border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.78rem',
-                            lineHeight: 1.7,
-                          }}
-                        >
-                          <div>apikey: {maskKey(anonKey)}</div>
-                          <div>Authorization: Bearer {maskKey(anonKey)}</div>
-                          <div>Content-Type: application/json</div>
-                        </Box>
-                      </Box>
-                    </Stack>
-                  </Paper>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 4,
-                      border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                      bgcolor: alpha(theme.palette.info.main, 0.05),
-                      flex: 1,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                      <PolicyOutlinedIcon sx={{ color: theme.palette.info.main, mt: 0.25 }} />
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
-                          Operational Notes
-                        </Typography>
-                        <Stack spacing={1.1}>
-                          <Typography variant="body2" color="text.secondary">
-                            Verified reports are the default public export surface.
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Active advisories should usually be filtered with `expires_at=gte.now()`.
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Generated risk zones are intended for downstream GIS and hotspot overlays.
-                          </Typography>
-                        </Stack>
-                      </Box>
-                    </Stack>
-                  </Paper>
                 </Stack>
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2.5} sx={{ mb: 3 }}>
-              {endpoints.map((endpoint) => (
-                <Grid key={endpoint.key} size={{ xs: 12, xl: 4 }}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      height: '100%',
-                      p: 2.5,
-                      borderRadius: 4,
-                      border: `1px solid ${alpha(endpoint.accent, 0.16)}`,
-                      background: `linear-gradient(180deg, ${alpha(endpoint.accent, 0.06)} 0%, ${theme.palette.background.paper} 100%)`,
-                    }}
-                  >
-                    <Stack spacing={2}>
-                      <Stack direction="row" justifyContent="space-between" spacing={2}>
-                        <Stack direction="row" spacing={1.25} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: 2.5,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: endpoint.accent,
-                              bgcolor: alpha(endpoint.accent, 0.12),
-                            }}
-                          >
-                            {endpoint.icon}
-                          </Box>
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                              {endpoint.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {endpoint.bestFor}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        <Chip
-                          size="small"
-                          label={endpoint.method}
-                          sx={{
-                            fontWeight: 700,
-                            bgcolor: alpha(endpoint.accent, 0.14),
-                            color: endpoint.accent,
-                          }}
-                        />
-                      </Stack>
-
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2.5,
-                          bgcolor: alpha(theme.palette.background.paper, 0.92),
-                          border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.86rem',
-                            color: endpoint.accent,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {endpoint.path}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          {endpoint.purpose}
-                        </Typography>
-                      </Paper>
-
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                          Example Query
-                        </Typography>
-                        <Typography
-                          sx={{
-                            mt: 0.75,
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontSize: '0.76rem',
-                            wordBreak: 'break-all',
-                            color: theme.palette.text.primary,
-                          }}
-                        >
-                          {endpoint.example}
-                        </Typography>
-                      </Box>
-
-                      <Divider />
-
-                      <Stack spacing={1.1}>
-                        {endpoint.queryHints.map((hint) => (
-                          <Typography key={hint} variant="body2" color="text.secondary">
-                            • {hint}
-                          </Typography>
-                        ))}
-                      </Stack>
-                    </Stack>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-
-            <Grid container spacing={2.5}>
-              <Grid size={{ xs: 12, lg: 7.5 }}>
-                <Paper
-                  elevation={0}
+                <Box
                   sx={{
+                    bgcolor: 'rgba(0, 0, 0, 0.2)',
+                    boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                    borderRadius: '12px',
                     p: 3,
-                    borderRadius: 4,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                    bgcolor: theme.palette.background.paper,
+                    fontFamily: 'monospace',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.7,
+                    color: '#e2e8f0',
+                    overflowX: 'auto',
+                    whiteSpace: 'pre',
                   }}
                 >
-                  <Stack
-                    direction={{ xs: 'column', md: 'row' }}
-                    spacing={2}
-                    justifyContent="space-between"
-                    sx={{ mb: 2.5 }}
-                  >
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
-                        Example Requests
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Copyable samples aligned with the export API documentation.
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      {Object.values(codeSamples).map((sample) => (
-                        <Button
-                          key={sample.key}
-                          size="small"
-                          variant={activeSample === sample.key ? 'contained' : 'outlined'}
-                          onClick={() => setActiveSample(sample.key)}
-                          sx={{ textTransform: 'none', borderRadius: 2.5 }}
-                        >
-                          {sample.label}
-                        </Button>
-                      ))}
-                    </Stack>
-                  </Stack>
+                  <span style={{ color: '#64748b' }}># Fetch 10 latest verified floods</span>
+                  <br /><span style={{ color: '#c084fc' }}>import</span> requests
+                  <br /><br />URL = <span style={{ color: '#fcd34d' }}>"{restBaseUrl}/hazard_reports"</span>
+                  <br />PARAMS = {'{'}
+                  <br />&nbsp;&nbsp;<span style={{ color: '#fcd34d' }}>"hazard_type"</span>: <span style={{ color: '#fcd34d' }}>"eq.Flood"</span>,
+                  <br />&nbsp;&nbsp;<span style={{ color: '#fcd34d' }}>"order"</span>: <span style={{ color: '#fcd34d' }}>"created_at.desc"</span>,
+                  <br />&nbsp;&nbsp;<span style={{ color: '#fcd34d' }}>"limit"</span>: <span style={{ color: '#fcd34d' }}>"10"</span>
+                  <br />{'}'}
+                  <br /><br />res = requests.get(URL, params=PARAMS, headers=HEADERS)
+                  <br /><span style={{ color: '#c084fc' }}>for</span> report <span style={{ color: '#c084fc' }}>in</span> res.json():
+                  <br />&nbsp;&nbsp;print(<span style={{ color: '#34d399' }}>f"[<span style={{ color: '#bfdbfe' }}>{'{report[\'type\']}'}</span>] @ <span style={{ color: '#bfdbfe' }}>{'{report[\'lat\']}'}</span>"</span>)
+                </Box>
+              </Box>
 
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      position: 'relative',
-                      p: 0,
-                      overflow: 'hidden',
-                      borderRadius: 3,
-                      bgcolor: '#0f172a',
-                      color: '#e2e8f0',
-                    }}
-                  >
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      sx={{
-                        px: 2,
-                        py: 1.25,
-                        borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
-                          fontSize: '0.78rem',
-                          color: '#93c5fd',
-                        }}
-                      >
-                        {activeCodeSample.language}
-                      </Typography>
-                      <Button
-                        size="small"
-                        color="inherit"
-                        startIcon={<ContentCopyOutlinedIcon fontSize="small" />}
-                        onClick={() => copyText(activeCodeSample.key, activeCodeSample.code)}
-                        sx={{ textTransform: 'none', color: '#cbd5e1' }}
-                      >
-                        {copyState === activeCodeSample.key ? 'Copied' : 'Copy'}
-                      </Button>
-                    </Stack>
-                    <Box
-                      component="pre"
-                      sx={{
-                        m: 0,
-                        p: 2.5,
-                        overflowX: 'auto',
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.79rem',
-                        lineHeight: 1.75,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {activeCodeSample.code}
-                    </Box>
-                  </Paper>
-                </Paper>
-              </Grid>
-
-              <Grid size={{ xs: 12, lg: 4.5 }}>
-                <Stack spacing={2.5}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 4,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 1.5 }}>
-                      <CodeOutlinedIcon color="primary" fontSize="small" />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        Common Query Controls
-                      </Typography>
-                    </Stack>
-                    <Stack spacing={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        `select=*` projects all columns.
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        `order=created_at.desc` sorts newest-first.
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        `limit=50` controls payload size.
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        `eq`, `gte`, and `lte` support simple filtering patterns.
-                      </Typography>
-                    </Stack>
-                  </Paper>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 4,
-                      border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                      bgcolor: alpha(theme.palette.success.main, 0.05),
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 1.5 }}>
-                      <ShieldOutlinedIcon sx={{ color: theme.palette.success.main }} fontSize="small" />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        Export Guidance
-                      </Typography>
-                    </Stack>
-                    <Stack spacing={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        Prefer specific column selection for production integrations.
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Use server-side filters to keep exports small and predictable.
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Verified and active data should be treated as the public-safe integration layer.
-                      </Typography>
-                    </Stack>
-                  </Paper>
-
-                  <Alert
-                    severity="info"
-                    icon={<PublicOutlinedIcon fontSize="inherit" />}
-                    sx={{ borderRadius: 3 }}
-                  >
-                    Full PostgREST syntax reference:{' '}
-                    <Link
-                      href="https://postgrest.org/en/v12/references/api/tables_views.html"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      postgrest.org
-                    </Link>
-                  </Alert>
+              {/* Power of PostgREST Info Box */}
+              <Box
+                sx={{
+                  bgcolor: 'rgba(30, 41, 59, 0.4)',
+                  border: '1px solid rgba(51, 65, 85, 0.5)',
+                  borderRadius: '16px',
+                  p: 3,
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <InfoIcon sx={{ color: '#818cf8', fontSize: 20 }} />
+                  </Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                    Power of PostgREST
+                  </Typography>
                 </Stack>
-              </Grid>
-            </Grid>
-          </Box>
-        </Paper>
-      </Container>
+                <Typography variant="body2" sx={{ color: '#94a3b8', lineHeight: 1.7, mb: 2 }}>
+                  Our API uses PostgREST, allowing for sophisticated filtering directly in the URL query string. You can use operators like{' '}
+                  <Box component="code" sx={{ color: '#a5b4fc' }}>gte.</Box>,{' '}
+                  <Box component="code" sx={{ color: '#a5b4fc' }}>is.null</Box>, and{' '}
+                  <Box component="code" sx={{ color: '#a5b4fc' }}>ov.</Box> for complex spatial queries.
+                </Typography>
+                <Link
+                  href="https://postgrest.org"
+                  target="_blank"
+                  rel="noreferrer"
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: '#818cf8',
+                    '&:hover': { color: '#a5b4fc' },
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  Read Filter Syntax Reference
+                  <LaunchIcon sx={{ fontSize: 10 }} />
+                </Link>
+              </Box>
+            </Stack>
+          </Grid>
+        </Grid>
+      </Paper>
     </Box>
   );
 }
