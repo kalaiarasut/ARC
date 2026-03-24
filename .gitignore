@@ -1,2 +1,5 @@
 skills
 react-bits/
+.superdesign
+.npm-cache
+.npm-global

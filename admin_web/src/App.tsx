@@ -7,6 +7,7 @@ import { MapView } from './pages/MapView';
 import { Advisories } from './pages/Advisories';
 import { GeneratedZones } from './pages/GeneratedZones';
 import { AuditLogs } from './pages/AuditLogs';
+import { ApiReference } from './pages/ApiReference';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CustomThemeProvider } from './contexts/ThemeContext';
@@ -67,6 +68,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><AuditLogs /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/api-reference"
+            element={
+              <ProtectedRoute>
+                <Layout><ApiReference /></Layout>
               </ProtectedRoute>
             }
           />
