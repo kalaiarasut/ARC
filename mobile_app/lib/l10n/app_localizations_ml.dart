@@ -1056,4 +1056,10 @@ class AppLocalizationsMl extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'റിപ്പോർട്ട് നിരസിച്ചു';
+
+  @override
+  String get achievementsAndBadges => 'നേട്ടങ്ങളും ബാഡ്ജുകളും';
+
+  @override
+  String get offlineMaps => 'ഓഫ്‌ലൈൻ മാപ്പുകൾ';
 }

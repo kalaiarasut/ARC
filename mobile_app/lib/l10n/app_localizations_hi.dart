@@ -1046,4 +1046,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'रिपोर्ट अस्वीकृत';
+
+  @override
+  String get achievementsAndBadges => 'उपलब्धियां और बैज';
+
+  @override
+  String get offlineMaps => 'ऑफ़लाइन मैप्स';
 }

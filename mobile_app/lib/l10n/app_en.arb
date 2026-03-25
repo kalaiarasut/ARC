@@ -895,5 +895,9 @@
   "highRiskVerifiedReason": "High-risk report verified",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "Report rejected",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "Achievements & Badges",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "Offline Maps",
+  "@offlineMaps": {}
 }

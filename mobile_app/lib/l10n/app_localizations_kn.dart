@@ -1050,4 +1050,10 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'ವರದಿ ತಿರಸ್ಕರಿಸಲಾಗಿದೆ';
+
+  @override
+  String get achievementsAndBadges => 'ಸಾಧನೆಗಳು ಮತ್ತು ಬ್ಯಾಡ್ಜ್‌ಗಳು';
+
+  @override
+  String get offlineMaps => 'ಆಫ್‌ಲೈನ್ ನಕ್ಷೆಗಳು';
 }

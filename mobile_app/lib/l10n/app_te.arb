@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "అధిక-ప్రమాద నివేదిక ధృవీకరించబడింది",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "నివేదిక తిరస్కరించబడింది",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "సాధనలు & బ్యాడ్జీలు",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ఆఫ్‌లైన్ మ్యాప్‌లు",
+  "@offlineMaps": {}
 }

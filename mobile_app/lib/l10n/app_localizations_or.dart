@@ -1052,4 +1052,10 @@ class AppLocalizationsOr extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'ରିପୋର୍ଟ ପ୍ରତ୍ୟାଖ୍ୟାନ ହୋଇଛି';
+
+  @override
+  String get achievementsAndBadges => 'ସଫଳତା ଏବଂ ବ୍ୟାଜ୍';
+
+  @override
+  String get offlineMaps => 'ଅଫଲାଇନ୍ ମାନଚିତ୍ର';
 }

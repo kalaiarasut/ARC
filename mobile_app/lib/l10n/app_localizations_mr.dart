@@ -1040,4 +1040,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'अहवाल नाकारला';
+
+  @override
+  String get achievementsAndBadges => 'उपलब्धी आणि बॅजेस';
+
+  @override
+  String get offlineMaps => 'ऑफलाइन नकाशे';
 }

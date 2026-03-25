@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "ଉଚ୍ଚ-ବିପଦ ରିପୋର୍ଟ ଯାଞ୍ଚ ହୋଇଛି",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "ରିପୋର୍ଟ ପ୍ରତ୍ୟାଖ୍ୟାନ ହୋଇଛି",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "ସଫଳତା ଏବଂ ବ୍ୟାଜ୍",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ଅଫଲାଇନ୍ ମାନଚିତ୍ର",
+  "@offlineMaps": {}
 }

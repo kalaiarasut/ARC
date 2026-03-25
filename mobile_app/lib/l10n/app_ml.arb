@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "ഉയർന്ന അപകടസാധ്യതയുള്ള റിപ്പോർട്ട് സ്ഥിരീകരിച്ചു",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "റിപ്പോർട്ട് നിരസിച്ചു",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "നേട്ടങ്ങളും ബാഡ്ജുകളും",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ഓഫ്‌ലൈൻ മാപ്പുകൾ",
+  "@offlineMaps": {}
 }

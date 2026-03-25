@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "উচ্চ-ঝুঁকির রিপোর্টের সত্যতা যাচাই করা হয়েছে",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "রিপোর্ট প্রত্যাখ্যাত",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "অর্জন এবং ব্যাজ",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "অফলাইন ম্যাপস",
+  "@offlineMaps": {}
 }

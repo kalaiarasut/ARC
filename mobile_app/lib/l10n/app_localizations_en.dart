@@ -1039,4 +1039,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'Report rejected';
+
+  @override
+  String get achievementsAndBadges => 'Achievements & Badges';
+
+  @override
+  String get offlineMaps => 'Offline Maps';
 }

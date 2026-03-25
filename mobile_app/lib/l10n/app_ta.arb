@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "அதிக ஆபத்து அறிக்கை சரிபார்க்கப்பட்டது",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "அறிக்கை நிராகரிக்கப்பட்டது",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "சாதனைகள் மற்றும் பேட்ஜ்கள்",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ஆஃப்லைன் வரைபடங்கள்",
+  "@offlineMaps": {}
 }

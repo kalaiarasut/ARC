@@ -1050,4 +1050,10 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'నివేదిక తిరస్కరించబడింది';
+
+  @override
+  String get achievementsAndBadges => 'సాధనలు & బ్యాడ్జీలు';
+
+  @override
+  String get offlineMaps => 'ఆఫ్‌లైన్ మ్యాప్‌లు';
 }

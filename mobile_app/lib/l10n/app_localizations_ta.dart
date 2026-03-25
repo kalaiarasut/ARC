@@ -1051,4 +1051,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'அறிக்கை நிராகரிக்கப்பட்டது';
+
+  @override
+  String get achievementsAndBadges => 'சாதனைகள் மற்றும் பேட்ஜ்கள்';
+
+  @override
+  String get offlineMaps => 'ஆஃப்லைன் வரைபடங்கள்';
 }

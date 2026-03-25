@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "ಹೆಚ್ಚಿನ ಅಪಾಯದ ವರದಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "ವರದಿ ತಿರಸ್ಕರಿಸಲಾಗಿದೆ",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "ಸಾಧನೆಗಳು ಮತ್ತು ಬ್ಯಾಡ್ಜ್‌ಗಳು",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ಆಫ್‌ಲೈನ್ ನಕ್ಷೆಗಳು",
+  "@offlineMaps": {}
 }

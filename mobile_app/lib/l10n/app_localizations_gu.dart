@@ -1040,4 +1040,10 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'રિપોર્ટ નકારવામાં આવ્યો';
+
+  @override
+  String get achievementsAndBadges => 'સિદ્ધિઓ અને બેજ';
+
+  @override
+  String get offlineMaps => 'ઑફલાઇન નકશા';
 }

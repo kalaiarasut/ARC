@@ -673,5 +673,9 @@
   "highRiskVerifiedReason": "उच्च-जोखीम अहवाल सत्यापित",
   "@highRiskVerifiedReason": {},
   "reportRejectedReason": "अहवाल नाकारला",
-  "@reportRejectedReason": {}
+  "@reportRejectedReason": {},
+  "achievementsAndBadges": "उपलब्धी आणि बॅजेस",
+  "@achievementsAndBadges": {},
+  "offlineMaps": "ऑफलाइन नकाशे",
+  "@offlineMaps": {}
 }

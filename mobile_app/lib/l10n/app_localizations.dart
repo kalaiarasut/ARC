@@ -1901,6 +1901,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report rejected'**
   String get reportRejectedReason;
+
+  /// No description provided for @achievementsAndBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements & Badges'**
+  String get achievementsAndBadges;
+
+  /// No description provided for @offlineMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Maps'**
+  String get offlineMaps;
 }
 
 class _AppLocalizationsDelegate

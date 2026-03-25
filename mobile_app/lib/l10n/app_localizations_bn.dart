@@ -1042,4 +1042,10 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get reportRejectedReason => 'রিপোর্ট প্রত্যাখ্যাত';
+
+  @override
+  String get achievementsAndBadges => 'অর্জন এবং ব্যাজ';
+
+  @override
+  String get offlineMaps => 'অফলাইন ম্যাপস';
 }
