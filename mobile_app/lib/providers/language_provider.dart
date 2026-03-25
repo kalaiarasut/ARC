@@ -17,22 +17,18 @@ final localeProvider = Provider<Locale>((ref) {
 class LanguageCodeNotifier extends Notifier<String> {
   @override
   String build() {
-    _loadLanguage();
-    return 'en';
-  }
-
-  // Load saved language
-  Future<void> _loadLanguage() async {
     final savedCode = StorageService.getLanguage();
     if (savedCode != null && savedCode.trim().isNotEmpty) {
-      state = savedCode;
+      return savedCode.trim().toLowerCase();
     }
+    return 'en';
   }
 
   // Set language code
   Future<void> setLanguageCode(String code) async {
-    state = code;
-    await StorageService.saveLanguage(code);
-    await PushTokenService().syncLanguageCode(code);
+    final normalizedCode = code.trim().toLowerCase();
+    state = normalizedCode;
+    await StorageService.saveLanguage(normalizedCode);
+    await PushTokenService().syncLanguageCode(normalizedCode);
   }
 }

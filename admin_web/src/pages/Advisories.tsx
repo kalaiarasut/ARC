@@ -92,6 +92,27 @@ const formatDateTime = (value: string | null) => {
   }
 };
 
+const normalizeSourceText = (value: string | null | undefined) => (value ?? '').trim();
+
+const buildSourceSignature = (source: {
+  title: string;
+  body: string;
+  region: string | null;
+}) =>
+  JSON.stringify({
+    title: normalizeSourceText(source.title),
+    body: normalizeSourceText(source.body),
+    region: normalizeSourceText(source.region),
+  });
+
+const toDateTimeLocalValue = (value: string | null) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+
 const WIZARD_STEPS = [
   { label: 'Advisory Content', icon: <EditNoteIcon /> },
   { label: 'Location & Contacts', icon: <PlaceOutlinedIcon /> },
@@ -105,6 +126,9 @@ export function Advisories() {
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingAdvisory, setEditingAdvisory] = useState<OfficialAdvisory | null>(null);
+  const [loadingEditTranslations, setLoadingEditTranslations] = useState(false);
+  const [originalSourceSignature, setOriginalSourceSignature] = useState<string | null>(null);
   const [publishExpanded, setPublishExpanded] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -120,10 +144,11 @@ export function Advisories() {
 
   const formState = useAdvisoryForm();
   const translationsState = useTranslations();
-  const { form, updateField, resetForm, isSourceReady, parseNullableNumber, toIsoOrNull } =
+  const { form, updateField, setFormValues, resetForm, isSourceReady, parseNullableNumber, toIsoOrNull } =
     formState;
   const {
     translations,
+    setTranslations,
     activeTab,
     setActiveTab,
     updateTranslation,
@@ -137,6 +162,29 @@ export function Advisories() {
   } = translationsState;
 
   const supabaseOk = useMemo(() => isSupabaseConfigured(), []);
+  const isEditing = editingAdvisory != null;
+  const currentSourceSignature = useMemo(
+    () =>
+      buildSourceSignature({
+        title: form.title,
+        body: form.body,
+        region: form.region,
+      }),
+    [form.title, form.body, form.region]
+  );
+  const sourceContentChanged = useMemo(
+    () => (!isEditing ? true : currentSourceSignature !== originalSourceSignature),
+    [currentSourceSignature, isEditing, originalSourceSignature]
+  );
+  const requiresTranslationStep = !isEditing || sourceContentChanged;
+  const reviewStepIndex = requiresTranslationStep ? 3 : 2;
+  const visibleSteps = useMemo(
+    () =>
+      requiresTranslationStep
+        ? WIZARD_STEPS
+        : [WIZARD_STEPS[0], WIZARD_STEPS[1], WIZARD_STEPS[3]],
+    [requiresTranslationStep]
+  );
 
   const load = useCallback(async () => {
     try {
@@ -225,10 +273,62 @@ export function Advisories() {
   };
 
   const handleReset = () => {
+    setEditingAdvisory(null);
+    setOriginalSourceSignature(null);
     resetForm();
     clearTranslations();
     setActiveStep(0);
   };
+
+  const handleEdit = useCallback(
+    async (advisory: OfficialAdvisory) => {
+      if (!isAuthenticated) {
+        setError('Please login to edit official updates.');
+        return;
+      }
+
+      try {
+        setLoadingEditTranslations(true);
+        setError(null);
+
+        setEditingAdvisory(advisory);
+        setOriginalSourceSignature(
+          buildSourceSignature({
+            title: advisory.title,
+            body: advisory.body,
+            region: advisory.region,
+          })
+        );
+        setFormValues({
+          title: advisory.title,
+          body: advisory.body,
+          region: advisory.region ?? '',
+          category: advisory.category,
+          severity: advisory.severity,
+          lat: advisory.latitude?.toString() ?? '',
+          lng: advisory.longitude?.toString() ?? '',
+          radius: advisory.radius_km?.toString() ?? '',
+          startsAt: toDateTimeLocalValue(advisory.starts_at),
+          expiresAt: toDateTimeLocalValue(advisory.expires_at),
+          phone: advisory.contact_phone ?? '',
+          whatsapp: advisory.contact_whatsapp ?? '',
+          hotline: advisory.contact_hotline ?? '',
+        });
+
+        const existingTranslations = await advisoryService.getAdvisoryTranslations(advisory.id);
+        setTranslations(existingTranslations);
+        setActiveTab(existingTranslations[0]?.language_code ?? 'ta');
+        setActiveStep(0);
+        setPublishExpanded(true);
+      } catch (e) {
+        console.error(e);
+        setError('Failed to load advisory for editing.');
+      } finally {
+        setLoadingEditTranslations(false);
+      }
+    },
+    [isAuthenticated, setFormValues, setActiveTab, setTranslations]
+  );
 
   const handlePublish = async () => {
     if (!isSourceReady) {
@@ -241,7 +341,7 @@ export function Advisories() {
       return;
     }
 
-    if (!allReviewed) {
+    if (requiresTranslationStep && !allReviewed) {
       setError('Generate and review all required translations before publish.');
       return;
     }
@@ -260,6 +360,7 @@ export function Advisories() {
       }
 
       await advisoryService.publishAdvisory({
+        advisory_id: editingAdvisory?.id,
         title: form.title.trim(),
         body: form.body.trim(),
         region: form.region.trim() || null,
@@ -274,7 +375,8 @@ export function Advisories() {
         contact_whatsapp: form.whatsapp.trim() || null,
         contact_hotline: form.hotline.trim() || null,
         source_language: 'en',
-        translations,
+        translations: requiresTranslationStep ? translations : [],
+        replace_translations: requiresTranslationStep,
       });
 
       handleReset();
@@ -283,7 +385,11 @@ export function Advisories() {
       await load();
     } catch (e) {
       console.error(e);
-      setError('Failed to publish update. Check your permissions (RLS) and login status.');
+      setError(
+        editingAdvisory
+          ? 'Failed to save advisory changes. Check your permissions and login status.'
+          : 'Failed to publish update. Check your permissions (RLS) and login status.'
+      );
     } finally {
       setPublishing(false);
     }
@@ -332,19 +438,32 @@ export function Advisories() {
   );
 
   const canAdvance = useMemo(() => {
-    switch (activeStep) {
-      case 0:
-        return isSourceReady;
-      case 1:
-        return true;
-      case 2:
-        return translations.length > 0;
-      case 3:
-        return allReviewed;
-      default:
-        return false;
+    if (activeStep === 0) return isSourceReady;
+    if (activeStep === 1) return true;
+    if (requiresTranslationStep && activeStep === 2) return translations.length > 0;
+    if (activeStep === reviewStepIndex) return requiresTranslationStep ? allReviewed : true;
+    return false;
+  }, [activeStep, allReviewed, isSourceReady, requiresTranslationStep, reviewStepIndex, translations.length]);
+
+  useEffect(() => {
+    if (activeStep > reviewStepIndex) {
+      setActiveStep(reviewStepIndex);
     }
-  }, [activeStep, isSourceReady, translations.length, allReviewed]);
+  }, [activeStep, reviewStepIndex]);
+
+  const pendingReviewLanguages = useMemo(
+    () =>
+      languages.filter((lang) => {
+        const draft = translations.find((t) => t.language_code === lang.code);
+        return !(
+          draft &&
+          draft.translation_status === 'reviewed' &&
+          draft.title.trim().length > 0 &&
+          draft.body.trim().length > 0
+        );
+      }),
+    [languages, translations]
+  );
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
@@ -396,9 +515,16 @@ export function Advisories() {
               variant={publishExpanded ? 'outlined' : 'contained'}
               size="small"
               startIcon={publishExpanded ? <CloseIcon /> : <AddCircleOutlineIcon />}
-              onClick={() => setPublishExpanded((current) => !current)}
+              onClick={() => {
+                if (publishExpanded) {
+                  handleReset();
+                  setPublishExpanded(false);
+                  return;
+                }
+                setPublishExpanded(true);
+              }}
             >
-              {publishExpanded ? 'Cancel' : 'New Update'}
+              {publishExpanded ? (isEditing ? 'Cancel Edit' : 'Cancel') : 'New Update'}
             </Button>
           </Stack>
         </Stack>
@@ -448,7 +574,7 @@ export function Advisories() {
                 flexWrap: 'wrap',
               }}
             >
-              {WIZARD_STEPS.map((step, index) => {
+              {visibleSteps.map((step, index) => {
                 const isCompleted = activeStep > index;
                 const isActive = activeStep === index;
 
@@ -667,7 +793,7 @@ export function Advisories() {
               )}
 
               {/* Step 3: Translations */}
-              {activeStep === 2 && (
+              {requiresTranslationStep && activeStep === 2 && (
                 <Stack spacing={2.5}>
                   <Stack direction="row" justifyContent="flex-end">
                     <Button
@@ -763,11 +889,88 @@ export function Advisories() {
               )}
 
               {/* Step 4: Review */}
-              {activeStep === 3 && (
-                <Alert severity="info">
-                  Review summary: Title: {form.title || '—'}, {translations.length} translations,
-                  {allReviewed ? ' All reviewed ✓' : ' Awaiting review'}
-                </Alert>
+              {activeStep === reviewStepIndex && (
+                <Stack spacing={2}>
+                  <Alert severity={!requiresTranslationStep || allReviewed ? 'success' : 'warning'}>
+                    <strong>Review summary</strong>
+                    <br />
+                    Title: {form.title || '-'}
+                    <br />
+                    {requiresTranslationStep ? (
+                      <>
+                        Generated translations: {translations.length}
+                        <br />
+                        Status: {allReviewed ? 'All translations reviewed' : 'Awaiting review before publish'}
+                      </>
+                    ) : (
+                      <>Status: Source text unchanged. Existing translations will be kept.</>
+                    )}
+                  </Alert>
+
+                  {requiresTranslationStep ? (
+                    <>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          bgcolor: alpha(theme.palette.background.paper, 0.72),
+                        }}
+                      >
+                        <Stack spacing={1.5}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Translation review status
+                          </Typography>
+
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            {languages.map((lang) => {
+                              const draft = translations.find((t) => t.language_code === lang.code);
+                              const reviewed =
+                                draft &&
+                                draft.translation_status === 'reviewed' &&
+                                draft.title.trim().length > 0 &&
+                                draft.body.trim().length > 0;
+
+                              return (
+                                <Chip
+                                  key={lang.code}
+                                  label={lang.label + ': ' + (reviewed ? 'Reviewed' : 'Pending')}
+                                  color={reviewed ? 'success' : 'warning'}
+                                  variant={reviewed ? 'filled' : 'outlined'}
+                                />
+                              );
+                            })}
+                          </Stack>
+
+                          {!allReviewed && (
+                            <Typography variant="body2" color="text.secondary">
+                              Publish is blocked until all four translations are marked reviewed in
+                              the previous step.
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Paper>
+
+                      {!allReviewed && (
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                          {pendingReviewLanguages.map((lang) => (
+                            <Button
+                              key={lang.code}
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setActiveTab(lang.code);
+                                setActiveStep(2);
+                              }}
+                            >
+                              Review {lang.label}
+                            </Button>
+                          ))}
+                        </Stack>
+                      )}
+                    </>
+                  ) : null}
+                </Stack>
               )}
             </Box>
 
@@ -797,11 +1000,11 @@ export function Advisories() {
                   Clear
                 </Button>
 
-                {activeStep < 3 ? (
+                {activeStep < reviewStepIndex ? (
                   <Button
                     variant="contained"
                     endIcon={<ArrowForwardIcon />}
-                    onClick={() => setActiveStep(Math.min(3, activeStep + 1))}
+                    onClick={() => setActiveStep(Math.min(reviewStepIndex, activeStep + 1))}
                     disabled={!canAdvance}
                   >
                     Next
@@ -811,9 +1014,9 @@ export function Advisories() {
                     variant="contained"
                     startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <SendOutlinedIcon />}
                     onClick={handlePublish}
-                    disabled={publishing || !isSourceReady || !allReviewed}
+                    disabled={publishing || !isSourceReady}
                   >
-                    {publishing ? 'Publishing...' : 'Publish'}
+                    {publishing ? (isEditing ? 'Saving...' : 'Publishing...') : isEditing ? 'Save Changes' : 'Publish'}
                   </Button>
                 )}
               </Stack>
@@ -907,11 +1110,23 @@ export function Advisories() {
                           {item.title}
                         </Typography>
                       </TableCell>
-                      <TableCell>{item.region || '—'}</TableCell>
+                      <TableCell>{item.region || '-'}</TableCell>
                       <TableCell>
                         <Typography variant="caption">{formatDateTime(item.starts_at)}</Typography>
                       </TableCell>
                       <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => void handleEdit(item)}
+                          disabled={!isAdmin || loadingEditTranslations}
+                        >
+                          {loadingEditTranslations && editingAdvisory?.id === item.id ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <EditNoteIcon />
+                          )}
+                        </IconButton>
                         <IconButton
                           size="small"
                           color="error"

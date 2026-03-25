@@ -20,6 +20,7 @@ export interface AdvisoryFormState {
 export interface UseAdvisoryFormReturn {
   form: AdvisoryFormState;
   updateField: <K extends keyof AdvisoryFormState>(field: K, value: AdvisoryFormState[K]) => void;
+  setFormValues: (next: AdvisoryFormState) => void;
   resetForm: () => void;
   isSourceReady: boolean;
   parseNullableNumber: (value: string) => number | null;
@@ -46,6 +47,14 @@ export function useAdvisoryForm(onFormChange?: () => void): UseAdvisoryFormRetur
   const updateField = useCallback(
     <K extends keyof AdvisoryFormState>(field: K, value: AdvisoryFormState[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }));
+      onFormChange?.();
+    },
+    [onFormChange]
+  );
+
+  const setFormValues = useCallback(
+    (next: AdvisoryFormState) => {
+      setForm(next);
       onFormChange?.();
     },
     [onFormChange]
@@ -88,6 +97,7 @@ export function useAdvisoryForm(onFormChange?: () => void): UseAdvisoryFormRetur
   return {
     form,
     updateField,
+    setFormValues,
     resetForm,
     isSourceReady,
     parseNullableNumber,

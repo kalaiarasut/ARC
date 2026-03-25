@@ -4,6 +4,7 @@ import type {
   AdvisoryCreateInput,
   AdvisoryLanguageCode,
   AdvisoryTranslationPreviewResponse,
+  AdvisoryTranslationDraft,
   OfficialAdvisory,
 } from '../types/advisory';
 
@@ -157,6 +158,33 @@ export const advisoryService = {
     return (data as OfficialAdvisory[]) ?? [];
   },
 
+  async getAdvisoryTranslations(advisoryId: string): Promise<AdvisoryTranslationDraft[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const id = advisoryId.trim();
+    if (!id) {
+      throw new Error('Missing advisory id');
+    }
+
+    const { data, error } = await supabase
+      .from('official_advisory_translations')
+      .select('language_code, title, body, region, translation_status, provider, model')
+      .eq('advisory_id', id)
+      .order('language_code', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching advisory translations:', error);
+      throw error;
+    }
+
+    return ((data as AdvisoryTranslationDraft[] | null) ?? []).map((item) => ({
+      ...item,
+      error: undefined,
+    }));
+  },
+
   async publishAdvisory(input: AdvisoryCreateInput): Promise<OfficialAdvisory> {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase not configured');
@@ -164,6 +192,7 @@ export const advisoryService = {
 
     try {
       const data = await invokeEdgeFunction<{ advisory: OfficialAdvisory }>('publish_advisory_with_translations', {
+        advisory_id: input.advisory_id ?? null,
         title: input.title.trim(),
         body: input.body.trim(),
         region: toNullableString(input.region),
@@ -179,6 +208,7 @@ export const advisoryService = {
         contact_hotline: toNullableString(input.contact_hotline),
         source_language: input.source_language ?? 'en',
         translations: input.translations,
+        replace_translations: input.replace_translations ?? true,
       });
       return data.advisory;
     } catch (error) {

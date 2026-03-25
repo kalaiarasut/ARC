@@ -52,6 +52,7 @@ export interface AdvisoryTranslationDraft {
 }
 
 export interface AdvisoryCreateInput {
+  advisory_id?: string;
   title: string;
   body: string;
   region?: string | null;
@@ -67,6 +68,7 @@ export interface AdvisoryCreateInput {
   contact_hotline?: string | null;
   source_language?: AdvisoryLanguageCode;
   translations: AdvisoryTranslationDraft[];
+  replace_translations?: boolean;
 }
 
 export interface AdvisoryTranslationPreviewResponse {
