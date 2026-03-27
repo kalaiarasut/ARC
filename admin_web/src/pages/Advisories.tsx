@@ -153,6 +153,7 @@ export function Advisories() {
     setActiveTab,
     updateTranslation,
     markReviewed,
+    markAllReviewed,
     markEditable,
     allReviewed,
     reviewedCount,
@@ -795,7 +796,23 @@ export function Advisories() {
               {/* Step 3: Translations */}
               {requiresTranslationStep && activeStep === 2 && (
                 <Stack spacing={2.5}>
-                  <Stack direction="row" justifyContent="flex-end">
+                  <Stack direction="row" justifyContent="flex-end" spacing={1.5}>
+                    {translations.length > 0 && (
+                      <Button
+                        variant="outlined"
+                        startIcon={<TaskAltIcon />}
+                        onClick={() => {
+                          const reviewed = markAllReviewed();
+                          if (reviewed === 0) {
+                            setError('Nothing to review yet. Make sure each translation has title and body text.');
+                            return;
+                          }
+                          setError(null);
+                        }}
+                      >
+                        Quick Review All
+                      </Button>
+                    )}
                     <Button
                       variant="contained"
                       startIcon={

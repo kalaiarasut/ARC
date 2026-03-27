@@ -86,6 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _locationSub = ref.listenManual<LatLng?>(userLocationProvider, (prev, next) {
       if (next != null && (prev == null || prev != next)) {
         _loadLiveReports();
+        _loadLiveAdvisories();
       }
     });
 
@@ -137,7 +138,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _loadLiveAdvisories({LatLng? locationOverride}) async {
     try {
       final loc = locationOverride ?? ref.read(userLocationProvider);
-      final items = await AdvisoryService().getLatest(limit: 10, userLocation: loc);
+      final languageCode = ref.read(languageCodeProvider);
+      final items = await AdvisoryService().getLatest(
+        limit: 10,
+        userLocation: loc,
+        languageCode: languageCode,
+      );
       if (!mounted) return;
       setState(() => _liveAdvisories = items);
     } catch (_) {
@@ -687,7 +693,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 )
               else
                 SizedBox(
-                  height: 140,
+                  height: 172,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _liveAdvisories.length,
@@ -703,7 +709,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           );
                         },
                         child: Container(
-                          width: 220,
+                          width: 236,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
@@ -735,28 +741,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              Text(
-                                a.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      a.title,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (a.region != null && a.region!.trim().isNotEmpty)
+                                      Text(
+                                        a.region!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      ),
+                                    const Spacer(),
+                                    Text(
+                                      _timeAgo(a.publishedAt),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              if (a.region != null && a.region!.trim().isNotEmpty)
-                                Text(
-                                  a.region!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                                ),
-                              const Spacer(),
-                              Text(
-                                _timeAgo(a.publishedAt),
-                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                               ),
                             ],
                           ),

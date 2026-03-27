@@ -12,8 +12,13 @@ class AdvisoryService {
   String _resolveLanguageCode(String? requestedLanguageCode) {
     final code = (requestedLanguageCode ?? StorageService.getLanguage() ?? _defaultLanguageCode).trim().toLowerCase();
     switch (code) {
+      case 'bn':
       case 'ta':
+      case 'gu':
       case 'hi':
+      case 'kn':
+      case 'mr':
+      case 'or':
       case 'te':
       case 'ml':
       case 'en':
@@ -71,30 +76,40 @@ class AdvisoryService {
 
     const distance = Distance();
 
-    // Filter out advisories that are targeted by radius if user is outside it
-    items.removeWhere((a) {
-      if (a.radiusKm == null || a.latitude == null || a.longitude == null) return false;
-      if (userLocation == null) return true; // Hide targeted advisories if location unknown
-      final d = distance.as(LengthUnit.Meter, userLocation, LatLng(a.latitude!, a.longitude!));
-      return d > (a.radiusKm! * 1000);
-    });
-
     if (userLocation == null) {
+      items.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
       return items.take(safeLimit).toList();
     }
 
-    double distMeters(OfficialAdvisory a) {
+    double? distMeters(OfficialAdvisory a) {
       final lat = a.latitude;
       final lon = a.longitude;
-      if (lat == null || lon == null) return double.infinity;
+      if (lat == null || lon == null) return null;
       return distance.as(LengthUnit.Meter, userLocation, LatLng(lat, lon));
     }
 
+    int relevanceBucket(OfficialAdvisory a) {
+      final d = distMeters(a);
+      if (d == null) return 2;
+      if (a.radiusKm != null && d <= (a.radiusKm! * 1000)) return 0;
+      return 1;
+    }
+
     items.sort((a, b) {
+      final bucketCmp = relevanceBucket(a).compareTo(relevanceBucket(b));
+      if (bucketCmp != 0) return bucketCmp;
+
       final da = distMeters(a);
       final db = distMeters(b);
-      final cmp = da.compareTo(db);
-      if (cmp != 0) return cmp;
+      if (da != null && db != null) {
+        final cmp = da.compareTo(db);
+        if (cmp != 0) return cmp;
+      } else if (da != null) {
+        return -1;
+      } else if (db != null) {
+        return 1;
+      }
+
       // Tie-breaker: newest first.
       return b.publishedAt.compareTo(a.publishedAt);
     });

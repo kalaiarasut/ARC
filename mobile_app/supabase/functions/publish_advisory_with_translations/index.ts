@@ -2,7 +2,7 @@
 
 import { handleCors, jsonResponse, requireAdmin } from "../_shared_admin.ts";
 
-const REQUIRED_LANGUAGES = ["ta", "hi", "te", "ml"];
+const REQUIRED_LANGUAGES = ["bn", "gu", "hi", "kn", "ml", "mr", "or", "ta", "te"];
 
 Deno.serve(async (request: Request) => {
   const corsResponse = handleCors(request);

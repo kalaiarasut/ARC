@@ -2,7 +2,7 @@
 
 import { handleCors, jsonResponse, requireAdmin } from "../_shared_admin.ts";
 
-type TargetLanguage = "ta" | "hi" | "te" | "ml";
+type TargetLanguage = "bn" | "gu" | "hi" | "kn" | "ml" | "mr" | "or" | "ta" | "te";
 
 type TranslationDraft = {
   language_code: TargetLanguage;
@@ -17,16 +17,26 @@ type TranslationDraft = {
 
 const SARVAM_BASE_URL = Deno.env.get("SARVAM_BASE_URL") ?? "https://api.sarvam.ai";
 const SARVAM_API_KEY = Deno.env.get("SARVAM_API_KEY") ?? "";
-const SUPPORTED_TARGETS: TargetLanguage[] = ["ta", "hi", "te", "ml"];
+const SUPPORTED_TARGETS: TargetLanguage[] = ["bn", "gu", "hi", "kn", "ml", "mr", "or", "ta", "te"];
 const TRANSLATE_MODEL = "sarvam-translate:v1";
 const MAYURA_MODEL = "mayura:v1";
 
 const toSarvamLanguageCode = (languageCode: TargetLanguage | "en") => {
   switch (languageCode) {
+    case "bn":
+      return "bn-IN";
+    case "gu":
+      return "gu-IN";
     case "ta":
       return "ta-IN";
     case "hi":
       return "hi-IN";
+    case "kn":
+      return "kn-IN";
+    case "mr":
+      return "mr-IN";
+    case "or":
+      return "or-IN";
     case "te":
       return "te-IN";
     case "ml":

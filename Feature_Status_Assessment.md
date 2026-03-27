@@ -1,118 +1,133 @@
-# Civil Alert System — Feature Status Assessment
+﻿# Civil Alert System - Feature Status Assessment
 
-> A comprehensive audit of every implemented, partially implemented, and planned feature across the full-stack platform.
+> Current implementation status across the mobile app, admin dashboard, and Supabase backend, plus the highest-value improvements still worth doing.
 
 ---
 
-## ✅ Fully Completed Features
+## Complete Features
 
 ### Mobile App (Flutter)
 
 | # | Feature | Status | Details |
 |---|---------|--------|---------|
-| 1 | Phone OTP Authentication | ✅ Complete | Supabase Phone Auth, full login/signup flow |
-| 2 | Interactive Onboarding | ✅ Complete | Multi-step guide for new users |
-| 3 | Multi-Media Hazard Reporting | ✅ Complete | Photo, video, audio capture (up to 5 attachments), hazard types (High Waves, Tsunami, Storm, Flood, Other), urgency levels (Low/Medium/High), high-risk flag, people-at-risk count |
-| 4 | Two-Phase Upload | ✅ Complete | Report data submitted first, media uploaded separately; partial-failure recovery queues failed media for retry |
-| 5 | Upload Progress Timeline | ✅ Complete | Visual overlay showing each upload step with timestamps, percentage, and completion/failure state |
-| 6 | Offline-First Queueing (Hive) | ✅ Complete | Reports queued locally when offline, pending indicator visible, manual "Sync Now" button |
-| 7 | Android Background Sync (WorkManager) | ✅ Complete | Periodic task every 15 min, exponential backoff, runs even when app is killed |
-| 8 | Report Sync Service | ✅ Complete | Automatically syncs queued reports when connectivity returns |
-| 9 | Report Feed (Community & Personal) | ✅ Complete | Toggle between "My Reports" and "Community" reports, filterable by Now/Week/Month |
-| 10 | Official Advisories Feed | ✅ Complete | Color-coded by severity (Info/Watch/Warning), shows region, date, contact details |
-| 11 | Live Situational Map | ✅ Complete | Flutter Map with hazard markers, advisory markers, risk zone overlays, marker clustering, detail bottom sheets with media preview and "Get Directions" |
-| 12 | Risk Zones on Mobile Map | ✅ Complete | Fetches cached and on-demand DBSCAN risk zones from PostGIS, renders color-coded circle overlays (yellow/orange/red) |
-| 13 | FCM Push Notifications | ✅ Complete | Firebase Cloud Messaging for new advisories and report status changes; background + foreground + terminated |
-| 14 | In-App Realtime Notifications | ✅ Complete | Supabase Realtime subscriptions trigger local notifications for advisory inserts and report status updates |
-| 15 | Profile & Sync Dashboard | ✅ Complete | Shows submission history, sync status, pending upload count, manual sync trigger, connectivity indicator |
-| 16 | Multilingual Support (i18n) | ✅ Complete | English and Tamil with localized strings throughout all screens |
-| 17 | Report Detail Screen | ✅ Complete | Full description, media viewer (photo/video/audio), GPS coordinates, timestamp, hazard type |
-| 18 | Gamification System | ✅ Complete | Points, badges, leaderboard. Server-side triggers award points on report submit/verify/reject. 10 badge types. Achievements screen, leaderboard screen, profile stats card. Admin dashboard Top Citizens widget |
-| 19 | Notifications Screen | ✅ Complete | Combined feed of advisory broadcasts and report status changes (verified/rejected), accessible from home header notification icon |
-| 20 | Offline Map Tiles | ✅ Complete | FMTC auto-caches viewed tiles for offline use; dedicated Offline Maps screen to bulk-download regions by radius (5/10/25 km) with progress, manage/delete cached regions |
+| 1 | Phone OTP Authentication | Complete | Supabase Phone Auth with login/signup flow |
+| 2 | Interactive Onboarding | Complete | Multi-step guided onboarding |
+| 3 | Multimedia Hazard Reporting | Complete | Photo, video, audio capture with hazard type, urgency, high-risk flag, and people-at-risk count |
+| 4 | Two-Phase Upload Pipeline | Complete | Report data inserts first, media uploads second, with retry-safe partial failure recovery |
+| 5 | Upload Progress Timeline | Complete | Per-step upload timeline with timestamps and completion/failure state |
+| 6 | Offline Queueing | Complete | Hive-backed offline queue with visible pending state |
+| 7 | Android Background Sync | Complete | WorkManager-based background retry with backoff |
+| 8 | Manual + Automatic Queue Sync | Complete | Manual sync trigger and automatic retry when connectivity returns |
+| 9 | Community / Personal Report Feed | Complete | Citizens can view community reports and their own reports with time-window filters |
+| 10 | Home Feed Window Fallback | Complete | Home feed automatically falls back from Now -> Last Week -> Last Month to avoid empty startup state |
+| 11 | Official Advisories Feed | Complete | Severity-colored advisories with region, time, contacts, and localized content |
+| 12 | Live Situational Map | Complete | Hazard markers, advisory markers, risk zones, clustering, and detail sheets |
+| 13 | Risk Zone Rendering | Complete | Cached and on-demand PostGIS risk zones rendered on map |
+| 14 | FCM Push Notifications | Complete | Advisory and report-status notifications in foreground/background/terminated flows |
+| 15 | In-App Realtime Notifications | Complete | Supabase Realtime drives local notification behavior |
+| 16 | Notification Deep Linking | Complete | Notification taps route directly to advisory or report detail screens |
+| 17 | Notifications Screen | Complete | Combined advisory + report-status feed inside the app |
+| 18 | Profile / Sync Dashboard | Complete | Submission history, connectivity state, pending upload count, and manual sync controls |
+| 19 | Offline Map Tiles | Complete | Viewed-tile caching plus bulk download/delete for offline regions |
+| 20 | Multilingual App Support | Complete | Core app localization is wired for English, Bengali, Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Tamil, and Telugu |
+| 21 | Localized Advisories | Complete | Advisory fetches use locale-aware RPCs; translated advisory content is rendered across home, updates, map, and detail flows |
+| 22 | Report Detail Screen | Complete | Media viewer, timestamps, hazard info, and GPS details |
+| 23 | Gamification System | Complete | Points, badges, leaderboard, profile stats, and backend trigger-based scoring |
 
 ### Admin Dashboard (React)
 
 | # | Feature | Status | Details |
 |---|---------|--------|---------|
-| 18 | Secure Admin Authentication | ✅ Complete | Email/password via Supabase Auth, admin-only role enforcement (`app_roles` table), non-admin users rejected at login |
-| 19 | Protected Routes | ✅ Complete | Unauthenticated users redirected to login page |
-| 20 | Analytics Dashboard | ✅ Complete | 8 KPI cards (Total, Pending, High-Risk, Today, Weekly Trend %, Hotspot Clusters, False-Positive Rate, Avg Verification Time), breakdown charts by Hazard/Status/Urgency |
-| 21 | Report Management Table | ✅ Complete | Paginated, searchable, multi-filter (hazard type, urgency, status, date range, high-risk, has-media, landmark proximity), day/week picker, auto-refresh toggle |
-| 22 | Verification Workflow | ✅ Complete | Full report detail dialog with photo viewer, video player, audio player, GPS, masked phone. Status flow: Pending → Verified → Rejected → Resolved |
-| 23 | Suspicious Report Flagging | ✅ Complete | Automated flags: rapid submissions (3+ in 5 min), high hourly volume (8+/hour), repeated descriptions, high-risk without media |
-| 24 | AI-Generated Risk Zones | ✅ Complete | PostGIS DBSCAN clustering, zone table with risk score/report count/radius/timestamp. Status: Candidate → Verified → Suppressed → Locked (6h hold). One-click recompute |
-| 25 | Live Map (Leaflet) | ✅ Complete | Hazard markers, advisory markers, risk zone overlays, monitoring zones. Multiple basemaps (street/satellite). Layer toggles. Recentering. Report count display |
-| 26 | Monitoring Zone Drawing | ✅ Complete | Draw circle zones with Leaflet Draw, name, radius, people count. Color-coded by population (green → yellow → red → orange). Edit/resize/delete with Supabase persistence |
-| 27 | Landmark Management | ✅ Complete | Create/edit/delete landmarks with name, coordinates, radius. Filter reports by proximity |
-| 28 | Advisory Broadcasting | ✅ Complete | Full form: title, body, 7 categories, 3 severities, region, GPS, start/expiry dates, emergency contacts (phone, WhatsApp, hotline). Pushed in real-time |
-| 29 | CSV Export | ✅ Complete | Export filtered reports as timestamped CSV files |
-| 30 | Realtime Updates | ✅ Complete | Supabase subscriptions auto-refresh report table on new incoming reports |
-| 31 | Recent Reports Table | ✅ Complete | Dashboard widget showing latest 10 reports with quick navigation to full report view |
+| 24 | Secure Admin Authentication | Complete | Email/password login with admin-only role enforcement |
+| 25 | Protected Routes | Complete | Unauthenticated users are redirected to login |
+| 26 | Analytics Dashboard | Complete | KPI cards and report breakdowns by hazard, urgency, and status |
+| 27 | Report Management Table | Complete | Search, pagination, filters, and realtime refresh |
+| 28 | Report Verification Workflow | Complete | Full report-review dialog with media evidence and status transitions |
+| 29 | Quick Verify from Dashboard | Complete | Recent reports widget supports direct verification |
+| 30 | Suspicious Report Flagging | Complete | Heuristics for spam-like or suspicious submissions |
+| 31 | AI-Generated Risk Zones | Complete | PostGIS DBSCAN hotspots with analyst state workflow |
+| 32 | Live Map | Complete | Hazard markers, advisories, risk zones, monitoring zones, layer toggles, and recentering |
+| 33 | Monitoring Zone Management | Complete | Named monitoring zones with persistence, edit, and delete flows |
+| 34 | Polygon Monitoring Zones | Complete | Monitoring zones now support circles and polygons on the main map workflow |
+| 35 | Landmark Management | Complete | CRUD for important landmarks plus proximity filtering |
+| 36 | Advisory Broadcasting | Complete | Authoring form with category, severity, targeting, validity window, and emergency contacts |
+| 37 | Multilingual Advisory Workflow | Complete | English source -> AI-generated translations -> review/edit -> publish |
+| 38 | Edit Existing Advisories | Complete | Advisories can be edited instead of delete-and-republish |
+| 39 | Quick Review All Translations | Complete | One-click action to mark all generated translations as reviewed |
+| 40 | CSV Export | Complete | Filtered report export as timestamped CSV |
+| 41 | Audit Logs Page | Complete | Admin-visible audit log view for status-change accountability |
+| 42 | API Reference Page | Complete | In-dashboard API reference for integrators and internal teams |
 
-### Backend (Supabase)
+### Backend / Supabase
 
 | # | Feature | Status | Details |
 |---|---------|--------|---------|
-| 32 | PostGIS Spatial Queries | ✅ Complete | Bounding-box queries, distance calculations, DBSCAN clustering, coordinate-based filtering |
-| 33 | Cached Risk Zone Tables | ✅ Complete | `get_cached_risk_zones` and `calculate_risk_zones_on_demand` functions for performance |
-| 34 | Row Level Security (RLS) | ✅ Complete | Citizens see only own data, analysts get role-based access |
-| 35 | Realtime Subscriptions | ✅ Complete | Websocket channels for reports, advisories, and zones to both frontends |
-| 36 | Rate Limiting | ✅ Complete | 30-second minimum interval, hourly caps, database-level enforcement |
-| 37 | Duplicate Deduplication | ✅ Complete | Backend-level dedupe logic that links duplicate submissions to existing reports |
-| 38 | Supabase Storage | ✅ Complete | Media upload (photos, videos, audio) with per-report/per-user path structure |
-| 39 | Push Token Management | ✅ Complete | FCM token upsert/disable via `push_tokens` table |
+| 43 | PostGIS Spatial Queries | Complete | Bounding boxes, distance calculations, clustering, and location filtering |
+| 44 | Cached Risk Zone Functions | Complete | Cached and on-demand risk zone computation paths |
+| 45 | Row Level Security | Complete | Citizens are restricted to their own data; admin reads are role-guarded |
+| 46 | Realtime Subscriptions | Complete | Realtime channels for reports, advisories, and map updates |
+| 47 | Rate Limiting | Complete | Database-enforced submission throttling and hourly caps |
+| 48 | Duplicate Deduplication | Complete | Duplicate report linking logic exists in backend |
+| 49 | Supabase Storage | Complete | Structured media storage for report assets |
+| 50 | Push Token Management | Complete | Token upsert, disable flow, and per-device language code storage |
+| 51 | Official Advisory Translation Storage | Complete | Canonical advisory rows plus official_advisory_translations per locale |
+| 52 | Locale-Aware Advisory Read RPCs | Complete | Localized advisory fetch functions with English fallback |
+| 53 | Multilingual Advisory Publish Edge Functions | Complete | Admin-only translation preview and publish-with-translations functions |
+| 54 | Report Status Audit Tables / Policies | Complete | Audit persistence and admin-visible RLS path exist in the backend |
 
 ---
 
-## 🟡 Partially Implemented Features
+## Partially Implemented Features
 
-| # | Feature | Status | What Exists | What's Missing |
-|---|---------|--------|-------------|----------------|
-| 1 | **Privacy Controls** | 🟡 Not Needed | `privacy_provider.dart` with `reduceMapPrecision` toggle, `privacy_controls_screen.dart` UI with switch | The toggle stores a preference but coordinate fuzzing is **not applied** during report submission or map display. The setting is saved but has no downstream effect |
-| 2 | **FCM Deep-Linking** | ✅ Complete | Implemented notification tap deep-links for foreground/background/terminated flows. Taps route to `ReportDetailsScreen` (`report_id`) or `AdvisoryDetailsScreen` (`advisory_id`) via app navigator and notification payload parsing |   |
-| 3 | **Admin Quick Verify** | ✅ Complete | Added quick-verify action in `RecentReportsTable.tsx` wired to `hazardService.verifyReport` from Dashboard, with loading state and optimistic status updates |   |
-| 4 | **Map Image/PDF Export** | ✅ Complete | Export button in Live Map toolbar — PNG (high-res via html2canvas) and A4 landscape PDF (jsPDF with header, timestamp, watermark) |
-| 5 | **Geofencing Page** | 🟡 Partial | Monitoring zones can be drawn via `LeafletMapWithDraw` on the Live Map page | No dedicated "Geofencing" page exists. Geofences are only monitoring-zone circles — no polygon support, no automated alerting when citizens enter/exit zones |
-
----
-
-## 🔵 Features That Can Be Improved
-
-| # | Feature | Current State | Suggested Improvement |
-|---|---------|--------------|----------------------|
-| 1 | **Offline Queue Visibility** | ✅ Complete | Dedicated `QueuedReportsScreen` linked from Profile and Updates. Shows per-item queue status, retry count, attachments, error reason, next retry timing, and delete action for stuck reports | � |
-| 2 | **Report Filtering** | ✅ Complete | Mobile app includes Hazard Type and Urgency drop-down filters alongside time windows. Admin has full multi-filter |
-| 3 | **Advisory Targeting** | ✅ Complete | Advisories can be targeted by GPS radius. Mobile app drops targeted notifications if user is out of bounds |
-| 4 | **Map Performance** | ✅ Complete | Admin Live Map now debounces viewport-driven risk-zone refreshes and uses client-side tile/viewport caching with invalidation on refresh and zone mutations | � |
-| 5 | **Media Compression** | Photos/videos uploaded at original resolution | Add client-side compression (image resize, video transcode) before upload to reduce bandwidth and storage costs |
-| 6 | **Report Detail on Admin** | Full-page dialog with all media inline | Add image zoom/lightbox, video seek preview, and audio waveform visualization for better evidence review |
-| 7 | **Notification Granularity** | All-or-nothing notification toggle | Let users choose: advisory notifications only, report status only, or both. Per-severity filtering (e.g., only Warning-level advisories) |
-| 8 | **Admin Dashboard Trends** | Weekly trend percentage only | Add time-series charts (reports per day/week over last month), geographic distribution heatmap on dashboard |
-| 9 | **Multilingual Coverage** | English and Tamil | Add Hindi, Malayalam, Telugu, Kannada, and other regional languages for broader coastal India coverage |
-| 10 | **Download/Share Reports** | Citizens can view their reports | Allow citizens to download or share their submitted reports as PDF or shareable link |
-| 11 | **Monitoring Zone Alerts** | Zones drawn with people count | Add automated alerts when report density exceeds a threshold within a monitoring zone |
-| 12 | **Admin Audit Trail** | Report status changes happen instantly | Log who changed what status and when, for accountability and dispute resolution |
+| # | Feature | Status | What Exists | What Is Missing |
+|---|---------|--------|-------------|-----------------|
+| 1 | Geofencing / Monitoring Zones | Partial | Admins can draw, persist, edit, and delete circle and polygon monitoring zones | No automated entry/exit alerts, no zone-triggered citizen notifications, no rules engine |
+| 2 | Notification Preferences | Partial | There is basic notification support and token management | No fine-grained preference controls by type, severity, or quiet hours |
+| 3 | Cross-Language Report Review | Partial | Official advisories are multilingual | Citizen free-text reports are not yet auto-translated to a common analyst language |
+| 4 | Advisory Delivery Relevance | Partial | Location-aware ranking exists and advisory targeting is supported | There is no explicit user-facing relevance label such as Nearby / Global / Outside Area |
 
 ---
 
-## 🔴 New Features to Implement
+## Explicitly De-Prioritized / Not Needed Right Now
+
+| # | Feature | Decision | Reason |
+|---|---------|----------|--------|
+| 1 | User-Toggle Privacy Controls for Map Precision | Not Needed | The current product direction favors verified, operationally useful exact locations over citizen-side precision masking. If privacy rules are needed later, they should be system-enforced by report type, not left to a user toggle. |
+| 2 | Separate Geofencing Page | Not Needed | Monitoring zones already live where operators use them: the main map. The capability matters more than a standalone page. |
+
+---
+
+## Highest-Value Improvements
+
+| # | Improvement | Current State | Why It Matters |
+|---|-------------|--------------|----------------|
+| 1 | Translate Citizen Report Text for Analysts | Advisories are multilingual, but citizen free-text reports are not normalized for admin review | High operational value: lets analysts triage mixed-language submissions faster and more accurately |
+| 2 | Advisory Delivery Diagnostics | Advisories can be published and pushed, but there is no operator-facing sent/delivered/opened visibility | Critical for trust: admins need to know whether alerts actually reached devices |
+| 3 | Per-User Notification Controls | Notification flow is system-wide | Lets users opt into advisory-only, report-status-only, severity filters, and quiet hours |
+| 4 | Media Compression Before Upload | Photos and videos still upload at original size | Reduces bandwidth, storage cost, and mobile upload failures |
+| 5 | Accessibility Hardening | Base app works, but accessibility is not a first-class audited layer | Important for emergency usability: screen readers, contrast, large text, and semantics |
+| 6 | Evidence Review UX on Admin | Verification works, but media review is basic | Zoom, scrub previews, and waveform/audio aids would speed analyst validation |
+| 7 | Advisory Relevance Labels | Advisories are now ranked by relevance instead of hidden | The UI should explain why an advisory is shown: Nearby, In Radius, or Global |
+| 8 | Better Home / Updates Overflow Handling | Long translated strings are more demanding on compact cards | Important because localization increases text length and exposes layout edge cases |
+| 9 | Advisory Edit Audit Trail | Advisories can be edited, but the edit history is not surfaced clearly | Operators need to know what changed, when, and by whom during active events |
+| 10 | iOS Push Support | Push implementation is Android-first | Necessary for broader citizen coverage if iOS distribution matters |
+
+---
+
+## New Features Worth Building
 
 | # | Feature | Priority | Description |
 |---|---------|----------|-------------|
-| 1 | **AI/NLP Report Triage** | 🔴 High | Automated severity scoring of report descriptions using NLP. Spam/noise filtering using lightweight ML models (Scikit-learn, HuggingFace). Zero code exists — part of Phase 1 roadmap |
-| 2 | **Python Processing Pipeline** | 🔴 High | Dedicated backend pipeline for asynchronous report analysis, classification, and enrichment. Part of Phase 1 roadmap |
-| 3 | **Institutional Weather API Integration** | 🟠 Medium | Ingest meteorological data feeds (IMD, OpenWeatherMap) to enrich risk zones with weather context. Part of Phase 2 roadmap |
-| 4 | **Dark Mode** | 🟠 Medium | No dark mode implementation exists. Add theme toggle for both mobile (Flutter ThemeMode) and admin web (MUI dark theme) |
-| 5 | **Citizen-to-Citizen Messaging** | 🟡 Low | Allow citizens in the same area to communicate during active events. Could use Supabase Realtime channels |
-| 6 | **iOS Push Notifications** | 🟠 Medium | FCM code only runs on Android (`if (!Platform.isAndroid) return`). APNs integration needed for iOS |
-| 7 | **Geofence Entry/Exit Alerts** | 🟠 Medium | Alert citizens when they enter a high-risk geofenced zone. Requires background location tracking on mobile |
-| 8 | **Report Comments/Threads** | 🟡 Low | Allow analysts to add notes/comments to reports. Citizens could see status update reasons |
-| 9 | **Multi-Tenant / Multi-District** | 🟡 Low | Support multiple districts/agencies with data isolation. Currently single-tenant |
-| 10 | **Photo AI Analysis** | 🟠 Medium | Auto-classify uploaded photos to detect flood water levels, infrastructure damage, etc. using computer vision |
-| 11 | **Accessibility (a11y)** | 🟠 Medium | Screen reader support, high-contrast mode, and semantic labels throughout the mobile app |
-| 12 | **Export API for Institutions** | 🟡 Low | REST/GraphQL API for external systems (government dashboards, GIS tools) to pull report data |
-| 13 | **User Account Deletion** | 🟠 Medium | GDPR/compliance: allow citizens to delete their account and all associated data |
+| 1 | Multilingual Report Translation Pipeline | High | Detect citizen report language, store original text, and produce translated English for analyst triage without overwriting the source text |
+| 2 | Monitoring-Zone Alert Rules | High | Trigger analyst alerts when report density, urgency, or category thresholds are crossed inside a zone |
+| 3 | Institutional Export API | High | Stable REST/RPC surface for agencies, GIS tools, and external dashboards |
+| 4 | Advisory Delivery Analytics | High | Sent / failed / received / opened metrics per advisory and per language |
+| 5 | Weather / Tide Data Integration | Medium | Enrich advisories and risk maps with institutional weather, tide, and wave feeds |
+| 6 | User Account Deletion | Medium | Compliance and trust feature for removing user account data on request |
+| 7 | iOS APNs Support | Medium | Full Apple push support parallel to current Android FCM flow |
+| 8 | Photo / Video AI Analysis | Medium | Damage / flood / obstruction classification on uploaded media |
+| 9 | Multi-Tenant Agency Support | Medium | District / agency isolation for broader deployment |
+| 10 | Public Safety Share Links / PDFs | Low | Let citizens or operators share official advisories and selected reports externally in a controlled format |
 
 ---
 
@@ -120,9 +135,14 @@
 
 | Category | Count |
 |----------|-------|
-| ✅ Fully Completed | 44 features |
-| 🟡 Partially Implemented | 3 features |
-| 🔵 Can Be Improved | 10 features |
-| 🔴 New to Implement | 12 features |
+| Complete | 54 |
+| Partial | 4 |
+| De-Prioritized / Not Needed | 2 |
+| Highest-Value Improvements | 10 |
+| New Features Worth Building | 10 |
 
+## Recommended Next Three
 
+1. Multilingual report-text translation for admins
+2. Advisory delivery diagnostics and notification controls
+3. Monitoring-zone alert rules

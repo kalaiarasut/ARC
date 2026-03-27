@@ -1,5 +1,15 @@
 export type AdvisorySeverity = 'info' | 'watch' | 'warning';
-export type AdvisoryLanguageCode = 'en' | 'ta' | 'hi' | 'te' | 'ml';
+export type AdvisoryLanguageCode =
+  | 'en'
+  | 'bn'
+  | 'gu'
+  | 'hi'
+  | 'kn'
+  | 'ml'
+  | 'mr'
+  | 'or'
+  | 'ta'
+  | 'te';
 export type AdvisoryTranslationStatus = 'generated' | 'reviewed' | 'failed';
 
 export type AdvisoryCategory =

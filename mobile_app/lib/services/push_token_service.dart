@@ -104,8 +104,13 @@ class PushTokenService {
 
   String _normalizeLanguageCode(String languageCode) {
     switch (languageCode.trim().toLowerCase()) {
+      case 'bn':
       case 'ta':
+      case 'gu':
       case 'hi':
+      case 'kn':
+      case 'mr':
+      case 'or':
       case 'te':
       case 'ml':
       case 'en':

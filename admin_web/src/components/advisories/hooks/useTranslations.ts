@@ -6,6 +6,11 @@ export const TARGET_LANGUAGES: {
   label: string;
   nativeLabel: string;
 }[] = [
+  { code: 'bn', label: 'Bengali', nativeLabel: 'বাংলা' },
+  { code: 'gu', label: 'Gujarati', nativeLabel: 'ગુજરાતી' },
+  { code: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ' },
+  { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
+  { code: 'or', label: 'Odia', nativeLabel: 'ଓଡ଼ିଆ' },
   { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
   { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
   { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' },
@@ -24,6 +29,7 @@ export interface UseTranslationsReturn {
     patch: Partial<AdvisoryTranslationDraft>
   ) => void;
   markReviewed: (languageCode: AdvisoryLanguageCode) => boolean;
+  markAllReviewed: () => number;
   markEditable: (languageCode: AdvisoryLanguageCode) => void;
   allReviewed: boolean;
   reviewedCount: number;
@@ -34,16 +40,16 @@ export interface UseTranslationsReturn {
 
 export function useTranslations(): UseTranslationsReturn {
   const [translations, setTranslations] = useState<AdvisoryTranslationDraft[]>([]);
-  const [activeTab, setActiveTab] = useState<AdvisoryLanguageCode>('ta');
+  const [activeTab, setActiveTab] = useState<AdvisoryLanguageCode>('bn');
 
   const clearTranslations = useCallback(() => {
     setTranslations([]);
-    setActiveTab('ta');
+    setActiveTab(TARGET_LANGUAGES[0].code);
   }, []);
 
   const invalidateTranslations = useCallback(() => {
     setTranslations((current) => (current.length === 0 ? current : []));
-    setActiveTab((current) => (current === 'ta' ? current : 'ta'));
+    setActiveTab(TARGET_LANGUAGES[0].code);
   }, []);
 
   const updateTranslation = useCallback(
@@ -94,6 +100,27 @@ export function useTranslations(): UseTranslationsReturn {
     [updateTranslation]
   );
 
+  const markAllReviewed = useCallback((): number => {
+    let reviewed = 0;
+
+    setTranslations((current) =>
+      current.map((translation) => {
+        if (!translation.title.trim() || !translation.body.trim()) {
+          return translation;
+        }
+
+        reviewed += 1;
+        return {
+          ...translation,
+          translation_status: 'reviewed',
+          error: undefined,
+        };
+      })
+    );
+
+    return reviewed;
+  }, []);
+
   const allReviewed = useMemo(
     () =>
       TARGET_LANGUAGES.every((lang) =>
@@ -128,6 +155,7 @@ export function useTranslations(): UseTranslationsReturn {
     invalidateTranslations,
     updateTranslation,
     markReviewed,
+    markAllReviewed,
     markEditable,
     allReviewed,
     reviewedCount,

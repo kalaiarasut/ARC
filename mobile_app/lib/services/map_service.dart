@@ -140,8 +140,13 @@ class MapService {
       final languageCode = (() {
         final saved = (StorageService.getLanguage() ?? 'en').trim().toLowerCase();
         switch (saved) {
+          case 'bn':
           case 'ta':
+          case 'gu':
           case 'hi':
+          case 'kn':
+          case 'mr':
+          case 'or':
           case 'te':
           case 'ml':
           case 'en':
