@@ -59,6 +59,7 @@ const statusConfig = (status: RiskZoneStatus) => {
 
 export const GeneratedZones: React.FC = () => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [zones, setZones] = useState<GeneratedRiskZone[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,13 +185,15 @@ export const GeneratedZones: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: isDark ? 'background.default' : alpha(theme.palette.primary.main, 0.02) }}>
       {/* Premium Header */}
       <Box
         sx={{
           px: { xs: 2, sm: 3 },
           py: 2,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+          background: isDark
+            ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${theme.palette.background.paper} 100%)`
+            : `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
           borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
         }}
       >
@@ -204,11 +207,15 @@ export const GeneratedZones: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-                boxShadow: `0 4px 14px ${alpha(theme.palette.secondary.main, 0.35)}`,
+                background: isDark
+                  ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)'
+                  : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
+                boxShadow: isDark
+                  ? '0 0 15px rgba(0, 255, 209, 0.3)'
+                  : `0 4px 14px ${alpha(theme.palette.secondary.main, 0.35)}`,
               }}
             >
-              <RadarIcon sx={{ color: 'white', fontSize: 24 }} />
+              <RadarIcon sx={{ color: isDark ? '#040b16' : 'white', fontSize: 24 }} />
             </Box>
             <Box>
               <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2, letterSpacing: -0.5 }}>
@@ -265,8 +272,13 @@ export const GeneratedZones: React.FC = () => {
                 borderRadius: '10px',
                 textTransform: 'none',
                 fontWeight: 600,
-                background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-                boxShadow: `0 4px 12px ${alpha(theme.palette.secondary.main, 0.3)}`,
+                background: isDark
+                  ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)'
+                  : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
+                color: isDark ? '#040b16' : '#ffffff',
+                boxShadow: isDark
+                  ? '0 0 15px rgba(0, 255, 209, 0.3)'
+                  : `0 4px 12px ${alpha(theme.palette.secondary.main, 0.3)}`,
               }}
             >
               {actionLoading === 'recompute' ? 'Computing…' : 'Recompute Zones'}

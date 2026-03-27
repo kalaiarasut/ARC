@@ -141,24 +141,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             }}
         >
             {/* Logo */}
-            <Box sx={{ p: 3, pb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box
+            <Box sx={{ p: 3, pb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '12px',
+                            background: isDark ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)' : OCEAN_GRADIENT,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: isDark ? '0 0 15px rgba(0, 255, 209, 0.3)' : '0 4px 12px rgba(8, 131, 149, 0.3)',
+                        }}
+                    >
+                        <Typography sx={{ color: isDark ? '#040b16' : '#FFFFFF', fontWeight: 800, fontSize: '1rem' }}>C</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: isDark ? '#e2f1f8' : '#1e293b', letterSpacing: '-0.02em' }}>
+                        CoastSafe
+                    </Typography>
+                </Box>
+                <IconButton
+                    onClick={(e) => toggleColorMode(e)}
+                    size="small"
                     sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '12px',
-                        background: isDark ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)' : OCEAN_GRADIENT,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: isDark ? '0 0 15px rgba(0, 255, 209, 0.3)' : '0 4px 12px rgba(8, 131, 149, 0.3)',
+                        color: isDark ? '#00ffd1' : '#475569',
+                        backgroundColor: isDark ? 'rgba(0, 255, 209, 0.08)' : 'rgba(0,0,0,0.04)',
+                        width: 32,
+                        height: 32,
+                        '&:hover': {
+                            backgroundColor: isDark ? 'rgba(0, 255, 209, 0.15)' : 'rgba(0,0,0,0.08)'
+                        }
                     }}
                 >
-                    <Typography sx={{ color: isDark ? '#040b16' : '#FFFFFF', fontWeight: 800, fontSize: '1rem' }}>C</Typography>
-                </Box>
-                <Typography sx={{ fontSize: '1.125rem', fontWeight: 700, color: isDark ? '#e2f1f8' : '#1e293b', letterSpacing: '-0.02em' }}>
-                    CoastSafe
-                </Typography>
+                    {isDark ? <LightModeOutlinedIcon sx={{ fontSize: 18 }} /> : <DarkModeOutlinedIcon sx={{ fontSize: 18 }} />}
+                </IconButton>
             </Box>
 
             {/* Navigation */}
@@ -178,22 +195,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
             {/* Bottom Actions */}
             <Box sx={{ p: 2, pt: 0 }}>
-                {/* Theme Toggle */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: isAuthenticated && user ? 2 : 0 }}>
-                    <IconButton 
-                        onClick={(e) => toggleColorMode(e)} 
-                        sx={{ 
-                            color: isDark ? '#00ffd1' : '#475569',
-                            backgroundColor: isDark ? 'rgba(0, 255, 209, 0.05)' : 'rgba(0,0,0,0.04)',
-                            '&:hover': {
-                                backgroundColor: isDark ? 'rgba(0, 255, 209, 0.15)' : 'rgba(0,0,0,0.08)'
-                            }
-                        }}
-                    >
-                        {isDark ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
-                    </IconButton>
-                </Box>
-
                 {/* Bottom Profile & Logout */}
                 {isAuthenticated && user && (
                     <>
