@@ -1,8 +1,22 @@
-import React from 'react';
-import { Box, Typography, TextField, Button, Stack, Alert, alpha } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Stack,
+  Alert,
+  alpha,
+  Tooltip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import type { AdvisoryTranslationDraft } from '../../types/advisory';
 
 export interface TranslationEditorProps {
@@ -12,6 +26,11 @@ export interface TranslationEditorProps {
     label: string;
     nativeLabel: string;
   };
+  source: {
+    title: string;
+    body: string;
+    region: string | null;
+  };
   onUpdate: (patch: Partial<AdvisoryTranslationDraft>) => void;
   onMarkReviewed: () => void;
   onMarkEditable: () => void;
@@ -20,12 +39,14 @@ export interface TranslationEditorProps {
 export const TranslationEditor: React.FC<TranslationEditorProps> = ({
   draft,
   language,
+  source,
   onUpdate,
   onMarkReviewed,
   onMarkEditable,
 }) => {
   const theme = useTheme();
   const isReviewed = draft.translation_status === 'reviewed';
+  const [showSourceDialog, setShowSourceDialog] = useState(false);
 
   return (
     <Box>
@@ -47,13 +68,52 @@ export const TranslationEditor: React.FC<TranslationEditorProps> = ({
             {language.label}
           </Typography>
         </Box>
-        {isReviewed && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'success.main' }}>
-            <CheckCircleIcon sx={{ fontSize: '1.2rem' }} />
-            <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>Reviewed</Typography>
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Tooltip title="View original source message">
+            <IconButton size="small" onClick={() => setShowSourceDialog(true)}>
+              <TextSnippetIcon sx={{ fontSize: '1rem' }} />
+            </IconButton>
+          </Tooltip>
+          {isReviewed && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'success.main' }}>
+              <CheckCircleIcon sx={{ fontSize: '1.2rem' }} />
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 500 }}>Reviewed</Typography>
+            </Box>
+          )}
+        </Box>
       </Box>
+
+      <Dialog open={showSourceDialog} onClose={() => setShowSourceDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Original source message</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Title
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {source.title || '-'}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Body
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {source.body || '-'}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Region
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {source.region?.trim() || '-'}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+      </Dialog>
 
       {draft.error && (
         <Alert severity="error" sx={{ mb: 2 }}>

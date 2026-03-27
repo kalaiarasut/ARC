@@ -1045,4 +1045,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineMaps => 'Offline Maps';
+
+  @override
+  String get filterSeverity => 'Severity';
+
+  @override
+  String get filterCategory => 'Category';
+
+  @override
+  String get filterNearMe => 'Near me';
+
+  @override
+  String get filterAllSeverities => 'All Severities';
+
+  @override
+  String get filterAllCategories => 'All Categories';
+
+  @override
+  String get filterWarning => 'Warning';
+
+  @override
+  String get filterWatch => 'Watch';
+
+  @override
+  String get filterInfo => 'Info';
+
+  @override
+  String get filtersLabel => 'Filters';
+
+  @override
+  String get filterClearAll => 'Clear all';
+
+  @override
+  String get filterSearchRegion => 'Search region...';
+
+  @override
+  String get filterSearchByRegion => 'Search by region';
+
+  @override
+  String get filterStatus => 'Status';
+
+  @override
+  String get filterActiveOnly => 'Active only';
+
+  @override
+  String get filterIncludeExpired => 'Include expired';
+
+  @override
+  String get filterAdditional => 'Additional Filters';
+
+  @override
+  String get filterHasContact => 'Has contact info';
+
+  @override
+  String get filterTranslatedOnly => 'Translated only';
+
+  @override
+  String get filterApply => 'Apply Filters';
+
+  @override
+  String get sortLabel => 'Sort';
+
+  @override
+  String get sortMostRelevant => 'Most relevant';
+
+  @override
+  String get sortNewest => 'Newest';
+
+  @override
+  String get sortNearest => 'Nearest';
+
+  @override
+  String filterActiveCount(int count) {
+    return '$count active';
+  }
 }

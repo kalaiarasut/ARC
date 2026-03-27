@@ -1913,6 +1913,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline Maps'**
   String get offlineMaps;
+
+  /// No description provided for @filterSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'Severity'**
+  String get filterSeverity;
+
+  /// No description provided for @filterCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get filterCategory;
+
+  /// No description provided for @filterNearMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Near me'**
+  String get filterNearMe;
+
+  /// No description provided for @filterAllSeverities.
+  ///
+  /// In en, this message translates to:
+  /// **'All Severities'**
+  String get filterAllSeverities;
+
+  /// No description provided for @filterAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All Categories'**
+  String get filterAllCategories;
+
+  /// No description provided for @filterWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get filterWarning;
+
+  /// No description provided for @filterWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch'**
+  String get filterWatch;
+
+  /// No description provided for @filterInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get filterInfo;
+
+  /// No description provided for @filtersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filtersLabel;
+
+  /// No description provided for @filterClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get filterClearAll;
+
+  /// No description provided for @filterSearchRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Search region...'**
+  String get filterSearchRegion;
+
+  /// No description provided for @filterSearchByRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by region'**
+  String get filterSearchByRegion;
+
+  /// No description provided for @filterStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get filterStatus;
+
+  /// No description provided for @filterActiveOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Active only'**
+  String get filterActiveOnly;
+
+  /// No description provided for @filterIncludeExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Include expired'**
+  String get filterIncludeExpired;
+
+  /// No description provided for @filterAdditional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Filters'**
+  String get filterAdditional;
+
+  /// No description provided for @filterHasContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Has contact info'**
+  String get filterHasContact;
+
+  /// No description provided for @filterTranslatedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated only'**
+  String get filterTranslatedOnly;
+
+  /// No description provided for @filterApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters'**
+  String get filterApply;
+
+  /// No description provided for @sortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sortLabel;
+
+  /// No description provided for @sortMostRelevant.
+  ///
+  /// In en, this message translates to:
+  /// **'Most relevant'**
+  String get sortMostRelevant;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get sortNewest;
+
+  /// No description provided for @sortNearest.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest'**
+  String get sortNearest;
+
+  /// No description provided for @filterActiveCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} active'**
+  String filterActiveCount(int count);
 }
 
 class _AppLocalizationsDelegate

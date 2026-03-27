@@ -29,6 +29,59 @@ class AdvisoryDetailsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _showOriginalMessage(
+    BuildContext context,
+    OfficialAdvisory advisory,
+  ) async {
+    final original = await AdvisoryService().getById(
+      advisory.id,
+      languageCode: advisory.sourceLanguage,
+    );
+    if (!context.mounted || original == null) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(original.title),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if ((original.region ?? '').trim().isNotEmpty) ...[
+                Text(
+                  original.region!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(dialogContext).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              Text(
+                original.body,
+                style: TextStyle(
+                  color: Theme.of(dialogContext).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.l10n.close),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageCode = Localizations.localeOf(context).languageCode;
@@ -128,9 +181,30 @@ class AdvisoryDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    advisory.title,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          advisory.title,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (advisory.displayLanguage != advisory.sourceLanguage)
+                        IconButton(
+                          onPressed: () => _showOriginalMessage(context, advisory),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(width: 22, height: 22),
+                          splashRadius: 18,
+                          icon: Icon(
+                            Icons.translate,
+                            size: 16,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                    ],
                   ),
                   if ((advisory.region ?? '').trim().isNotEmpty) ...[
                     const SizedBox(height: 8),

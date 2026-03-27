@@ -893,6 +893,11 @@ export function Advisories() {
                             <TranslationEditor
                               language={lang}
                               draft={draft}
+                              source={{
+                                title: form.title.trim(),
+                                body: form.body.trim(),
+                                region: form.region.trim() || null,
+                              }}
                               onUpdate={(patch) => updateTranslation(lang.code, patch)}
                               onMarkReviewed={() => markReviewed(lang.code)}
                               onMarkEditable={() => markEditable(lang.code)}
