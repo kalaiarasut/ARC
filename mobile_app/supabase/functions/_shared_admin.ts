@@ -7,6 +7,15 @@ type AdminAuthResult = {
   user: { id: string; email?: string | null };
 };
 
+export type AuthenticatedUserResult = {
+  supabase: any;
+  user: { id: string; email?: string | null };
+};
+
+export type WorkerAuthResult = {
+  supabase: any;
+};
+
 const jsonHeaders = { "content-type": "application/json" };
 export const corsHeaders = {
   "content-type": "application/json",
@@ -26,12 +35,25 @@ export function handleCors(request: Request): Response | null {
   return null;
 }
 
-export async function requireAdmin(request: Request): Promise<AdminAuthResult | Response> {
+export function createServiceRoleSupabaseClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
-    return jsonResponse({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
+}
+
+export async function requireAuthenticatedUser(request: Request): Promise<AuthenticatedUserResult | Response> {
+  let supabase: any;
+  try {
+    supabase = createServiceRoleSupabaseClient();
+  } catch (error) {
+    return jsonResponse({ error: error instanceof Error ? error.message : "Failed to create Supabase client" }, 500);
   }
 
   const authHeader =
@@ -44,8 +66,7 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult | 
   if (!token) {
     return jsonResponse({ error: "Missing bearer token" }, 401);
   }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
@@ -56,19 +77,59 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult | 
     return jsonResponse({ error: "Invalid auth token" }, 401);
   }
 
+  return { supabase, user };
+}
+
+export async function requireWorkerSecret(
+  request: Request,
+  secretName = "REPORT_TRANSLATION_WORKER_SECRET",
+): Promise<WorkerAuthResult | Response> {
+  const expectedSecret = (Deno.env.get(secretName) ?? "").trim();
+  if (!expectedSecret) {
+    return jsonResponse({ error: `Missing ${secretName}` }, 500);
+  }
+
+  const providedSecret = (request.headers.get("x-worker-secret") ?? "").trim();
+  if (!providedSecret || providedSecret !== expectedSecret) {
+    return jsonResponse({ error: "Invalid worker secret" }, 401);
+  }
+
+  try {
+    return { supabase: createServiceRoleSupabaseClient() };
+  } catch (error) {
+    return jsonResponse({ error: error instanceof Error ? error.message : "Failed to create Supabase client" }, 500);
+  }
+}
+
+export async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
   const { data: roleRow, error: roleError } = await supabase
     .from("app_roles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (roleError) {
-    return jsonResponse({ error: `Failed to verify admin role: ${roleError.message}` }, 500);
+    throw new Error(`Failed to verify admin role: ${roleError.message}`);
   }
 
-  if (roleRow?.role !== "admin") {
-    return jsonResponse({ error: "Admin access required" }, 403);
+  return roleRow?.role === "admin";
+}
+
+export async function requireAdmin(request: Request): Promise<AdminAuthResult | Response> {
+  const auth = await requireAuthenticatedUser(request);
+  if (auth instanceof Response) return auth;
+
+  try {
+    const isAdmin = await isAdminUser(auth.supabase, auth.user.id);
+    if (!isAdmin) {
+      return jsonResponse({ error: "Admin access required" }, 403);
+    }
+  } catch (error) {
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Failed to verify admin role" },
+      500,
+    );
   }
 
-  return { supabase, user };
+  return auth;
 }

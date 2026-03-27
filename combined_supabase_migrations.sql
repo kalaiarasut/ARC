@@ -28,6 +28,16 @@ CREATE TABLE IF NOT EXISTS public.hazard_reports (
   user_name TEXT,
   hazard_type TEXT NOT NULL CHECK (hazard_type IN ('High Waves', 'Tsunami', 'Storm', 'Flood', 'Other')),
   description TEXT NOT NULL,
+  detected_language TEXT,
+  translated_english TEXT,
+  translation_status TEXT NOT NULL DEFAULT 'pending' CHECK (translation_status IN ('pending', 'processing', 'completed', 'failed', 'skipped')),
+  translation_attempts INTEGER NOT NULL DEFAULT 0,
+  translation_last_error TEXT,
+  translation_last_attempt_at TIMESTAMPTZ,
+  translation_next_retry_at TIMESTAMPTZ,
+  translation_provider TEXT,
+  translation_model TEXT,
+  translated_at TIMESTAMPTZ,
   location GEOGRAPHY(Point, 4326) NOT NULL,
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
@@ -254,6 +264,9 @@ CREATE INDEX IF NOT EXISTS idx_hazard_created_at ON public.hazard_reports (creat
 CREATE INDEX IF NOT EXISTS idx_hazard_user_id ON public.hazard_reports (user_id);
 CREATE INDEX IF NOT EXISTS idx_hazard_client_id ON public.hazard_reports (client_id);
 CREATE INDEX IF NOT EXISTS idx_hazard_device_id ON public.hazard_reports (device_id);
+CREATE INDEX IF NOT EXISTS idx_hazard_reports_detected_language ON public.hazard_reports (detected_language);
+CREATE INDEX IF NOT EXISTS idx_hazard_reports_translation_status ON public.hazard_reports (translation_status);
+CREATE INDEX IF NOT EXISTS idx_hazard_reports_translation_retry ON public.hazard_reports (translation_status, translation_next_retry_at, translation_attempts);
 
 CREATE INDEX IF NOT EXISTS idx_risk_zones_location ON public.risk_zones_cached USING GIST (CAST(ST_MakePoint(center_lon, center_lat) AS geography));
 CREATE INDEX IF NOT EXISTS idx_risk_zones_calculated_at ON public.risk_zones_cached (calculated_at DESC);

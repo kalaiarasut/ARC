@@ -117,9 +117,12 @@ class ReportService {
         },
       );
 
-      if (response is String) return response;
-      if (response is Map && response['id'] != null) return response['id'].toString();
-      return response.toString();
+      final reportId = response is String
+          ? response
+          : (response is Map && response['id'] != null)
+              ? response['id'].toString()
+              : response.toString();
+      return reportId;
     } on PostgrestException catch (e) {
       // If RPC isn't deployed yet, fall back to direct insert.
       final msg = e.message.toLowerCase();

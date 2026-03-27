@@ -58,6 +58,8 @@ import {
   NavigateBefore as NavigateBeforeIcon,
   NavigateNext as NavigateNextIcon,
   History as HistoryIcon,
+  Translate as TranslateIcon,
+  TextSnippet as TextSnippetIcon,
 } from '@mui/icons-material';
 import { ImageZoom, AudioWaveform, VideoPreview } from '../components/MediaComponents';
 
@@ -96,6 +98,8 @@ export function Reports() {
   
   const [auditLogs, setAuditLogs] = useState<ReportAuditLog[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  const [translatingReportId, setTranslatingReportId] = useState<string | null>(null);
+  const [showOriginalDescription, setShowOriginalDescription] = useState(false);
 
   const [filters, setFilters] = useState<Partial<FilterOptions>>({
     hazardTypes: [],
@@ -433,6 +437,7 @@ export function Reports() {
   const handleRowClick = async (report: HazardReport) => {
     setSelectedReport(report);
     setDetailDialogOpen(true);
+    setShowOriginalDescription(false);
     setLoadingAudit(true);
     try {
       const logs = await hazardService.getReportAuditLogs(report.id);
@@ -442,6 +447,79 @@ export function Reports() {
       setAuditLogs([]);
     } finally {
       setLoadingAudit(false);
+    }
+  };
+
+  const ensureReportTranslation = async (report: HazardReport, options?: { silent?: boolean; force?: boolean }) => {
+    try {
+      setTranslatingReportId(report.id);
+      const translated = await hazardService.translateReportToEnglish(report.id, {
+        force: options?.force ?? false,
+      });
+      const patch: Partial<HazardReport> = {
+        detected_language: translated.detected_language,
+        translated_english: translated.translated_english,
+        translation_status: translated.translation_status,
+        translation_attempts: translated.translation_attempts,
+        translation_provider: translated.translation_provider,
+        translation_model: translated.translation_model,
+        translated_at: translated.translated_at,
+        translation_last_error: null,
+        translation_next_retry_at: null,
+      };
+
+      setReports((prev) => prev.map((item) => (item.id === report.id ? { ...item, ...patch } : item)));
+      setSelectedReport((prev) => (prev && prev.id === report.id ? { ...prev, ...patch } : prev));
+    } catch (e) {
+      console.error(e);
+      if (!options?.silent) {
+        setError('Failed to translate report description.');
+      }
+    } finally {
+      setTranslatingReportId(null);
+    }
+  };
+
+  const getLanguageLabel = (code?: string | null) => {
+    switch ((code ?? '').trim().toLowerCase()) {
+      case 'bn':
+        return 'Bengali';
+      case 'gu':
+        return 'Gujarati';
+      case 'hi':
+        return 'Hindi';
+      case 'kn':
+        return 'Kannada';
+      case 'ml':
+        return 'Malayalam';
+      case 'mr':
+        return 'Marathi';
+      case 'or':
+        return 'Odia';
+      case 'ta':
+        return 'Tamil';
+      case 'te':
+        return 'Telugu';
+      case 'en':
+        return 'English';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const getTranslationStatusMeta = (status?: HazardReport['translation_status'] | null) => {
+    switch (status) {
+      case 'completed':
+        return { label: 'Translated', color: 'success' as const };
+      case 'processing':
+        return { label: 'Processing', color: 'info' as const };
+      case 'failed':
+        return { label: 'Failed', color: 'error' as const };
+      case 'skipped':
+        return { label: 'Skipped', color: 'default' as const };
+      case 'pending':
+      default:
+        return { label: 'Pending', color: 'warning' as const };
     }
   };
 
@@ -509,7 +587,7 @@ export function Reports() {
     const colors = {
       'High': 'error',
       'Medium': 'warning',
-      'Low': 'success',
+      'Low': 'info',
     };
     return colors[level] as any;
   };
@@ -517,11 +595,31 @@ export function Reports() {
   const getStatusColor = (status: ReportStatus) => {
     const colors = {
       'pending': 'default',
-      'verified': 'info',
+      'verified': 'primary',
       'rejected': 'error',
-      'resolved': 'success',
+      'resolved': 'info',
     };
     return colors[status] as any;
+  };
+
+  const getStatusChipStyle = (status: ReportStatus) => {
+    const styles: Record<ReportStatus, { bgcolor: string; color: string }> = {
+      'pending': { bgcolor: alpha(theme.palette.grey[500], 0.12), color: theme.palette.grey[700] },
+      'verified': { bgcolor: alpha('#088395', 0.12), color: '#088395' },
+      'rejected': { bgcolor: alpha(theme.palette.error.main, 0.1), color: theme.palette.error.main },
+      'resolved': { bgcolor: alpha('#0891b2', 0.12), color: '#0891b2' },
+    };
+    return styles[status] || styles['pending'];
+  };
+
+  const getUrgencyChipStyle = (level: UrgencyLevel | null) => {
+    if (!level) return { bgcolor: alpha(theme.palette.grey[400], 0.1), color: theme.palette.grey[600] };
+    const styles: Record<UrgencyLevel, { bgcolor: string; color: string; borderColor: string }> = {
+      'High': { bgcolor: alpha(theme.palette.error.main, 0.08), color: theme.palette.error.main, borderColor: alpha(theme.palette.error.main, 0.3) },
+      'Medium': { bgcolor: alpha('#f59e0b', 0.08), color: '#d97706', borderColor: alpha('#f59e0b', 0.3) },
+      'Low': { bgcolor: alpha('#088395', 0.08), color: '#088395', borderColor: alpha('#088395', 0.3) },
+    };
+    return styles[level] || { bgcolor: 'transparent', color: theme.palette.grey[600], borderColor: theme.palette.grey[300] };
   };
 
   const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -1011,6 +1109,11 @@ export function Reports() {
                       const isRejected = report.status === 'rejected';
                       const isResolved = report.status === 'resolved';
                       const isPending = report.status === 'pending';
+                      const translationMeta = getTranslationStatusMeta(report.translation_status);
+                      const displayedDescription =
+                        report.translation_status === 'completed' && report.translated_english?.trim()
+                          ? report.translated_english
+                          : report.description;
                       return (
                     <TableRow
                       key={report.id}
@@ -1094,9 +1197,28 @@ export function Reports() {
 
                       {/* Description */}
                       <TableCell>
-                        <Typography variant="body2" noWrap sx={{ fontSize: '0.8rem', color: alpha(theme.palette.text.primary, 0.85) }}>
-                          {report.description}
-                        </Typography>
+                        <Stack spacing={0.5} alignItems="flex-start">
+                          <Typography variant="body2" noWrap sx={{ fontSize: '0.8rem', color: alpha(theme.palette.text.primary, 0.85) }}>
+                            {displayedDescription}
+                          </Typography>
+                          <Stack direction="row" spacing={0.5} alignItems="center" useFlexGap flexWrap="wrap">
+                            <Chip
+                              label={translationMeta.label}
+                              size="small"
+                              color={translationMeta.color}
+                              variant={translationMeta.color === 'default' ? 'outlined' : 'filled'}
+                              sx={{ fontSize: '0.62rem', height: 20, fontWeight: 600 }}
+                            />
+                            {report.detected_language && (
+                              <Chip
+                                size="small"
+                                label={getLanguageLabel(report.detected_language)}
+                                variant="outlined"
+                                sx={{ fontSize: '0.62rem', height: 20, fontWeight: 600 }}
+                              />
+                            )}
+                          </Stack>
+                        </Stack>
                       </TableCell>
 
                       {/* Location */}
@@ -1580,11 +1702,140 @@ export function Reports() {
 
                   {/* Description */}
                   <Box>
-                    <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                      Description
-                    </Typography>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
+                        Description
+                      </Typography>
+                      <Stack direction="row" spacing={0.75} alignItems="center">
+                        <Chip
+                          size="small"
+                          label={getTranslationStatusMeta(selectedReport.translation_status).label}
+                          color={getTranslationStatusMeta(selectedReport.translation_status).color}
+                          variant={getTranslationStatusMeta(selectedReport.translation_status).color === 'default' ? 'outlined' : 'filled'}
+                          sx={{ height: 22, fontSize: '0.65rem', fontWeight: 600 }}
+                        />
+                        {selectedReport.detected_language && (
+                          <Chip
+                            size="small"
+                            icon={<TranslateIcon sx={{ fontSize: '0.8rem !important' }} />}
+                            label={getLanguageLabel(selectedReport.detected_language)}
+                            sx={{ height: 22, fontSize: '0.65rem', fontWeight: 600 }}
+                          />
+                        )}
+                        {selectedReport.translated_english?.trim() &&
+                          selectedReport.translated_english.trim() != selectedReport.description.trim() && (
+                            <Tooltip title={showOriginalDescription ? 'Show English translation' : 'Show original text'}>
+                              <IconButton
+                                size="small"
+                                onClick={() => setShowOriginalDescription((prev) => !prev)}
+                                sx={{
+                                  width: 24,
+                                  height: 24,
+                                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) },
+                                }}
+                              >
+                                <TextSnippetIcon sx={{ fontSize: '0.9rem', color: theme.palette.primary.main }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        {(selectedReport.translation_status === 'processing' || translatingReportId === selectedReport.id) && (
+                          <CircularProgress size={16} />
+                        )}
+                        {selectedReport.translation_status === 'failed' && translatingReportId !== selectedReport.id && (
+                          <Tooltip title="Retry translation">
+                            <IconButton
+                              size="small"
+                              onClick={() => void ensureReportTranslation(selectedReport, { force: true })}
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                bgcolor: alpha(theme.palette.error.main, 0.08),
+                                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.16) },
+                              }}
+                            >
+                              <RefreshIcon sx={{ fontSize: '0.9rem', color: theme.palette.error.main }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {(selectedReport.translation_status === 'skipped' || !selectedReport.translation_status) &&
+                          translatingReportId !== selectedReport.id && (
+                          <Tooltip title="Translate anyway">
+                            <IconButton
+                              size="small"
+                              onClick={() => void ensureReportTranslation(selectedReport, { force: true })}
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) },
+                              }}
+                            >
+                              <TranslateIcon sx={{ fontSize: '0.9rem', color: theme.palette.primary.main }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    </Box>
                     <Paper variant="outlined" sx={{ p: 2, mt: 0.5, borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
-                      <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>{selectedReport.description}</Typography>
+                      {selectedReport.translated_english?.trim() &&
+                      selectedReport.translated_english.trim() != selectedReport.description.trim() ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.text.secondary, 0.65) }}
+                          >
+                            {showOriginalDescription
+                              ? `Original ${getLanguageLabel(selectedReport.detected_language)} text`
+                              : `English translation from ${getLanguageLabel(selectedReport.detected_language)}`}
+                          </Typography>
+                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                            {showOriginalDescription
+                              ? selectedReport.description
+                              : selectedReport.translated_english}
+                          </Typography>
+                        </>
+                      ) : selectedReport.translation_status === 'pending' ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.warning.dark, 0.75) }}
+                          >
+                            Translation is queued. The original message is shown until English text is ready.
+                          </Typography>
+                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                            {selectedReport.description}
+                          </Typography>
+                        </>
+                      ) : selectedReport.translation_status === 'processing' ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.info.main, 0.75) }}
+                          >
+                            Translation is in progress. The original message is shown until English text is ready.
+                          </Typography>
+                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                            {selectedReport.description}
+                          </Typography>
+                        </>
+                      ) : selectedReport.translation_status === 'failed' ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.error.main, 0.75) }}
+                          >
+                            Translation failed{selectedReport.translation_last_error ? `: ${selectedReport.translation_last_error}` : '.'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                            {selectedReport.description}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                          {selectedReport.description}
+                        </Typography>
+                      )}
                     </Paper>
                   </Box>
 

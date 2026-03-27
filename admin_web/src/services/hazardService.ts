@@ -7,6 +7,78 @@ export interface PagedResult<T> {
   total: number;
 }
 
+const SUPABASE_URL = (
+  import.meta.env.VITE_SUPABASE_URL ||
+  import.meta.env.VITE_PUBLIC_SUPABASE_URL ||
+  import.meta.env.SUPABASE_URL ||
+  ''
+).trim();
+
+const SUPABASE_ANON_KEY = (
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_KEY ||
+  import.meta.env.SUPABASE_ANON_KEY ||
+  import.meta.env.SUPABASE_KEY ||
+  ''
+).trim();
+
+const getFunctionAuthHeaders = async () => {
+  let { data, error } = await supabase.auth.getSession();
+  let session = data.session;
+
+  const expiresAtMs = session?.expires_at ? session.expires_at * 1000 : 0;
+  const needsRefresh = !session || (expiresAtMs > 0 && expiresAtMs - Date.now() < 60_000);
+
+  if (needsRefresh) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error) {
+      throw new Error('Session expired. Please log in again.');
+    }
+    session = refreshed.data.session;
+    error = null;
+  }
+
+  const accessToken = session?.access_token;
+
+  if (error || !accessToken) {
+    throw new Error('Missing admin session. Please log in again.');
+  }
+
+  return {
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    apikey: SUPABASE_ANON_KEY,
+    'x-supabase-auth': `Bearer ${accessToken}`,
+  };
+};
+
+const invokeEdgeFunction = async <TResponse>(functionName: string, body: Record<string, unknown>): Promise<TResponse> => {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase environment variables are missing.');
+  }
+
+  const headers = await getFunctionAuthHeaders();
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message =
+      payload?.error ||
+      payload?.message ||
+      `Edge Function ${functionName} failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return payload as TResponse;
+};
+
 export const hazardService = {
   async getReportsWithCount(
     filters?: Partial<FilterOptions>,
@@ -64,7 +136,7 @@ export const hazardService = {
     if (filters?.searchQuery) {
       const q = filters.searchQuery;
       query = query.or(
-        `description.ilike.%${q}%,user_name.ilike.%${q}%,hazard_type.ilike.%${q}%`
+        `description.ilike.%${q}%,translated_english.ilike.%${q}%,user_name.ilike.%${q}%,hazard_type.ilike.%${q}%`
       );
     }
 
@@ -127,7 +199,7 @@ export const hazardService = {
     }
 
     if (filters?.searchQuery) {
-      query = query.or(`description.ilike.%${filters.searchQuery}%,user_name.ilike.%${filters.searchQuery}%`);
+      query = query.or(`description.ilike.%${filters.searchQuery}%,translated_english.ilike.%${filters.searchQuery}%,user_name.ilike.%${filters.searchQuery}%`);
     }
 
     const { data, error } = await query;
@@ -348,6 +420,27 @@ export const hazardService = {
     return this.setReportStatus(reportId, 'rejected');
   },
 
+  async translateReportToEnglish(reportId: string, options?: { force?: boolean }): Promise<{
+    report_id: string;
+    original_description: string;
+    detected_language: string | null;
+    translated_english: string | null;
+    translation_status: 'completed' | 'failed' | 'skipped';
+    translation_attempts: number;
+    translation_provider: string | null;
+    translation_model: string | null;
+    translated_at: string | null;
+  }> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction('translate_report_for_admin', {
+      report_id: reportId,
+      force: options?.force ?? false,
+    });
+  },
+
   subscribeToReports(callback: (report: HazardReport) => void) {
     if (!isSupabaseConfigured()) {
       return {
@@ -362,6 +455,17 @@ export const hazardService = {
         'postgres_changes',
         {
           event: 'INSERT',
+          schema: 'public',
+          table: 'hazard_reports',
+        },
+        (payload) => {
+          callback(payload.new as HazardReport);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'hazard_reports',
         },
