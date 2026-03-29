@@ -332,7 +332,7 @@ class AchievementsScreen extends ConsumerWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 4),
         itemCount: entries.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+        separatorBuilder: (_, _) => const Divider(height: 1, indent: 56),
         itemBuilder: (context, index) {
           final entry = entries[index];
           final isPositive = entry.points > 0;

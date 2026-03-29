@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) {
+            pageBuilder: (_, _, _) {
               if (!isOnboardingComplete) return const OnboardingScreen();
               if (!isSignedIn) return const LoginScreen();
               return HomeScreen(
@@ -59,7 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
                 initialUserLocation: homeFeedBootstrap?.userLocation,
               );
             },
-            transitionsBuilder: (_, animation, __, child) {
+            transitionsBuilder: (_, animation, _, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 1200),

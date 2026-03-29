@@ -127,8 +127,6 @@
 | 3 | Institutional Export API | High | Stable REST/RPC surface for agencies, GIS tools, and external dashboards |
 | 4 | Advisory Delivery Analytics | High | Sent / failed / received / opened metrics per advisory and per language |
 | 5 | Weather / Tide Data Integration | Medium | Enrich advisories and risk maps with institutional weather, tide, and wave feeds |
-| 6 | User Account Deletion | Medium | Compliance and trust feature for removing user account data on request |
-| 7 | iOS APNs Support | Medium | Full Apple push support parallel to current Android FCM flow |
 | 8 | Photo / Video AI Analysis | Medium | Damage / flood / obstruction classification on uploaded media |
 | 9 | Multi-Tenant Agency Support | Medium | District / agency isolation for broader deployment |
 | 10 | Public Safety Share Links / PDFs | Low | Let citizens or operators share official advisories and selected reports externally in a controlled format |

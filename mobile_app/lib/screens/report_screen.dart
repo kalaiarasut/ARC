@@ -463,6 +463,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
     setState(() => _isSubmitting = true);
 
+    final l10n = context.l10n;
     try {
       final eventTime = DateTime.now();
 
@@ -472,7 +473,7 @@ class _ReportScreenState extends State<ReportScreen> {
       if (!isOnline) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.noInternetReportQueued)),
+            SnackBar(content: Text(l10n.noInternetReportQueued)),
           );
         }
         // Queue offline report for background sync
@@ -513,8 +514,8 @@ class _ReportScreenState extends State<ReportScreen> {
       final totalSteps = 2 + _selectedMedia.length;
       UploadProgressController.instance.start(
         flowType: UploadFlowType.submit,
-        title: context.l10n.uploadingReportTitle,
-        subtitle: context.l10n.preparingReportDesc,
+        title: l10n.uploadingReportTitle,
+        subtitle: l10n.preparingReportDesc,
         totalSteps: totalSteps,
       );
 
@@ -533,11 +534,11 @@ class _ReportScreenState extends State<ReportScreen> {
           final go = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text(context.l10n.profileNeededTitle),
-              content: Text(context.l10n.profileNeededBody),
+              title: Text(l10n.profileNeededTitle),
+              content: Text(l10n.profileNeededBody),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.cancel)),
-                TextButton(onPressed: () => Navigator.pop(context, true), child: Text(context.l10n.addNow)),
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+                TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.addNow)),
               ],
             ),
           );
@@ -574,18 +575,18 @@ class _ReportScreenState extends State<ReportScreen> {
       );
 
       final reportId = await _reportService.insertReport(report);
-      UploadProgressController.instance.step(context.l10n.reportDetailsUploaded);
+      UploadProgressController.instance.step(l10n.reportDetailsUploaded);
 
       // If backend dedupe returned an existing report, stop and inform user.
       final meta = await _reportService.getReportMetaById(reportId);
       final existingClientId = meta?['client_id']?.toString();
       final isLikelyDuplicate = existingClientId != null && existingClientId != report.clientId;
       if (isLikelyDuplicate) {
-        UploadProgressController.instance.complete(context.l10n.duplicateReportLinked);
+        UploadProgressController.instance.complete(l10n.duplicateReportLinked);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.l10n.duplicateReportDetected),
+              content: Text(l10n.duplicateReportDetected),
               backgroundColor: Colors.orange,
             ),
           );
@@ -610,8 +611,8 @@ class _ReportScreenState extends State<ReportScreen> {
             );
             uploadedUrls.add(url);
             UploadProgressController.instance.step(
-              context.l10n.uploadedAttachmentCounter(index + 1, _selectedMedia.length),
-              subtitle: context.l10n.uploadingMedia,
+              l10n.uploadedAttachmentCounter(index + 1, _selectedMedia.length),
+              subtitle: l10n.uploadingMedia,
             );
           }
           
@@ -623,7 +624,7 @@ class _ReportScreenState extends State<ReportScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(context.l10n.reportSavedMediaUploadFailedRetry),
+                content: Text(l10n.reportSavedMediaUploadFailedRetry),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -634,12 +635,12 @@ class _ReportScreenState extends State<ReportScreen> {
             media: _selectedMedia,
             lastError: uploadError.toString(),
           );
-          UploadProgressController.instance.note(context.l10n.mediaUploadFailedQueued);
+          UploadProgressController.instance.note(l10n.mediaUploadFailedQueued);
         }
       }
 
-      UploadProgressController.instance.step(context.l10n.finalizingReport);
-      UploadProgressController.instance.complete(context.l10n.reportSubmittedSuccessfully);
+      UploadProgressController.instance.step(l10n.finalizingReport);
+      UploadProgressController.instance.complete(l10n.reportSubmittedSuccessfully);
 
       if (mounted) {
         await _showSubmittedConfirmationDialog();
@@ -649,30 +650,30 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       final msg = e.toString().toLowerCase();
       if (msg.contains('rate_limited_min_interval')) {
-        UploadProgressController.instance.fail(context.l10n.pleaseWaitBeforeSending);
+        UploadProgressController.instance.fail(l10n.pleaseWaitBeforeSending);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.l10n.rateLimitMinInterval),
+              content: Text(l10n.rateLimitMinInterval),
               backgroundColor: Colors.orange,
             ),
           );
         }
       } else if (msg.contains('rate_limited_hourly')) {
-        UploadProgressController.instance.fail(context.l10n.hourlyReportLimitTitle);
+        UploadProgressController.instance.fail(l10n.hourlyReportLimitTitle);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.l10n.rateLimitHourly),
+              content: Text(l10n.rateLimitHourly),
               backgroundColor: Colors.orange,
             ),
           );
         }
       } else {
-      UploadProgressController.instance.fail(context.l10n.uploadFailedError(e.toString()));
+      UploadProgressController.instance.fail(l10n.uploadFailedError(e.toString()));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
+          SnackBar(content: Text(l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
         );
       }
       }

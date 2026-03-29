@@ -325,7 +325,7 @@ class _OfflineMapsScreenState extends State<OfflineMapsScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: _regions.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final region = _regions[index];
                             return Container(
