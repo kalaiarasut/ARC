@@ -17,6 +17,7 @@ import '../core/supabase_config.dart';
 import '../providers/map_provider.dart';
 import '../providers/language_provider.dart';
 import '../models/map_marker_data.dart';
+import '../models/monitoring_zone.dart';
 import '../models/official_advisory.dart';
 import '../models/advisory_category.dart';
 import 'report_details_screen.dart';
@@ -464,6 +465,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       behavior: CacheBehavior.cacheFirst,
                     ),
                   ),
+                ),
+
+              if (mapState.monitoringZones.any((zone) => zone.isPolygon))
+                PolygonLayer(
+                  polygons: _buildMonitoringZonePolygons(mapState.monitoringZones),
+                ),
+
+              if (mapState.monitoringZones.any((zone) => zone.isCircle))
+                CircleLayer(
+                  circles: _buildMonitoringZoneCircles(mapState.monitoringZones),
                 ),
 
               // Risk zones (if enabled)
@@ -985,6 +996,47 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       default:
         return Icons.warning;
     }
+  }
+
+  Color _monitoringZoneColor(int peopleCount) {
+    if (peopleCount >= 50) return const Color(0xFFFF9800);
+    if (peopleCount >= 30) return const Color(0xFFF44336);
+    if (peopleCount >= 20) return const Color(0xFFFFC107);
+    return const Color(0xFF4CAF50);
+  }
+
+  List<Polygon> _buildMonitoringZonePolygons(List<MonitoringZone> zones) {
+    return zones
+        .where((zone) => zone.isPolygon)
+        .map((zone) {
+          final color = _monitoringZoneColor(zone.peopleCount);
+          return Polygon(
+            points: zone.polygonPoints
+                .map((point) => LatLng(point.lat, point.lng))
+                .toList(),
+            color: color.withOpacity(0.14),
+            borderColor: color.withOpacity(0.9),
+            borderStrokeWidth: 2,
+          );
+        })
+        .toList();
+  }
+
+  List<CircleMarker> _buildMonitoringZoneCircles(List<MonitoringZone> zones) {
+    return zones
+        .where((zone) => zone.isCircle)
+        .map((zone) {
+          final color = _monitoringZoneColor(zone.peopleCount);
+          return CircleMarker(
+            point: LatLng(zone.centerLat, zone.centerLng),
+            radius: zone.radiusMeters,
+            useRadiusInMeter: true,
+            color: color.withOpacity(0.14),
+            borderColor: color.withOpacity(0.9),
+            borderStrokeWidth: 2,
+          );
+        })
+        .toList();
   }
 
   Color getAdvisoryColor(String category) {

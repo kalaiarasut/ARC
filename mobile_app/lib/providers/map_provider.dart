@@ -1,14 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/map_marker_data.dart';
 import '../models/official_advisory.dart';
+import '../models/monitoring_zone.dart';
 import '../models/risk_zone.dart';
 import '../core/supabase_config.dart';
 import '../services/advisory_service.dart';
 import '../services/map_service.dart';
 import 'language_provider.dart';
+
+double mathCosDeg(double degrees) => math.cos((degrees * math.pi) / 180);
 
 /// Map filters state
 class MapFilters{
@@ -45,6 +50,7 @@ class MapState {
   final List<MapMarkerData> markers;
   final List<OfficialAdvisory> advisories;
   final List<RiskZone> riskZones;
+  final List<MonitoringZone> monitoringZones;
   final MapMarkerData? selectedMarker;
   final OfficialAdvisory? selectedAdvisory;
   final DateTime? lastUpdated;
@@ -56,6 +62,7 @@ class MapState {
     this.markers = const [],
     this.advisories = const [],
     this.riskZones = const [],
+    this.monitoringZones = const [],
     this.selectedMarker,
     this.selectedAdvisory,
     this.lastUpdated,
@@ -68,6 +75,7 @@ class MapState {
     List<MapMarkerData>? markers,
     List<OfficialAdvisory>? advisories,
     List<RiskZone>? riskZones,
+    List<MonitoringZone>? monitoringZones,
     MapMarkerData? selectedMarker,
     bool clearSelectedMarker = false,
     OfficialAdvisory? selectedAdvisory,
@@ -82,6 +90,7 @@ class MapState {
       markers: markers ?? this.markers,
       advisories: advisories ?? this.advisories,
       riskZones: riskZones ?? this.riskZones,
+      monitoringZones: monitoringZones ?? this.monitoringZones,
       selectedMarker: clearSelectedMarker ? null : (selectedMarker ?? this.selectedMarker),
       selectedAdvisory: clearSelectedAdvisory ? null : (selectedAdvisory ?? this.selectedAdvisory),
       lastUpdated: lastUpdated ?? this.lastUpdated,
@@ -257,6 +266,56 @@ class MapNotifier extends Notifier<MapState> {
     return true;
   }
 
+  bool _circleIntersectsBounds({
+    required double lat,
+    required double lon,
+    required double radiusMeters,
+    required LatLngBounds bounds,
+  }) {
+    final latPad = radiusMeters / 111320;
+    final cosLat = mathCosDeg(lat).abs().clamp(0.2, 1.0);
+    final lonPad = radiusMeters / (111320 * cosLat);
+    return lat + latPad >= bounds.south &&
+        lat - latPad <= bounds.north &&
+        lon + lonPad >= bounds.west &&
+        lon - lonPad <= bounds.east;
+  }
+
+  bool _polygonIntersectsBounds(List<MonitoringZoneCoordinate> points, LatLngBounds bounds) {
+    if (points.isEmpty) return false;
+
+    var minLat = points.first.lat;
+    var maxLat = points.first.lat;
+    var minLng = points.first.lng;
+    var maxLng = points.first.lng;
+
+    for (final point in points.skip(1)) {
+      if (point.lat < minLat) minLat = point.lat;
+      if (point.lat > maxLat) maxLat = point.lat;
+      if (point.lng < minLng) minLng = point.lng;
+      if (point.lng > maxLng) maxLng = point.lng;
+    }
+
+    return maxLat >= bounds.south &&
+        minLat <= bounds.north &&
+        maxLng >= bounds.west &&
+        minLng <= bounds.east;
+  }
+
+  List<MonitoringZone> _monitoringZonesInBounds(List<MonitoringZone> zones, LatLngBounds bounds) {
+    return zones.where((zone) {
+      if (zone.isPolygon) {
+        return _polygonIntersectsBounds(zone.polygonPoints, bounds);
+      }
+      return _circleIntersectsBounds(
+        lat: zone.centerLat,
+        lon: zone.centerLng,
+        radiusMeters: zone.radiusMeters,
+        bounds: bounds,
+      );
+    }).toList();
+  }
+
   Future<void> _loadOwnReportsForBounds({
     required LatLngBounds bounds,
     required String userId,
@@ -330,10 +389,15 @@ class MapNotifier extends Notifier<MapState> {
         maxLon: bounds.east,
       );
       final activeAdvisories = advisories.where(_isAdvisoryActive).toList();
+      final monitoringZones = _monitoringZonesInBounds(
+        await _mapService.getMonitoringZones(),
+        bounds,
+      );
 
       state = state.copyWith(
         markers: filteredMarkers,
         advisories: activeAdvisories,
+        monitoringZones: monitoringZones,
         lastUpdated: DateTime.now(),
         isLoading: false,
       );

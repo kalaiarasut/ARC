@@ -610,3 +610,18 @@ EXCEPTION
   WHEN undefined_table THEN RAISE NOTICE 'Skipping storage SQL.';
 END
 $$;
+
+-- ============================================================================
+-- BEGIN MIGRATION: 027_mobile_monitoring_zone_read.sql
+-- ============================================================================
+
+ALTER TABLE public.monitoring_zones ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated read monitoring zones" ON public.monitoring_zones;
+CREATE POLICY "Authenticated read monitoring zones"
+  ON public.monitoring_zones
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- END MIGRATION: 027_mobile_monitoring_zone_read.sql

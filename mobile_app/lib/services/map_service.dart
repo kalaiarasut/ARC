@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/supabase_config.dart';
 import '../models/risk_zone.dart';
 import '../models/map_marker_data.dart';
+import '../models/monitoring_zone.dart';
 import '../models/official_advisory.dart';
 import 'storage_service.dart';
 
@@ -206,6 +207,23 @@ class MapService {
     }
   }
 
+  Future<List<MonitoringZone>> getMonitoringZones() async {
+    try {
+      final response = await _supabase
+          .from('monitoring_zones')
+          .select('id,name,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at')
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((json) => MonitoringZone.fromJson(json as Map<String, dynamic>))
+          .where((zone) => zone.id.isNotEmpty)
+          .toList();
+    } catch (e) {
+      debugPrint('getMonitoringZones failed: $e');
+      return [];
+    }
+  }
+
   /// Calculate risk zones on-demand (real-time, expensive)
   /// Use only when user explicitly requests "Live analysis"
   /// Rate-limited to prevent abuse
@@ -326,11 +344,13 @@ class MapService {
 class MapData {
   final List<MapMarkerData> markers;
   final List<RiskZone> riskZones;
+  final List<MonitoringZone> monitoringZones;
   final DateTime lastUpdated;
 
   MapData({
     required this.markers,
     required this.riskZones,
+    this.monitoringZones = const [],
     required this.lastUpdated,
   });
 
