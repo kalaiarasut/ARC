@@ -49,6 +49,7 @@ import {
   VideoLibrary as VideoIcon,
   Audiotrack as AudioIcon,
   Warning as WarningIcon,
+  OutlinedFlag as OutlinedFlagIcon,
   People as PeopleIcon,
   Place as PlaceIcon,
   Download as DownloadIcon,
@@ -64,7 +65,7 @@ import {
 import { ImageZoom, AudioWaveform, VideoPreview } from '../components/MediaComponents';
 
 import { landmarkService } from '../services/landmarkService';
-import { hazardService } from '../services/hazardService';
+import { hazardService, type TranslationQueueStats } from '../services/hazardService';
 import { isSupabaseConfigured } from '../core/supabase_config';
 import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus, ReportAuditLog } from '../types/hazard';
 import type { Landmark } from '../types/landmark';
@@ -84,7 +85,7 @@ export function Reports() {
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<HazardReport | null>(null);
@@ -100,6 +101,10 @@ export function Reports() {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [translatingReportId, setTranslatingReportId] = useState<string | null>(null);
   const [showOriginalDescription, setShowOriginalDescription] = useState(false);
+  const [translationQueueStats, setTranslationQueueStats] = useState<TranslationQueueStats | null>(null);
+  const [translationQueueLoading, setTranslationQueueLoading] = useState(false);
+  const selectedReportId = selectedReport?.id ?? null;
+  const selectedTranslationStatus = selectedReport?.translation_status ?? null;
 
   const [filters, setFilters] = useState<Partial<FilterOptions>>({
     hazardTypes: [],
@@ -114,9 +119,11 @@ export function Reports() {
     landmarkRadius: 5000,
   });
 
-  const loadReports = async () => {
+  const loadReports = async (options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!options?.silent) {
+        setLoading(true);
+      }
       setError(null);
 
       if (!isSupabaseConfigured()) {
@@ -165,7 +172,9 @@ export function Reports() {
       setReports([]);
       setTotalCount(0);
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -230,7 +239,32 @@ export function Reports() {
 
   const looksLikeVideo = (url: string) => {
     const lower = url.toLowerCase();
-    return lower.includes('video') || lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm');
+    const path = lower.split('?')[0]?.split('#')[0] || lower;
+    return (
+      lower.includes('video') ||
+      path.endsWith('.mp4') ||
+      path.endsWith('.mov') ||
+      path.endsWith('.webm') ||
+      path.endsWith('.ogv') ||
+      path.endsWith('.ogg')
+    );
+  };
+
+  const loadTranslationQueueStats = async (options?: { silent?: boolean }) => {
+    try {
+      if (!options?.silent) {
+        setTranslationQueueLoading(true);
+      }
+
+      const stats = await hazardService.getTranslationQueueStats();
+      setTranslationQueueStats(stats);
+    } catch (queueError) {
+      console.error(queueError);
+    } finally {
+      if (!options?.silent) {
+        setTranslationQueueLoading(false);
+      }
+    }
   };
 
   const looksLikeAudio = (url: string) => {
@@ -345,8 +379,12 @@ export function Reports() {
   // Keep a ref to the latest loadReports implementation so realtime callbacks
   // always use current filters/pagination without re-subscribing.
   const loadReportsRef = useRef(loadReports);
+  const loadTranslationQueueStatsRef = useRef(loadTranslationQueueStats);
   useEffect(() => {
     loadReportsRef.current = loadReports;
+  });
+  useEffect(() => {
+    loadTranslationQueueStatsRef.current = loadTranslationQueueStats;
   });
 
   // Realtime updates: refresh on new reports.
@@ -354,7 +392,8 @@ export function Reports() {
     if (!isSupabaseConfigured()) return;
 
     const channel = hazardService.subscribeToReports(() => {
-      loadReportsRef.current();
+      void loadReportsRef.current({ silent: true });
+      void loadTranslationQueueStatsRef.current({ silent: true });
     });
 
     return () => {
@@ -366,8 +405,19 @@ export function Reports() {
 
   useEffect(() => {
     loadReports();
+    void loadTranslationQueueStats({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage]); // Removed filters from dep array to match original behavior where explicit search/filter button is needed, or add if auto-filtering is desired. Original only had page/rows.
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    const id = window.setInterval(() => {
+      void loadTranslationQueueStatsRef.current({ silent: true });
+    }, 15000);
+
+    return () => window.clearInterval(id);
+  }, []);
 
   // Auto-search effect with debounce
   useEffect(() => {
@@ -377,22 +427,79 @@ export function Reports() {
       // But checking if query is different from previous ref would be better.
       // For now, simple debounce for search query changes:
       setPage(0);
-      loadReports();
+      void loadReports({ silent: true });
     }, 100); // 100ms debounce for fast search
     return () => clearTimeout(timer);
   }, [filters.searchQuery]);
 
-  // Optional auto-refresh (does not change filters; just reloads current view)
+  // Continuous sync loop. "Live" mode runs faster, but even when disabled
+  // we still refresh periodically so records/translations appear without page reload.
   useEffect(() => {
-    if (!autoRefreshEnabled) return;
     if (!isSupabaseConfigured()) return;
 
+    const intervalMs = autoRefreshEnabled ? 5000 : 12000;
     const id = window.setInterval(() => {
-      loadReportsRef.current();
-    }, 30000);
+      void loadReportsRef.current({ silent: true });
+      void loadTranslationQueueStatsRef.current({ silent: true });
+    }, intervalMs);
 
     return () => window.clearInterval(id);
   }, [autoRefreshEnabled]);
+
+  // Keep the detail dialog report in sync with table refreshes.
+  useEffect(() => {
+    if (!detailDialogOpen || !selectedReportId) return;
+
+    const refreshed = reports.find((report) => report.id === selectedReportId);
+    if (!refreshed) return;
+
+    setSelectedReport((prev) => (prev && prev.id === selectedReportId ? { ...prev, ...refreshed } : prev));
+  }, [detailDialogOpen, reports, selectedReportId]);
+
+  // While translation is queued/processing, poll the selected row for live status.
+  useEffect(() => {
+    if (!detailDialogOpen || !selectedReportId) return;
+    if (!isSupabaseConfigured()) return;
+
+    const isLiveTranslationState =
+      selectedTranslationStatus === 'pending' ||
+      selectedTranslationStatus === 'processing' ||
+      translatingReportId === selectedReportId;
+    if (!isLiveTranslationState) return;
+
+    let active = true;
+
+    const refreshSelectedReport = async () => {
+      try {
+        const latest = await hazardService.getReportById(selectedReportId);
+        if (!active || !latest) return;
+
+        setSelectedReport((prev) => (prev && prev.id === latest.id ? { ...prev, ...latest } : prev));
+        setReports((prev) => prev.map((item) => (item.id === latest.id ? { ...item, ...latest } : item)));
+
+        if (
+          latest.translation_status &&
+          latest.translation_status !== 'pending' &&
+          latest.translation_status !== 'processing' &&
+          translatingReportId === latest.id
+        ) {
+          setTranslatingReportId(null);
+        }
+      } catch (pollError) {
+        console.error(pollError);
+      }
+    };
+
+    void refreshSelectedReport();
+    const timerId = window.setInterval(() => {
+      void refreshSelectedReport();
+    }, 2500);
+
+    return () => {
+      active = false;
+      window.clearInterval(timerId);
+    };
+  }, [detailDialogOpen, selectedReportId, selectedTranslationStatus, translatingReportId]);
 
   // Real-time subscription disabled for static mode
   /*
@@ -470,8 +577,19 @@ export function Reports() {
 
       setReports((prev) => prev.map((item) => (item.id === report.id ? { ...item, ...patch } : item)));
       setSelectedReport((prev) => (prev && prev.id === report.id ? { ...prev, ...patch } : prev));
+      void loadTranslationQueueStatsRef.current({ silent: true });
     } catch (e) {
       console.error(e);
+      try {
+        const latest = await hazardService.getReportById(report.id);
+        if (latest) {
+          setReports((prev) => prev.map((item) => (item.id === latest.id ? { ...item, ...latest } : item)));
+          setSelectedReport((prev) => (prev && prev.id === latest.id ? { ...prev, ...latest } : prev));
+          void loadTranslationQueueStatsRef.current({ silent: true });
+        }
+      } catch (refreshError) {
+        console.error(refreshError);
+      }
       if (!options?.silent) {
         setError('Failed to translate report description.');
       }
@@ -522,6 +640,69 @@ export function Reports() {
         return { label: 'Pending', color: 'warning' as const };
     }
   };
+
+  const isTranslationLive = (report: HazardReport | null) =>
+    !!report &&
+    (report.translation_status === 'pending' ||
+      report.translation_status === 'processing' ||
+      translatingReportId === report.id);
+
+  const getTranslationLiveLabel = (report: HazardReport | null) => {
+    if (!report) return '';
+    if (translatingReportId === report.id || report.translation_status === 'processing') {
+      return 'Translating...';
+    }
+    if (report.translation_status === 'pending') {
+      return 'Queued...';
+    }
+    return '';
+  };
+
+  const getTranslationFailureReason = (report: HazardReport) => {
+    const directError = (report.translation_last_error ?? '').trim();
+    if (directError) return directError;
+
+    const translatedText = (report.translated_english ?? '').trim();
+    if (!translatedText) return 'Unknown translation error';
+
+    const upper = translatedText.toUpperCase();
+    if (
+      upper.startsWith('TRANSLATION FAILED') ||
+      upper.includes('SARVAM REQUEST FAILED') ||
+      upper.includes('SOURCE AND TARGET LANGUAGES MUST BE DIFFERENT')
+    ) {
+      return translatedText;
+    }
+
+    return 'Unknown translation error';
+  };
+
+  const getQueueChipSx = (tone: 'warning' | 'info' | 'error' | 'success' | 'default') => ({
+    height: 22,
+    fontSize: '0.68rem',
+    fontWeight: 700,
+    border: 'none',
+    bgcolor:
+      tone === 'warning'
+        ? alpha(theme.palette.warning.main, 0.14)
+        : tone === 'info'
+          ? alpha(theme.palette.info.main, 0.14)
+          : tone === 'error'
+            ? alpha(theme.palette.error.main, 0.14)
+            : tone === 'success'
+              ? alpha(theme.palette.success.main, 0.14)
+              : alpha(theme.palette.grey[500], 0.12),
+    color:
+      tone === 'warning'
+        ? theme.palette.warning.dark
+        : tone === 'info'
+          ? theme.palette.info.main
+          : tone === 'error'
+            ? theme.palette.error.main
+            : tone === 'success'
+              ? theme.palette.success.main
+              : theme.palette.text.secondary,
+  });
 
   const updateStatus = async (report: HazardReport, nextStatus: ReportStatus) => {
     try {
@@ -582,16 +763,6 @@ export function Reports() {
     return colors[type] || '#6b7280';
   };
 
-  const getUrgencyColor = (level: UrgencyLevel | null) => {
-    if (!level) return 'default';
-    const colors = {
-      'High': 'error',
-      'Medium': 'warning',
-      'Low': 'info',
-    };
-    return colors[level] as any;
-  };
-
   const getStatusColor = (status: ReportStatus) => {
     const colors = {
       'pending': 'default',
@@ -600,26 +771,6 @@ export function Reports() {
       'resolved': 'info',
     };
     return colors[status] as any;
-  };
-
-  const getStatusChipStyle = (status: ReportStatus) => {
-    const styles: Record<ReportStatus, { bgcolor: string; color: string }> = {
-      'pending': { bgcolor: alpha(theme.palette.grey[500], 0.12), color: theme.palette.grey[700] },
-      'verified': { bgcolor: alpha('#088395', 0.12), color: '#088395' },
-      'rejected': { bgcolor: alpha(theme.palette.error.main, 0.1), color: theme.palette.error.main },
-      'resolved': { bgcolor: alpha('#0891b2', 0.12), color: '#0891b2' },
-    };
-    return styles[status] || styles['pending'];
-  };
-
-  const getUrgencyChipStyle = (level: UrgencyLevel | null) => {
-    if (!level) return { bgcolor: alpha(theme.palette.grey[400], 0.1), color: theme.palette.grey[600] };
-    const styles: Record<UrgencyLevel, { bgcolor: string; color: string; borderColor: string }> = {
-      'High': { bgcolor: alpha(theme.palette.error.main, 0.08), color: theme.palette.error.main, borderColor: alpha(theme.palette.error.main, 0.3) },
-      'Medium': { bgcolor: alpha('#f59e0b', 0.08), color: '#d97706', borderColor: alpha('#f59e0b', 0.3) },
-      'Low': { bgcolor: alpha('#088395', 0.08), color: '#088395', borderColor: alpha('#088395', 0.3) },
-    };
-    return styles[level] || { bgcolor: 'transparent', color: theme.palette.grey[600], borderColor: theme.palette.grey[300] };
   };
 
   const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -644,10 +795,6 @@ export function Reports() {
     if (desc.length >= 10) {
       const sameDescription = sameUser.filter((r) => normalizeText(r.description || '') === desc);
       if (sameDescription.length >= 2) flags.push('Repeated description');
-    }
-
-    if (report.is_high_risk && (!report.media_urls || report.media_urls.length === 0)) {
-      flags.push('High-risk without media');
     }
 
     return flags;
@@ -694,7 +841,7 @@ export function Reports() {
               }),
             }}
           >
-            {autoRefreshEnabled ? 'Live' : 'Auto-refresh'}
+            {autoRefreshEnabled ? 'Live (Fast)' : 'Live (Balanced)'}
           </Button>
           <Button
             variant="text"
@@ -802,7 +949,7 @@ export function Reports() {
             <Grid size="auto">
               <Stack direction="row" spacing={1}>
                 <IconButton
-                  onClick={loadReports}
+                  onClick={() => void loadReports()}
                   disabled={loading}
                   sx={{
                     bgcolor: theme.palette.primary.main,
@@ -866,6 +1013,43 @@ export function Reports() {
               </Stack>
             </Grid>
           </Grid>
+
+          <Box
+            sx={{
+              mt: 1.25,
+              pt: 1.1,
+              borderTop: `1px dashed ${alpha(theme.palette.divider, 0.16)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: alpha(theme.palette.text.secondary, 0.75),
+                }}
+              >
+                Translation Queue
+              </Typography>
+              {translationQueueLoading && !translationQueueStats && <CircularProgress size={12} />}
+            </Stack>
+
+            <Stack direction="row" spacing={0.7} alignItems="center" useFlexGap flexWrap="wrap">
+              <Chip label={`Pending ${translationQueueStats?.pending ?? 0}`} size="small" sx={getQueueChipSx('warning')} />
+              <Chip label={`Processing ${translationQueueStats?.processing ?? 0}`} size="small" sx={getQueueChipSx('info')} />
+              <Chip label={`Failed ${translationQueueStats?.failed ?? 0}`} size="small" sx={getQueueChipSx('error')} />
+              <Chip label={`Done ${translationQueueStats?.completed ?? 0}`} size="small" sx={getQueueChipSx('success')} />
+              <Chip label={`Active ${translationQueueStats?.active ?? 0}`} size="small" sx={getQueueChipSx('default')} />
+            </Stack>
+          </Box>
 
           <Popover
             open={dayFilterOpen}
@@ -1063,13 +1247,13 @@ export function Reports() {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: 130 }}>Hazard</TableCell>
-                  <TableCell sx={{ width: '30%' }}>Description</TableCell>
-                  <TableCell sx={{ width: 150 }}>Location</TableCell>
-                  <TableCell sx={{ width: 80 }}>Urgency</TableCell>
-                  <TableCell sx={{ width: 70, textAlign: 'center' }}>People</TableCell>
-                  <TableCell sx={{ width: 55, textAlign: 'center' }}>Media</TableCell>
-                  <TableCell sx={{ width: 130 }}>Date & Time</TableCell>
+                  <TableCell sx={{ width: 118 }}>Hazard</TableCell>
+                  <TableCell sx={{ width: '50%' }}>Description</TableCell>
+                  <TableCell sx={{ width: 124, pl: 2 }}>Location</TableCell>
+                  <TableCell sx={{ width: 86, textAlign: 'center' }}>Urgency</TableCell>
+                  <TableCell sx={{ width: 72, textAlign: 'center' }}>People</TableCell>
+                  <TableCell sx={{ width: 56, textAlign: 'center' }}>Media</TableCell>
+                  <TableCell sx={{ width: 108, textAlign: 'right', pr: 1 }}>Date & Time</TableCell>
                   <TableCell sx={{ width: 95, textAlign: 'center' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -1094,7 +1278,7 @@ export function Reports() {
                           <Button size="small" variant="outlined" onClick={handleResetFilters} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}>
                             Clear filters
                           </Button>
-                          <Button size="small" variant="contained" onClick={loadReports} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', boxShadow: 'none' }}>
+                          <Button size="small" variant="contained" onClick={() => void loadReports()} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', boxShadow: 'none' }}>
                             Refresh
                           </Button>
                         </Stack>
@@ -1109,7 +1293,6 @@ export function Reports() {
                       const isRejected = report.status === 'rejected';
                       const isResolved = report.status === 'resolved';
                       const isPending = report.status === 'pending';
-                      const translationMeta = getTranslationStatusMeta(report.translation_status);
                       const displayedDescription =
                         report.translation_status === 'completed' && report.translated_english?.trim()
                           ? report.translated_english
@@ -1147,84 +1330,84 @@ export function Reports() {
                                 : '3px solid transparent',
                       }}
                     >
-                      {/* Hazard Type + Risk + Status indicator */}
+                      {/* Hazard Type + Risk indicator */}
                       <TableCell>
-                        <Stack spacing={0.4} alignItems="flex-start">
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <Chip
-                              label={report.hazard_type}
-                              size="small"
-                              sx={{
-                                fontWeight: 600, fontSize: '0.6875rem', height: 22,
-                                bgcolor: alpha(getHazardColor(report.hazard_type), 0.1),
-                                color: getHazardColor(report.hazard_type),
-                                border: 'none',
-                              }}
-                            />
-                            {report.is_high_risk && (
-                              <Tooltip title="High Risk" arrow>
-                                <WarningIcon sx={{ fontSize: '0.85rem', color: theme.palette.error.main, opacity: 0.85 }} />
-                              </Tooltip>
-                            )}
-                          </Stack>
-                          <Stack direction="row" spacing={0.4} alignItems="center">
-                            <Box
-                              sx={{
-                                width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-                                bgcolor: isPending ? alpha(theme.palette.grey[500], 0.6)
-                                  : isVerified ? theme.palette.success.main
-                                    : isRejected ? theme.palette.error.main
-                                      : theme.palette.info.main,
-                              }}
-                            />
-                            <Typography variant="caption" sx={{
-                              fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
-                              color: isPending ? alpha(theme.palette.text.secondary, 0.6)
-                                : isVerified ? alpha(theme.palette.success.main, 0.8)
-                                  : isRejected ? alpha(theme.palette.error.main, 0.75)
-                                    : alpha(theme.palette.info.main, 0.8),
-                            }}>
-                              {report.status}
-                            </Typography>
-                            {suspiciousFlags.length > 0 && (
-                              <Tooltip title={suspiciousFlags.join(' · ')} arrow>
-                                <WarningIcon sx={{ fontSize: '0.7rem', color: alpha(theme.palette.warning.main, 0.75) }} />
-                              </Tooltip>
-                            )}
-                          </Stack>
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          <Chip
+                            label={report.hazard_type}
+                            size="small"
+                            sx={{
+                              fontWeight: 600, fontSize: '0.6875rem', height: 22,
+                              bgcolor: alpha(getHazardColor(report.hazard_type), 0.1),
+                              color: getHazardColor(report.hazard_type),
+                              border: 'none',
+                            }}
+                          />
+                          {report.is_high_risk && (
+                            <Tooltip title="High Risk" arrow>
+                              <WarningIcon
+                                sx={{
+                                  fontSize: '0.82rem',
+                                  color: theme.palette.error.main,
+                                  opacity: 0.9,
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                          {suspiciousFlags.length > 0 && (
+                            <Tooltip 
+                              title={
+                                <Stack component="ol" spacing={0.5} sx={{ m: 0.5, pl: 2, '& li': { fontSize: '0.75rem', fontWeight: 600 } }}>
+                                  {suspiciousFlags.map((flag, idx) => (
+                                    <li key={idx} style={{ paddingLeft: '4px' }}>{flag}</li>
+                                  ))}
+                                </Stack>
+                              }
+                              arrow
+                            >
+                              <OutlinedFlagIcon
+                                sx={{
+                                  fontSize: '0.85rem',
+                                  color: alpha(theme.palette.warning.main, 0.85),
+                                }}
+                              />
+                            </Tooltip>
+                          )}
                         </Stack>
                       </TableCell>
 
                       {/* Description */}
                       <TableCell>
-                        <Stack spacing={0.5} alignItems="flex-start">
-                          <Typography variant="body2" noWrap sx={{ fontSize: '0.8rem', color: alpha(theme.palette.text.primary, 0.85) }}>
-                            {displayedDescription}
-                          </Typography>
-                          <Stack direction="row" spacing={0.5} alignItems="center" useFlexGap flexWrap="wrap">
-                            <Chip
-                              label={translationMeta.label}
-                              size="small"
-                              color={translationMeta.color}
-                              variant={translationMeta.color === 'default' ? 'outlined' : 'filled'}
-                              sx={{ fontSize: '0.62rem', height: 20, fontWeight: 600 }}
-                            />
-                            {report.detected_language && (
-                              <Chip
-                                size="small"
-                                label={getLanguageLabel(report.detected_language)}
-                                variant="outlined"
-                                sx={{ fontSize: '0.62rem', height: 20, fontWeight: 600 }}
-                              />
-                            )}
-                          </Stack>
-                        </Stack>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: '0.85rem',
+                            color: alpha(theme.palette.text.primary, 0.85),
+                            maxWidth: '100%',
+                            pr: 1,
+                            lineHeight: 1.45,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {displayedDescription}
+                        </Typography>
                       </TableCell>
 
                       {/* Location */}
-                      <TableCell>
+                      <TableCell sx={{ pl: 2 }}>
                         <Stack direction="row" spacing={0.4} alignItems="center" sx={{ whiteSpace: 'nowrap' }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.675rem', color: alpha(theme.palette.text.secondary, 0.7), fontFamily: '"JetBrains Mono", "Fira Code", monospace', fontWeight: 500 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: '0.76rem',
+                              color: alpha(theme.palette.text.secondary, 0.78),
+                              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                              fontWeight: 600,
+                            }}
+                          >
                             {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
                           </Typography>
                           <Tooltip title="Open in Live Map" arrow>
@@ -1244,7 +1427,7 @@ export function Reports() {
                       </TableCell>
 
                       {/* Urgency */}
-                      <TableCell>
+                      <TableCell align="center">
                         {report.urgency_level ? (
                           <Chip
                             label={report.urgency_level}
@@ -1261,32 +1444,33 @@ export function Reports() {
                             }}
                           />
                         ) : (
-                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.4) }}>—</Typography>
+                          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: alpha(theme.palette.text.secondary, 0.4) }}>—</Typography>
                         )}
                       </TableCell>
 
                       {/* People at risk */}
                       <TableCell align="center">
-                        {report.people_at_risk ? (
+                        {report.people_at_risk && report.people_at_risk > 0 ? (
                           <Tooltip title="People at Risk" arrow>
                             <Chip
-                              icon={<PeopleIcon sx={{ fontSize: '0.75rem !important' }} />}
                               label={report.people_at_risk}
                               size="small"
                               sx={{
-                                fontSize: '0.65rem', height: 20, fontWeight: 600,
+                                fontSize: '0.65rem',
+                                height: 20,
+                                fontWeight: 600,
+                                minWidth: 34,
                                 bgcolor: alpha(theme.palette.error.main, 0.06),
                                 color: theme.palette.error.main,
                                 border: 'none',
-                                '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.7) },
+                                '& .MuiChip-label': { px: 0.75 },
                               }}
                             />
                           </Tooltip>
                         ) : (
-                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.3) }}>—</Typography>
+                          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: alpha(theme.palette.text.secondary, 0.3) }}>—</Typography>
                         )}
                       </TableCell>
-
                       {/* Media */}
                       <TableCell align="center">
                         {report.media_urls && report.media_urls.length > 0 ? (
@@ -1317,12 +1501,12 @@ export function Reports() {
                       </TableCell>
 
                       {/* Date */}
-                      <TableCell>
-                        <Stack spacing={0}>
-                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.6875rem', color: alpha(theme.palette.text.primary, 0.75), fontWeight: 500 }}>
-                            {format(new Date(report.created_at), 'MMM dd, yyyy')}
+                      <TableCell align="right" sx={{ pr: 1.5 }}>
+                        <Stack spacing={0} alignItems="flex-end">
+                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.76rem', color: alpha(theme.palette.text.primary, 0.8), fontWeight: 600 }}>
+                            {format(new Date(report.created_at), 'MMM dd')}
                           </Typography>
-                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.6rem', color: alpha(theme.palette.text.secondary, 0.5) }}>
+                          <Typography variant="caption" sx={{ whiteSpace: 'nowrap', fontSize: '0.72rem', color: alpha(theme.palette.text.secondary, 0.68), fontWeight: 500 }}>
                             {format(new Date(report.created_at), 'HH:mm')}
                           </Typography>
                         </Stack>
@@ -1676,30 +1860,85 @@ export function Reports() {
         >
           {selectedReport && (
             <>
-              <DialogTitle sx={{ pb: 1.5 }}>
+              <DialogTitle sx={{ pb: 2, pt: 3, px: 3, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.05rem' }}>
+                  <Typography variant="h6" fontWeight={800} sx={{ fontSize: '1.25rem', letterSpacing: '-0.02em', color: theme.palette.text.primary }}>
                     Report Details
                   </Typography>
-                  <IconButton onClick={() => setDetailDialogOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) } }}>
-                    <CloseIcon sx={{ fontSize: '1.1rem' }} />
+                  <IconButton onClick={() => setDetailDialogOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) }, transition: 'all 0.2s' }}>
+                    <CloseIcon sx={{ fontSize: '1.2rem', color: theme.palette.text.secondary }} />
                   </IconButton>
                 </Box>
               </DialogTitle>
-              <DialogContent dividers sx={{ borderColor: alpha(theme.palette.divider, 0.08) }}>
-                <Stack spacing={2.5}>
-                  {/* Status and Risk Badges */}
-                  <Box display="flex" gap={0.75} flexWrap="wrap">
-                    <Chip label={selectedReport.status.toUpperCase()} color={getStatusColor(selectedReport.status)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
-                    <Chip label={selectedReport.hazard_type} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', bgcolor: alpha(getHazardColor(selectedReport.hazard_type), 0.1), color: getHazardColor(selectedReport.hazard_type), border: 'none' }} />
+              <DialogContent sx={{ px: 3, py: 2.5 }}>
+                {/* Status and Risk Badges */}
+                <Box display="flex" gap={0.75} flexWrap="wrap" sx={{ mb: 2 }}>
+                  <Chip 
+                    label={selectedReport.status.toUpperCase()} 
+                      size="small" 
+                      sx={{ 
+                        fontWeight: 700, fontSize: '0.7rem', px: 0.5,
+                        bgcolor: selectedReport.status === 'pending' ? alpha(theme.palette.warning.main, 0.08)
+                          : selectedReport.status === 'verified' ? alpha(theme.palette.success.main, 0.08)
+                          : selectedReport.status === 'rejected' ? alpha(theme.palette.error.main, 0.08)
+                          : alpha(theme.palette.info.main, 0.08),
+                        color: selectedReport.status === 'pending' ? theme.palette.warning.dark
+                          : selectedReport.status === 'verified' ? theme.palette.success.main
+                          : selectedReport.status === 'rejected' ? theme.palette.error.main
+                          : theme.palette.info.main,
+                        border: 'none'
+                      }} 
+                    />
+                    <Chip 
+                      label={selectedReport.hazard_type} 
+                      size="small" 
+                      sx={{ 
+                        fontWeight: 700, fontSize: '0.7rem', px: 0.5,
+                        bgcolor: alpha(getHazardColor(selectedReport.hazard_type), 0.08), 
+                        color: getHazardColor(selectedReport.hazard_type), 
+                        border: 'none' 
+                      }} 
+                    />
                     {selectedReport.is_high_risk && (
-                      <Chip icon={<WarningIcon sx={{ fontSize: '0.85rem !important' }} />} label="HIGH RISK" color="error" size="small" sx={{ fontWeight: 700, fontSize: '0.7rem' }} />
+                      <Chip 
+                        icon={<WarningIcon sx={{ fontSize: '0.85rem !important', color: 'inherit' }} />} 
+                        label="HIGH RISK" 
+                        size="small" 
+                        sx={{ 
+                          fontWeight: 700, fontSize: '0.7rem', px: 0.5,
+                          bgcolor: alpha(theme.palette.error.main, 0.08),
+                          color: theme.palette.error.main,
+                          border: 'none',
+                          '& .MuiChip-icon': { ml: 0.5, mr: -0.5 }
+                        }} 
+                      />
                     )}
                     {selectedReport.urgency_level && (
-                      <Chip label={selectedReport.urgency_level} color={getUrgencyColor(selectedReport.urgency_level)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', bgcolor: 'transparent' }} variant="outlined" />
+                      <Chip 
+                        label={selectedReport.urgency_level} 
+                        size="small" 
+                        sx={{ 
+                          fontWeight: 700, fontSize: '0.7rem', px: 0.5,
+                          bgcolor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08)
+                            : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08)
+                            : alpha(theme.palette.success.main, 0.08),
+                          color: selectedReport.urgency_level === 'High' ? theme.palette.error.main
+                            : selectedReport.urgency_level === 'Medium' ? theme.palette.warning.dark
+                            : theme.palette.success.main,
+                          border: 'none'
+                        }} 
+                      />
                     )}
-                  </Box>
+                </Box>
 
+                <Box sx={{ 
+                  height: 4, 
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`, 
+                  mx: -3, 
+                  mb: 3
+                }} />
+
+                <Stack spacing={3.5}>
                   {/* Description */}
                   <Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
@@ -1710,16 +1949,34 @@ export function Reports() {
                         <Chip
                           size="small"
                           label={getTranslationStatusMeta(selectedReport.translation_status).label}
-                          color={getTranslationStatusMeta(selectedReport.translation_status).color}
-                          variant={getTranslationStatusMeta(selectedReport.translation_status).color === 'default' ? 'outlined' : 'filled'}
-                          sx={{ height: 22, fontSize: '0.65rem', fontWeight: 600 }}
+                          sx={{ 
+                            height: 22, fontSize: '0.65rem', fontWeight: 700, px: 0.5,
+                            bgcolor: getTranslationStatusMeta(selectedReport.translation_status).color === 'success' ? alpha(theme.palette.success.main, 0.08)
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'info' ? alpha(theme.palette.info.main, 0.08)
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'error' ? alpha(theme.palette.error.main, 0.08)
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'warning' ? alpha(theme.palette.warning.main, 0.08)
+                              : alpha(theme.palette.grey[500], 0.08),
+                            color: getTranslationStatusMeta(selectedReport.translation_status).color === 'success' ? theme.palette.success.main
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'info' ? theme.palette.info.main
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'error' ? theme.palette.error.main
+                              : getTranslationStatusMeta(selectedReport.translation_status).color === 'warning' ? theme.palette.warning.dark
+                              : theme.palette.text.secondary,
+                            border: 'none'
+                          }}
                         />
                         {selectedReport.detected_language && (
                           <Chip
                             size="small"
-                            icon={<TranslateIcon sx={{ fontSize: '0.8rem !important' }} />}
+                            icon={<TranslateIcon sx={{ fontSize: '0.8rem !important', color: 'inherit' }} />}
                             label={getLanguageLabel(selectedReport.detected_language)}
-                            sx={{ height: 22, fontSize: '0.65rem', fontWeight: 600 }}
+                            sx={{ 
+                              height: 22, fontSize: '0.65rem', fontWeight: 700, px: 0.5,
+                              bgcolor: alpha(theme.palette.grey[500], 0.08),
+                              color: theme.palette.text.secondary,
+                              border: '1px solid',
+                              borderColor: alpha(theme.palette.grey[500], 0.2),
+                              '& .MuiChip-icon': { ml: 0.5, mr: -0.5 }
+                            }}
                           />
                         )}
                         {selectedReport.translated_english?.trim() &&
@@ -1739,8 +1996,42 @@ export function Reports() {
                               </IconButton>
                             </Tooltip>
                           )}
-                        {(selectedReport.translation_status === 'processing' || translatingReportId === selectedReport.id) && (
-                          <CircularProgress size={16} />
+                        {isTranslationLive(selectedReport) && (
+                          <Stack direction="row" spacing={0.75} alignItems="center">
+                            <CircularProgress size={14} />
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                color:
+                                  selectedReport.translation_status === 'pending'
+                                    ? theme.palette.warning.dark
+                                    : theme.palette.info.main,
+                                letterSpacing: '0.01em',
+                              }}
+                            >
+                              {getTranslationLiveLabel(selectedReport)}
+                            </Typography>
+                          </Stack>
+                        )}
+                        {selectedReport.translation_status === 'failed' && (
+                          <Tooltip title={getTranslationFailureReason(selectedReport)}>
+                            <Chip
+                              size="small"
+                              label="Reason"
+                              sx={{
+                                height: 22,
+                                fontSize: '0.62rem',
+                                fontWeight: 700,
+                                px: 0.45,
+                                bgcolor: alpha(theme.palette.error.main, 0.08),
+                                color: theme.palette.error.main,
+                                border: '1px solid',
+                                borderColor: alpha(theme.palette.error.main, 0.25),
+                              }}
+                            />
+                          </Tooltip>
                         )}
                         {selectedReport.translation_status === 'failed' && translatingReportId !== selectedReport.id && (
                           <Tooltip title="Retry translation">
@@ -1777,19 +2068,31 @@ export function Reports() {
                         )}
                       </Stack>
                     </Box>
-                    <Paper variant="outlined" sx={{ p: 2, mt: 0.5, borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
-                      {selectedReport.translated_english?.trim() &&
+                    <Paper variant="outlined" sx={{ p: 2.5, mt: 1, borderRadius: '12px', border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, bgcolor: alpha(theme.palette.primary.main, 0.02), boxShadow: `inset 0 2px 4px ${alpha(theme.palette.common.black, 0.02)}` }}>
+                      {selectedReport.translation_status === 'failed' ? (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1.5, fontWeight: 600, color: theme.palette.error.main, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}
+                          >
+                            Translation failed: {getTranslationFailureReason(selectedReport)}
+                          </Typography>
+                          <Typography variant="body1" sx={{ lineHeight: 1.7, color: theme.palette.text.primary }}>
+                            {selectedReport.description}
+                          </Typography>
+                        </>
+                      ) : selectedReport.translated_english?.trim() &&
                       selectedReport.translated_english.trim() != selectedReport.description.trim() ? (
                         <>
                           <Typography
                             variant="caption"
-                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.text.secondary, 0.65) }}
+                            sx={{ display: 'block', mb: 1.5, fontWeight: 600, color: theme.palette.primary.main, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}
                           >
                             {showOriginalDescription
                               ? `Original ${getLanguageLabel(selectedReport.detected_language)} text`
                               : `English translation from ${getLanguageLabel(selectedReport.detected_language)}`}
                           </Typography>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                          <Typography variant="body1" sx={{ lineHeight: 1.7, color: theme.palette.text.primary }}>
                             {showOriginalDescription
                               ? selectedReport.description
                               : selectedReport.translated_english}
@@ -1799,11 +2102,11 @@ export function Reports() {
                         <>
                           <Typography
                             variant="caption"
-                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.warning.dark, 0.75) }}
+                            sx={{ display: 'block', mb: 1.5, fontWeight: 600, color: theme.palette.warning.dark, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}
                           >
                             Translation is queued. The original message is shown until English text is ready.
                           </Typography>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                          <Typography variant="body1" sx={{ lineHeight: 1.7, color: theme.palette.text.primary }}>
                             {selectedReport.description}
                           </Typography>
                         </>
@@ -1811,108 +2114,86 @@ export function Reports() {
                         <>
                           <Typography
                             variant="caption"
-                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.info.main, 0.75) }}
+                            sx={{ display: 'block', mb: 1.5, fontWeight: 600, color: theme.palette.info.main, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}
                           >
                             Translation is in progress. The original message is shown until English text is ready.
                           </Typography>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
-                            {selectedReport.description}
-                          </Typography>
-                        </>
-                      ) : selectedReport.translation_status === 'failed' ? (
-                        <>
-                          <Typography
-                            variant="caption"
-                            sx={{ display: 'block', mb: 1, color: alpha(theme.palette.error.main, 0.75) }}
-                          >
-                            Translation failed{selectedReport.translation_last_error ? `: ${selectedReport.translation_last_error}` : '.'}
-                          </Typography>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                          <Typography variant="body1" sx={{ lineHeight: 1.7, color: theme.palette.text.primary }}>
                             {selectedReport.description}
                           </Typography>
                         </>
                       ) : (
-                        <Typography variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.primary, 0.85) }}>
+                        <Typography variant="body1" sx={{ lineHeight: 1.7, color: theme.palette.text.primary }}>
                           {selectedReport.description}
                         </Typography>
                       )}
                     </Paper>
                   </Box>
 
-                  {/* Location */}
-                  <Grid container spacing={2}>
+                  {/* Location & Contact Grid */}
+                  <Grid container spacing={3}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Latitude
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
-                        {selectedReport.latitude.toFixed(6)}°N
-                      </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Longitude
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
-                        {selectedReport.longitude.toFixed(6)}°E
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                      <Stack spacing={2.5}>
+                        <Box>
+                          <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                            Location Coordinates
+                          </Typography>
+                          <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5, fontFamily: '"JetBrains Mono", monospace', fontSize: '0.9rem' }}>
+                            {selectedReport.latitude.toFixed(6)}°N, {selectedReport.longitude.toFixed(6)}°E
+                          </Typography>
+                        </Box>
 
-                  {/* Risk Info */}
-                  {selectedReport.people_at_risk && selectedReport.people_at_risk > 0 && (
-                    <Box>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        People at Risk
-                      </Typography>
-                      <Box sx={{ mt: 0.5 }}>
-                        <Chip
-                          icon={<PeopleIcon sx={{ fontSize: '0.9rem !important' }} />}
-                          label={`${selectedReport.people_at_risk} people`}
-                          size="small"
-                          sx={{ fontWeight: 600, bgcolor: alpha(theme.palette.error.main, 0.06), color: theme.palette.error.main, border: 'none', '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.7) } }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
+                        <Box>
+                          <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                            Reporter Info
+                          </Typography>
+                          <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {selectedReport.user_name || 'Anonymous'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontFamily: '"JetBrains Mono", monospace', color: theme.palette.text.secondary, fontSize: '0.85rem' }}>
+                              {safeMaskPhone(selectedReport.user_phone)}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    </Grid>
 
-                  {/* User Info */}
-                  <Grid container spacing={2}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Reporter Name
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.25 }}>
-                        {selectedReport.user_name || 'Anonymous'}
-                      </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Phone Number
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.25, fontFamily: '"JetBrains Mono", monospace' }}>
-                        {safeMaskPhone(selectedReport.user_phone)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                      <Stack spacing={2.5}>
+                        <Box>
+                          <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                            Timestamps
+                          </Typography>
+                          <Stack spacing={1} sx={{ mt: 0.5 }}>
+                            <Box>
+                              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', fontSize: '0.7rem' }}>Event Time</Typography>
+                              <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem' }}>{format(new Date(selectedReport.event_time), 'MMM dd, yyyy • hh:mm a')}</Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', fontSize: '0.7rem' }}>System Logged At</Typography>
+                              <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem' }}>{format(new Date(selectedReport.created_at), 'MMM dd, yyyy • hh:mm a')}</Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
 
-                  {/* Timestamps */}
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Event Time
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.25 }}>
-                        {format(new Date(selectedReport.event_time), 'PPpp')}
-                      </Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6 }}>
-                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
-                        Reported At
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.25 }}>
-                        {format(new Date(selectedReport.created_at), 'PPpp')}
-                      </Typography>
+                        {/* Risk Info inline */}
+                        {selectedReport.people_at_risk && selectedReport.people_at_risk > 0 && (
+                          <Box>
+                            <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                              People at Risk
+                            </Typography>
+                            <Box sx={{ mt: 0.5 }}>
+                              <Chip
+                                icon={<PeopleIcon sx={{ fontSize: '1rem !important' }} />}
+                                label={`${selectedReport.people_at_risk} people`}
+                                size="small"
+                                sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: alpha(theme.palette.error.main, 0.08), color: theme.palette.error.main, border: '1px solid', borderColor: alpha(theme.palette.error.main, 0.2), '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.8) } }}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+                      </Stack>
                     </Grid>
                   </Grid>
 
@@ -1979,34 +2260,77 @@ export function Reports() {
                   </Box>
                 </Stack>
               </DialogContent>
-              <DialogActions sx={{ px: 2.5, py: 1.5, borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}` }}>
+              <DialogActions sx={{ px: 3, py: 2.5, bgcolor: alpha(theme.palette.grey[50], 0.4), borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
                 {selectedReport.status === 'pending' && (
-                  <Stack direction="row" spacing={1} sx={{ mr: 'auto' }}>
+                  <Stack direction="row" spacing={1.5} sx={{ mr: 'auto' }}>
                     <Button
                       variant="contained"
                       color="success"
-                      size="small"
-                      startIcon={<CheckCircleIcon sx={{ fontSize: '1rem !important' }} />}
+                      startIcon={<CheckCircleIcon />}
                       disabled={statusUpdatingId === selectedReport.id}
                       onClick={() => updateStatus(selectedReport, 'verified')}
-                      sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 2 }}
+                      sx={{ 
+                        borderRadius: '12px', 
+                        textTransform: 'none', 
+                        fontWeight: 700, 
+                        px: 3, 
+                        py: 0.8,
+                        boxShadow: 'none',
+                        bgcolor: alpha(theme.palette.success.main, 0.1),
+                        color: theme.palette.success.dark,
+                        '&:hover': {
+                          boxShadow: 'none',
+                          bgcolor: alpha(theme.palette.success.main, 0.18),
+                          transform: 'translateY(-1px)'
+                        },
+                        transition: 'all 0.2s'
+                      }}
                     >
-                      Accept
+                      {statusUpdatingId === selectedReport.id ? 'Updating...' : 'Verify Report'}
                     </Button>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       color="error"
-                      size="small"
-                      startIcon={<CancelIcon sx={{ fontSize: '1rem !important' }} />}
+                      startIcon={<CancelIcon />}
                       disabled={statusUpdatingId === selectedReport.id}
                       onClick={() => updateStatus(selectedReport, 'rejected')}
-                      sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 2 }}
+                      sx={{ 
+                        borderRadius: '12px', 
+                        textTransform: 'none', 
+                        fontWeight: 700, 
+                        px: 3, 
+                        py: 0.8,
+                        boxShadow: 'none',
+                        bgcolor: alpha(theme.palette.error.main, 0.1),
+                        color: theme.palette.error.dark,
+                        '&:hover': {
+                          boxShadow: 'none',
+                          bgcolor: alpha(theme.palette.error.main, 0.18),
+                          transform: 'translateY(-1px)'
+                        },
+                        transition: 'all 0.2s'
+                      }}
                     >
-                      Reject
+                      Reject Report
                     </Button>
                   </Stack>
                 )}
-                <Button onClick={() => setDetailDialogOpen(false)} sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}>Close</Button>
+                <Button 
+                  onClick={() => setDetailDialogOpen(false)} 
+                  variant="text"
+                  sx={{ 
+                    borderRadius: '12px', 
+                    textTransform: 'none', 
+                    fontWeight: 600,
+                    color: theme.palette.text.secondary,
+                    px: 3,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.grey[500], 0.08)
+                    }
+                  }}
+                >
+                  Close
+                </Button>
               </DialogActions>
             </>
           )}
@@ -2022,4 +2346,5 @@ export function Reports() {
     </Box>
   );
 }
+
 

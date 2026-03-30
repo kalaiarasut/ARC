@@ -43,7 +43,7 @@ import { isSupabaseConfigured } from '../core/supabase_config';
 import { useAuth } from '../contexts/AuthContext';
 import { advisoryService } from '../services/advisoryService';
 import { riskZoneService } from '../services/riskZoneService';
-import type { OfficialAdvisory } from '../types/advisory';
+import type { AdvisoryCategory, AdvisoryLanguageCode, AdvisorySeverity, OfficialAdvisory } from '../types/advisory';
 import { useAdvisoryForm } from '../components/advisories/hooks/useAdvisoryForm';
 import { useTranslations } from '../components/advisories/hooks/useTranslations';
 import { FormSection } from '../components/advisories/FormSection';
@@ -258,7 +258,7 @@ export function Advisories() {
         title: form.title.trim(),
         body: form.body.trim(),
         region: form.region.trim() || null,
-        target_languages: languages.map((lang) => lang.code),
+        target_languages: languages.map((lang) => lang.code) as Exclude<AdvisoryLanguageCode, 'en'>[],
       });
 
       translationsState.setTranslations(preview.translations);

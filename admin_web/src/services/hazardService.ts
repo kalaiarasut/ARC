@@ -7,6 +7,32 @@ export interface PagedResult<T> {
   total: number;
 }
 
+export interface CuratedSeedResult {
+  seed_version: string;
+  total_reports: number;
+  reports_with_media: number;
+  languages: string[];
+  duplicate_record_key: string;
+  replace_existing: boolean;
+}
+
+export interface ClearedCuratedSeedResult {
+  deleted_reports: number;
+  deleted_media_objects: number;
+  deleted_users: number;
+}
+
+export interface TranslationQueueStats {
+  pending: number;
+  processing: number;
+  failed: number;
+  completed: number;
+  skipped: number;
+  active: number;
+  total_known: number;
+  fetched_at: string;
+}
+
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL ||
   import.meta.env.VITE_PUBLIC_SUPABASE_URL ||
@@ -441,6 +467,53 @@ export const hazardService = {
     });
   },
 
+  async getTranslationQueueStats(): Promise<TranslationQueueStats> {
+    if (!isSupabaseConfigured()) {
+      return {
+        pending: 0,
+        processing: 0,
+        failed: 0,
+        completed: 0,
+        skipped: 0,
+        active: 0,
+        total_known: 0,
+        fetched_at: new Date().toISOString(),
+      };
+    }
+
+    const countByStatus = async (status: 'pending' | 'processing' | 'failed' | 'completed' | 'skipped') => {
+      const { count, error } = await supabase
+        .from('hazard_reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('translation_status', status);
+
+      if (error) {
+        throw error;
+      }
+
+      return count ?? 0;
+    };
+
+    const [pending, processing, failed, completed, skipped] = await Promise.all([
+      countByStatus('pending'),
+      countByStatus('processing'),
+      countByStatus('failed'),
+      countByStatus('completed'),
+      countByStatus('skipped'),
+    ]);
+
+    return {
+      pending,
+      processing,
+      failed,
+      completed,
+      skipped,
+      active: pending + processing + failed,
+      total_known: pending + processing + failed + completed + skipped,
+      fetched_at: new Date().toISOString(),
+    };
+  },
+
   subscribeToReports(callback: (report: HazardReport) => void) {
     if (!isSupabaseConfigured()) {
       return {
@@ -505,6 +578,18 @@ export const hazardService = {
     return Number(data ?? 0);
   },
 
+  async seedCuratedReports(options?: {
+    replaceExisting?: boolean;
+  }): Promise<CuratedSeedResult> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction<CuratedSeedResult>('admin_seed_curated_reports', {
+      replace_existing: options?.replaceExisting ?? true,
+    });
+  },
+
   async clearMockReports(): Promise<number> {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase not configured');
@@ -516,5 +601,13 @@ export const hazardService = {
       throw error;
     }
     return Number(data ?? 0);
+  },
+
+  async clearCuratedSeedReports(): Promise<ClearedCuratedSeedResult> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction<ClearedCuratedSeedResult>('admin_clear_curated_seed', {});
   },
 };

@@ -849,13 +849,7 @@ export const MapView: React.FC = () => {
                                                 onClick={async () => {
                                                     try {
                                                         setMockBusy(true);
-                                                        await hazardService.seedMockReports({ clusters: 3, reportsPerCluster: 30, ageMinutes: 45 });
-                                                        try {
-                                                            await riskZoneService.recompute();
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                            setError(`Seeded reports, but zone generation failed: ${formatRpcError(e)}. This usually means a missing DB migration (uuid defaults / pgcrypto).`);
-                                                        }
+                                                        await hazardService.seedCuratedReports({ replaceExisting: true });
                                                         await loadLiveReports();
                                                         scheduleZonesRefresh();
                                                     } catch (e) {
@@ -866,7 +860,7 @@ export const MapView: React.FC = () => {
                                                 }}
                                                 sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.7rem', flex: 1, boxShadow: 'none', '&:hover': { boxShadow: 'none' } }}
                                             >
-                                                {mockBusy ? 'Seeding…' : 'Seed Mock'}
+                                                {mockBusy ? 'Seeding…' : 'Seed Curated'}
                                             </Button>
                                             <Button
                                                 variant="outlined"
@@ -876,7 +870,7 @@ export const MapView: React.FC = () => {
                                                 onClick={async () => {
                                                     try {
                                                         setMockBusy(true);
-                                                        await hazardService.clearMockReports();
+                                                        await hazardService.clearCuratedSeedReports();
                                                         await loadLiveReports();
                                                         scheduleZonesRefresh();
                                                     } catch (e) {

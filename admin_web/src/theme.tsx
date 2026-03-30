@@ -149,10 +149,33 @@ export const getTheme = (mode: PaletteMode) => {
                 },
                 elevation3: {
                     boxShadow: isDark
-                        ? '0 16px 32px rgba(0, 255, 209, 0.08)'
+                        ? '0 12px 32px rgba(0, 255, 209, 0.08)'
                         : '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
                 },
             },
+        },
+        MuiTooltip: {
+            styleOverrides: {
+                tooltip: {
+                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                    color: isDark ? '#f8fafc' : '#1e293b',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    boxShadow: isDark 
+                      ? '0 4px 12px rgba(0,0,0,0.5)' 
+                      : '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                    lineHeight: 1.5,
+                    border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+                },
+                arrow: {
+                    color: isDark ? '#1e293b' : '#ffffff',
+                    '&::before': {
+                        border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+                    }
+                }
+            }
         },
         MuiButton: {
             styleOverrides: {
