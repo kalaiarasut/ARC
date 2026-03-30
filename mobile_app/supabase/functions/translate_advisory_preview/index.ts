@@ -15,11 +15,99 @@ type TranslationDraft = {
   error?: string;
 };
 
-const SARVAM_BASE_URL = Deno.env.get("SARVAM_BASE_URL") ?? "https://api.sarvam.ai";
+const DEFAULT_SARVAM_BASE_URL = "https://api.sarvam.ai";
+const SARVAM_BASE_URL = Deno.env.get("SARVAM_BASE_URL") ?? DEFAULT_SARVAM_BASE_URL;
+const SARVAM_API_KEYS = (Deno.env.get("SARVAM_API_KEYS") ?? "")
+  .split(",")
+  .map((item) => item.trim())
+  .filter((item) => item.length > 0);
 const SARVAM_API_KEY = Deno.env.get("SARVAM_API_KEY") ?? "";
 const SUPPORTED_TARGETS: TargetLanguage[] = ["bn", "gu", "hi", "kn", "ml", "mr", "or", "ta", "te"];
 const TRANSLATE_MODEL = "sarvam-translate:v1";
 const MAYURA_MODEL = "mayura:v1";
+
+const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
+
+let sarvamKeyCursor = 0;
+
+const getSarvamApiKeys = () => {
+  const candidates = [...SARVAM_API_KEYS, SARVAM_API_KEY]
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  return Array.from(new Set(candidates));
+};
+
+const getRotatedSarvamApiKeys = () => {
+  const keys = getSarvamApiKeys();
+  if (keys.length <= 1) return keys;
+
+  const start = sarvamKeyCursor % keys.length;
+  sarvamKeyCursor = (sarvamKeyCursor + 1) % keys.length;
+
+  return [...keys.slice(start), ...keys.slice(0, start)];
+};
+
+const isRetryableSarvamStatus = (status: number) =>
+  status === 401 ||
+  status === 403 ||
+  status === 408 ||
+  status === 409 ||
+  status === 425 ||
+  status === 429 ||
+  status >= 500;
+
+const sarvamPost = async (path: string, body: Record<string, unknown>) => {
+  const baseUrl = normalizeBaseUrl(SARVAM_BASE_URL || DEFAULT_SARVAM_BASE_URL);
+  const apiKeys = getRotatedSarvamApiKeys();
+  if (apiKeys.length === 0) {
+    throw new Error("Missing SARVAM_API_KEY or SARVAM_API_KEYS");
+  }
+
+  let lastError: Error | null = null;
+
+  for (const apiKey of apiKeys) {
+    const maskedKeySuffix = apiKey.length >= 4 ? apiKey.slice(-4) : "***";
+    const url = `${baseUrl}${path}`;
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "api-subscription-key": apiKey,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (response.ok) {
+        return { payload, baseUrl };
+      }
+
+      const message =
+        payload?.error?.message ??
+        payload?.message ??
+        `Sarvam request failed (${response.status})`;
+      const error = new Error(`${message} @ ${baseUrl}${path} [key:${maskedKeySuffix}]`);
+
+      if (!isRetryableSarvamStatus(response.status)) {
+        (error as Error & { nonRetryable?: boolean }).nonRetryable = true;
+        throw error;
+      }
+
+      lastError = error;
+    } catch (error) {
+      if ((error as Error & { nonRetryable?: boolean })?.nonRetryable) {
+        throw error;
+      }
+      lastError =
+        error instanceof Error
+          ? error
+          : new Error(`Sarvam request failed @ ${baseUrl}${path} [key:${maskedKeySuffix}]`);
+    }
+  }
+
+  throw lastError ?? new Error(`Sarvam request failed for ${path}`);
+};
 
 const toSarvamLanguageCode = (languageCode: TargetLanguage | "en") => {
   switch (languageCode) {
@@ -85,19 +173,14 @@ const looksInvalidTranslation = (input: string, translated: string) => {
 };
 
 const detectLanguageCode = async (text: string): Promise<string | null> => {
-  if (!SARVAM_API_KEY || !text.trim()) return null;
+  if (getSarvamApiKeys().length === 0 || !text.trim()) return null;
 
-  const response = await fetch(`${SARVAM_BASE_URL}/text-lid`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "api-subscription-key": SARVAM_API_KEY,
-    },
-    body: JSON.stringify({ input: text }),
-  });
-
-  if (!response.ok) return null;
-  const payload = await response.json().catch(() => null);
+  let payload: any = null;
+  try {
+    ({ payload } = await sarvamPost("/text-lid", { input: text }));
+  } catch {
+    return null;
+  }
   const candidates = [
     payload?.language_code,
     payload?.language,
@@ -114,25 +197,13 @@ const detectLanguageCode = async (text: string): Promise<string | null> => {
 };
 
 const translateText = async (text: string, targetLanguage: TargetLanguage, model: string) => {
-  const response = await fetch(`${SARVAM_BASE_URL}/translate`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "api-subscription-key": SARVAM_API_KEY,
-    },
-    body: JSON.stringify({
-      input: text,
-      source_language_code: toSarvamLanguageCode("en"),
-      target_language_code: toSarvamLanguageCode(targetLanguage),
-      mode: "formal",
-      model,
-    }),
+  const { payload } = await sarvamPost("/translate", {
+    input: text,
+    source_language_code: toSarvamLanguageCode("en"),
+    target_language_code: toSarvamLanguageCode(targetLanguage),
+    mode: "formal",
+    model,
   });
-
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(payload?.error?.message ?? payload?.message ?? `Sarvam request failed (${response.status})`);
-  }
 
   const translated = extractTranslatedText(payload);
   if (!translated) {
@@ -170,8 +241,8 @@ Deno.serve(async (request: Request) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  if (!SARVAM_API_KEY) {
-    return jsonResponse({ error: "Missing SARVAM_API_KEY" }, 500);
+  if (getSarvamApiKeys().length === 0) {
+    return jsonResponse({ error: "Missing SARVAM_API_KEY or SARVAM_API_KEYS" }, 500);
   }
 
   const auth = await requireAdmin(request);
