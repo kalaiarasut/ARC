@@ -835,7 +835,7 @@ export function Reports() {
                 boxShadow: 'none',
                 '&:hover': { bgcolor: theme.palette.success.main, boxShadow: 'none' },
               } : {
-                borderColor: alpha(theme.palette.grey[300], 0.8),
+                borderColor: alpha(theme.palette.text.primary, 0.2),
                 color: alpha(theme.palette.text.secondary, 0.7),
                 '&:hover': { borderColor: theme.palette.success.main, color: theme.palette.success.main, bgcolor: alpha(theme.palette.success.main, 0.04) },
               }),
@@ -913,11 +913,11 @@ export function Reports() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '10px',
-                    bgcolor: alpha(theme.palette.grey[100], 0.4),
+                    bgcolor: alpha(theme.palette.text.primary, 0.04),
                     fontSize: '0.875rem',
                     '& fieldset': { borderColor: alpha(theme.palette.divider, 0.12) },
                     '&:hover': {
-                      bgcolor: alpha(theme.palette.grey[100], 0.7),
+                      bgcolor: alpha(theme.palette.text.primary, 0.08),
                       '& fieldset': { borderColor: alpha(theme.palette.divider, 0.25) },
                     },
                     '&.Mui-focused': {
@@ -975,7 +975,7 @@ export function Reports() {
                       height: 38,
                       px: 2,
                       borderRadius: '10px',
-                      borderColor: alpha(theme.palette.grey[300], 0.8),
+                      borderColor: alpha(theme.palette.text.primary, 0.2),
                       color: 'text.primary',
                       fontWeight: 600,
                       fontSize: '0.8125rem',
@@ -994,7 +994,7 @@ export function Reports() {
                     height: 38,
                     px: 2,
                     borderRadius: '10px',
-                    borderColor: alpha(theme.palette.grey[300], 0.8),
+                    borderColor: alpha(theme.palette.text.primary, 0.2),
                     color: filters.dateFrom && filters.dateTo ? 'white' : 'text.primary',
                     fontWeight: 600,
                     fontSize: '0.8125rem',
@@ -1130,7 +1130,7 @@ export function Reports() {
                         bgcolor: selected ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
                         color: selected ? 'primary.main' : 'text.primary',
                         '&:hover': {
-                          bgcolor: selected ? alpha(theme.palette.primary.main, 0.14) : alpha(theme.palette.grey[100], 0.5),
+                          bgcolor: selected ? alpha(theme.palette.primary.main, 0.14) : alpha(theme.palette.text.primary, 0.05),
                         },
                       }}
                     >
@@ -1238,7 +1238,7 @@ export function Reports() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   color: alpha(theme.palette.text.secondary, 0.7),
-                  bgcolor: alpha(theme.palette.grey[50], 0.6),
+                  bgcolor: alpha(theme.palette.text.primary, 0.02),
                   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                 },
                 '& .MuiChip-root': { height: 22 },
@@ -1321,7 +1321,7 @@ export function Reports() {
                               ? alpha(theme.palette.error.main, 0.012)
                               : index % 2 === 0
                                 ? 'transparent'
-                                : alpha(theme.palette.grey[50], 0.35),
+                                : alpha(theme.palette.text.primary, 0.01),
                         opacity: (isVerified || isResolved) ? 0.55 : 1,
                         transition: 'all 0.15s ease',
                         '&:hover': {
@@ -1605,7 +1605,7 @@ export function Reports() {
               px: 2,
               py: 0.75,
               borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-              bgcolor: alpha(theme.palette.grey[50], 0.3),
+              bgcolor: alpha(theme.palette.text.primary, 0.03),
             }}
           >
             <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.75rem' }}>
@@ -1644,7 +1644,7 @@ export function Reports() {
                   Narrow down your reports
                 </Typography>
               </Box>
-              <IconButton onClick={() => setFilterDrawerOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) } }}>
+              <IconButton onClick={() => setFilterDrawerOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.text.primary, 0.12), '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.18) } }}>
                 <CloseIcon sx={{ fontSize: '1.1rem' }} />
               </IconButton>
             </Box>
@@ -1843,7 +1843,7 @@ export function Reports() {
                 fullWidth
                 variant="outlined"
                 onClick={handleResetFilters}
-                sx={{ borderRadius: '10px', borderColor: alpha(theme.palette.grey[300], 0.8), color: 'text.secondary', textTransform: 'none', fontWeight: 600, py: 1 }}
+                sx={{ borderRadius: '10px', borderColor: alpha(theme.palette.text.primary, 0.2), color: 'text.secondary', textTransform: 'none', fontWeight: 600, py: 1 }}
               >
                 Reset All
               </Button>
@@ -1874,7 +1874,7 @@ export function Reports() {
                   <Typography variant="h6" fontWeight={800} sx={{ fontSize: '1.25rem', letterSpacing: '-0.02em', color: theme.palette.text.primary }}>
                     Report Details
                   </Typography>
-                  <IconButton onClick={() => setDetailDialogOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.grey[200], 0.5), '&:hover': { bgcolor: alpha(theme.palette.grey[200], 0.8) }, transition: 'all 0.2s' }}>
+                  <IconButton onClick={() => setDetailDialogOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.text.primary, 0.12), '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.18) }, transition: 'all 0.2s' }}>
                     <CloseIcon sx={{ fontSize: '1.2rem', color: theme.palette.text.secondary }} />
                   </IconButton>
                 </Box>
@@ -2215,7 +2215,7 @@ export function Reports() {
                       <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                         {selectedReport.media_urls.map((url, idx) => (
                           <Grid size={{ xs: 12, md: looksLikeAudio(url) ? 12 : 6 }} key={idx}>
-                            <Box sx={{ p: 1.5, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: '10px', bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
+                            <Box sx={{ p: 1.5, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: '10px', bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
                               <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.5), mb: 1, display: 'block', fontSize: '0.65rem' }}>
                                 Attachment {idx + 1}
                               </Typography>
@@ -2248,7 +2248,7 @@ export function Reports() {
                     ) : (
                       <Stack spacing={0.75} sx={{ mt: 1 }}>
                         {auditLogs.map((log) => (
-                          <Paper key={log.id} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.grey[50], 0.2) }}>
+                          <Paper key={log.id} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '10px', borderColor: alpha(theme.palette.divider, 0.1), bgcolor: alpha(theme.palette.text.primary, 0.01) }}>
                             <Box>
                               <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>
                                 {log.admin_email}
@@ -2269,7 +2269,7 @@ export function Reports() {
                   </Box>
                 </Stack>
               </DialogContent>
-              <DialogActions sx={{ px: 3, py: 2.5, bgcolor: alpha(theme.palette.grey[50], 0.4), borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
+              <DialogActions sx={{ px: 3, py: 2.5, bgcolor: alpha(theme.palette.text.primary, 0.04), borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
                 {selectedReport.status === 'pending' && (
                   <Stack direction="row" spacing={1.5} sx={{ mr: 'auto' }}>
                     <Button

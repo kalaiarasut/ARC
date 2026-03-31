@@ -46,7 +46,12 @@ import { exportMap } from '../services/mapExportService';
 import type { HazardReport } from '../types/hazard';
 import type { OfficialAdvisory } from '../types/advisory';
 import type { GeneratedRiskZone } from '../types/riskZone';
-import type { MonitoringZone } from '../types/monitoringZone';
+import type {
+    LiveExactPin,
+    LiveLocationSession,
+    LivePresenceCell,
+    MonitoringZone,
+} from '../types/monitoringZone';
 import { useSearchParams } from 'react-router-dom';
 import type { MonitoringZoneCoordinate } from '../types/monitoringZone';
 
@@ -72,6 +77,17 @@ export const MapView: React.FC = () => {
     const [monitoringZones, setMonitoringZones] = useState<MonitoringZone[]>([]);
     const [selectedMonitoringZone, setSelectedMonitoringZone] = useState<MonitoringZone | null>(null);
     const [monitoringZonesCount, setMonitoringZonesCount] = useState(0);
+    const [livePresenceEnabled, setLivePresenceEnabled] = useState(false);
+    const [livePresenceMode, setLivePresenceMode] = useState<'anonymized' | 'exact'>('anonymized');
+    const [livePresenceLoading, setLivePresenceLoading] = useState(false);
+    const [livePresenceCells, setLivePresenceCells] = useState<LivePresenceCell[]>([]);
+    const [liveExactPins, setLiveExactPins] = useState<LiveExactPin[]>([]);
+    const [liveExactPermission, setLiveExactPermission] = useState(false);
+    const [liveLocationSession, setLiveLocationSession] = useState<LiveLocationSession | null>(null);
+    const [liveSessionDialogOpen, setLiveSessionDialogOpen] = useState(false);
+    const [liveIncidentId, setLiveIncidentId] = useState('');
+    const [liveReason, setLiveReason] = useState('');
+    const [liveCountdownNow, setLiveCountdownNow] = useState(() => Date.now());
     const [zoomOnLoad, setZoomOnLoad] = useState(true);
 
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -104,6 +120,22 @@ export const MapView: React.FC = () => {
         return msg;
     };
 
+    const formatLiveCountdown = (expiresAt: string | null | undefined) => {
+        if (!expiresAt) return '00:00';
+        const remainingMs = Math.max(0, new Date(expiresAt).getTime() - liveCountdownNow);
+        const totalSeconds = Math.floor(remainingMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
+
+    const clearLivePresenceLayers = () => {
+        setLivePresenceCells([]);
+        setLiveExactPins([]);
+        mapRef.current?.clearLivePresenceCells();
+        mapRef.current?.clearLiveExactPins();
+    };
+
     const zonesRefreshTimerRef = useRef<number | null>(null);
     const zonesRequestIdRef = useRef(0);
     const zoneMoveHandlerBoundRef = useRef(false);
@@ -111,10 +143,14 @@ export const MapView: React.FC = () => {
     const showZonesRef = useRef(showZones);
     const showCandidateRef = useRef(showCandidateZones);
     const showSuppressedRef = useRef(showSuppressedZones);
+    const livePresenceEnabledRef = useRef(livePresenceEnabled);
+    const livePresenceModeRef = useRef(livePresenceMode);
 
     useEffect(() => { showZonesRef.current = showZones; }, [showZones]);
     useEffect(() => { showCandidateRef.current = showCandidateZones; }, [showCandidateZones]);
     useEffect(() => { showSuppressedRef.current = showSuppressedZones; }, [showSuppressedZones]);
+    useEffect(() => { livePresenceEnabledRef.current = livePresenceEnabled; }, [livePresenceEnabled]);
+    useEffect(() => { livePresenceModeRef.current = livePresenceMode; }, [livePresenceMode]);
 
     useEffect(() => {
         mapRef.current?.setMonitoringZonesVisible(showMonitoringZones);
@@ -292,6 +328,86 @@ export const MapView: React.FC = () => {
         }
     };
 
+    const loadLiveLocationCapability = async () => {
+        if (!isSupabaseConfigured() || isAdmin !== true) return;
+        try {
+            const [hasPermission, session] = await Promise.all([
+                monitoringZoneService.hasExactLocationPermission(),
+                monitoringZoneService.getActiveLiveLocationSession(),
+            ]);
+            setLiveExactPermission(hasPermission);
+            setLiveLocationSession(session);
+        } catch (e) {
+            console.error(e);
+            setError(`Failed to load live presence access: ${formatRpcError(e)}`);
+        }
+    };
+
+    const loadLivePresenceOverlay = async (options?: { silent?: boolean }) => {
+        if (!isSupabaseConfigured() || isAdmin !== true || !livePresenceEnabledRef.current) {
+            clearLivePresenceLayers();
+            return;
+        }
+
+        const bounds = mapRef.current?.getBounds();
+        const zoom = mapRef.current?.getZoomLevel() ?? 10;
+        if (!bounds) return;
+
+        try {
+            if (!options?.silent) setLivePresenceLoading(true);
+
+            if (livePresenceModeRef.current === 'anonymized') {
+                const cells = await monitoringZoneService.getLivePresenceAnonymized({
+                    bounds,
+                    zoom,
+                    minutes: 15,
+                });
+                setLivePresenceCells(cells);
+                setLiveExactPins([]);
+                mapRef.current?.setLivePresenceCells(cells);
+                mapRef.current?.clearLiveExactPins();
+                return;
+            }
+
+            const hasPermission = await monitoringZoneService.hasExactLocationPermission();
+            setLiveExactPermission(hasPermission);
+            if (!hasPermission) {
+                setLiveLocationSession(null);
+                setLiveExactPins([]);
+                setLivePresenceCells([]);
+                mapRef.current?.clearLiveExactPins();
+                mapRef.current?.clearLivePresenceCells();
+                return;
+            }
+
+            const session = await monitoringZoneService.getActiveLiveLocationSession();
+            setLiveLocationSession(session);
+            if (!session) {
+                setLiveExactPins([]);
+                setLivePresenceCells([]);
+                mapRef.current?.clearLiveExactPins();
+                mapRef.current?.clearLivePresenceCells();
+                return;
+            }
+
+            const pins = await monitoringZoneService.getLiveExactPins({
+                sessionId: session.id,
+                bounds,
+                minutes: 15,
+            });
+
+            setLiveExactPins(pins);
+            setLivePresenceCells([]);
+            mapRef.current?.setLiveExactPins(pins);
+            mapRef.current?.clearLivePresenceCells();
+        } catch (e) {
+            console.error(e);
+            setError(`Failed to load live presence: ${formatRpcError(e)}`);
+        } finally {
+            if (!options?.silent) setLivePresenceLoading(false);
+        }
+    };
+
     const resetZoneDialog = () => {
         setZoneDraftName('');
         setZoneDraftDescription('');
@@ -451,6 +567,57 @@ export const MapView: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        if (isAdmin === true) {
+            void loadLiveLocationCapability();
+        }
+        if (isAdmin === false) {
+            setLiveExactPermission(false);
+            setLiveLocationSession(null);
+            setLivePresenceEnabled(false);
+            clearLivePresenceLayers();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAdmin]);
+
+    useEffect(() => {
+        if (!livePresenceEnabled) {
+            clearLivePresenceLayers();
+            return;
+        }
+
+        void loadLivePresenceOverlay();
+
+        const runRefresh = () => {
+            if (document.hidden) return;
+            void loadLivePresenceOverlay({ silent: true });
+        };
+
+        const timer = window.setInterval(runRefresh, 5000);
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                void loadLivePresenceOverlay({ silent: true });
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [livePresenceEnabled, livePresenceMode]);
+
+    useEffect(() => {
+        if (!liveLocationSession?.expires_at) return;
+
+        const timer = window.setInterval(() => {
+            setLiveCountdownNow(Date.now());
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [liveLocationSession?.id, liveLocationSession?.expires_at]);
+
+    useEffect(() => {
         loadLiveReports();
         if (!isSupabaseConfigured()) return;
 
@@ -502,6 +669,59 @@ export const MapView: React.FC = () => {
     const handleRecenter = () => {
         mapRef.current?.panToLocation(13.08, 80.27, zoomOnLoad ? 14 : 6);
     };
+
+    const handleStartLiveSession = async () => {
+        try {
+            setLivePresenceLoading(true);
+
+            const incidentId = liveIncidentId.trim();
+            const reason = liveReason.trim();
+
+            if (!incidentId || !reason) {
+                setError('Incident ID and reason are required for emergency live mode.');
+                return;
+            }
+
+            const session = await monitoringZoneService.startLiveLocationSession({
+                incidentId,
+                reason,
+            });
+
+            setLiveLocationSession(session);
+            setLiveSessionDialogOpen(false);
+            setLiveIncidentId('');
+            setLiveReason('');
+            setLivePresenceEnabled(true);
+            setLivePresenceMode('exact');
+            await loadLivePresenceOverlay();
+        } catch (e) {
+            console.error(e);
+            setError(`Failed to start emergency live session: ${formatRpcError(e)}`);
+        } finally {
+            setLivePresenceLoading(false);
+        }
+    };
+
+    const handleStopLiveSession = async () => {
+        if (!liveLocationSession) return;
+        try {
+            setLivePresenceLoading(true);
+            await monitoringZoneService.stopLiveLocationSession(liveLocationSession.id);
+            setLiveLocationSession(null);
+            setLiveExactPins([]);
+            mapRef.current?.clearLiveExactPins();
+        } catch (e) {
+            console.error(e);
+            setError(`Failed to stop emergency live session: ${formatRpcError(e)}`);
+        } finally {
+            setLivePresenceLoading(false);
+        }
+    };
+
+    const livePresenceCount = livePresenceCells.reduce((sum, cell) => sum + cell.people_count, 0);
+    const liveModeSummary = livePresenceMode === 'anonymized'
+        ? `${livePresenceCount} device${livePresenceCount === 1 ? '' : 's'} in anonymized cells`
+        : `${liveExactPins.length} exact pin${liveExactPins.length === 1 ? '' : 's'} visible`;
 
     return (
         <Box sx={{
@@ -597,7 +817,7 @@ export const MapView: React.FC = () => {
                                 sx={{
                                     width: 32, height: 32,
                                     borderRadius: '9px',
-                                    bgcolor: showFilters ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.grey[100], 0.5),
+                                    bgcolor: showFilters ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.text.primary, 0.05),
                                     color: showFilters ? 'primary.main' : alpha(theme.palette.text.secondary, 0.6),
                                     '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' },
                                 }}
@@ -608,7 +828,7 @@ export const MapView: React.FC = () => {
 
                         <Tooltip title="Recenter" arrow>
                             <IconButton size="small" onClick={handleRecenter}
-                                sx={{ width: 32, height: 32, borderRadius: '9px', bgcolor: alpha(theme.palette.grey[100], 0.5), color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: 'primary.main' } }}>
+                                sx={{ width: 32, height: 32, borderRadius: '9px', bgcolor: alpha(theme.palette.text.primary, 0.05), color: alpha(theme.palette.text.secondary, 0.6), '&:hover': { color: 'primary.main' } }}>
                                 <MyLocationIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
                         </Tooltip>
@@ -712,7 +932,7 @@ export const MapView: React.FC = () => {
                                 fontWeight: 600,
                                 fontSize: '0.75rem',
                                 px: 1.5,
-                                borderColor: alpha(theme.palette.grey[300], 0.8),
+                                borderColor: alpha(theme.palette.text.primary, 0.2),
                                 color: alpha(theme.palette.text.primary, 0.7),
                                 '&:hover': { borderColor: theme.palette.primary.main, color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.04) },
                             }}
@@ -790,8 +1010,12 @@ export const MapView: React.FC = () => {
                             if (zoneMoveHandlerBoundRef.current) return;
                             zoneMoveHandlerBoundRef.current = true;
                             const onViewportChanged = () => {
-                                if (!showZonesRef.current) return;
-                                scheduleZonesRefresh();
+                                if (showZonesRef.current) {
+                                    scheduleZonesRefresh();
+                                }
+                                if (livePresenceEnabledRef.current) {
+                                    void loadLivePresenceOverlay({ silent: true });
+                                }
                             };
                             map.on('moveend', onViewportChanged);
                             map.on('zoomend', onViewportChanged);
@@ -818,6 +1042,7 @@ export const MapView: React.FC = () => {
                                     border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
                                     bgcolor: alpha(theme.palette.background.paper, 0.96),
                                     backdropFilter: 'blur(20px)',
+                                    color: theme.palette.text.primary,
                                     boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.06)}`,
                                     pointerEvents: 'auto',
                                 }}
@@ -927,6 +1152,146 @@ export const MapView: React.FC = () => {
                                                 <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.68) }}>
                                                     Select a monitoring zone on the map to edit its name and description.
                                                 </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+
+                                    {isAdmin && (
+                                        <Box sx={{ borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`, pt: 0.75 }}>
+                                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                                                <Typography variant="caption" sx={{ fontSize: '0.575rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: alpha(theme.palette.text.secondary, 0.4) }}>
+                                                    Live Presence
+                                                </Typography>
+                                                <Chip
+                                                    size="small"
+                                                    label={livePresenceEnabled ? (livePresenceMode === 'anonymized' ? 'Anonymized' : 'Emergency') : 'Off'}
+                                                    sx={{
+                                                        height: 18,
+                                                        fontSize: 8,
+                                                        fontWeight: 700,
+                                                        bgcolor: livePresenceEnabled
+                                                            ? livePresenceMode === 'anonymized'
+                                                                ? alpha(theme.palette.info.main, 0.08)
+                                                                : alpha(theme.palette.warning.main, 0.12)
+                                                            : alpha(theme.palette.grey[500], 0.08),
+                                                        color: livePresenceEnabled
+                                                            ? livePresenceMode === 'anonymized'
+                                                                ? alpha(theme.palette.info.main, 0.8)
+                                                                : alpha(theme.palette.warning.dark, 0.85)
+                                                            : alpha(theme.palette.text.secondary, 0.55),
+                                                    }}
+                                                />
+                                            </Stack>
+
+                                            <FormControlLabel
+                                                sx={{ m: 0, mb: 0.25 }}
+                                                control={(
+                                                    <Switch
+                                                        checked={livePresenceEnabled}
+                                                        onChange={(_, checked) => {
+                                                            setLivePresenceEnabled(checked);
+                                                            if (!checked) clearLivePresenceLayers();
+                                                        }}
+                                                        size="small"
+                                                        color="info"
+                                                    />
+                                                )}
+                                                label={<Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.68rem' }}>Admin live presence</Typography>}
+                                            />
+
+                                            {livePresenceEnabled && (
+                                                <Stack spacing={0.75} sx={{ mt: 0.5 }}>
+                                                    <Stack direction="row" spacing={0.75}>
+                                                        <Button
+                                                            variant={livePresenceMode === 'anonymized' ? 'contained' : 'outlined'}
+                                                            size="small"
+                                                            onClick={() => setLivePresenceMode('anonymized')}
+                                                            sx={{ flex: 1, borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.72rem', boxShadow: 'none' }}
+                                                        >
+                                                            Anonymized
+                                                        </Button>
+                                                        <Tooltip title={liveExactPermission ? 'Exact live pins for emergency operations' : 'Exact location permission required'}>
+                                                            <span style={{ flex: 1 }}>
+                                                                <Button
+                                                                    variant={livePresenceMode === 'exact' ? 'contained' : 'outlined'}
+                                                                    size="small"
+                                                                    fullWidth
+                                                                    disabled={!liveExactPermission}
+                                                                    onClick={() => setLivePresenceMode('exact')}
+                                                                    color="warning"
+                                                                    sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.72rem', boxShadow: 'none' }}
+                                                                >
+                                                                    Emergency Live
+                                                                </Button>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </Stack>
+
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.74) }}>
+                                                        {liveModeSummary}
+                                                    </Typography>
+
+                                                    {livePresenceMode === 'anonymized' && (
+                                                        <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.68) }}>
+                                                            Counts are grouped into live cells. No user or device identity is exposed in this mode.
+                                                        </Typography>
+                                                    )}
+
+                                                    {livePresenceMode === 'exact' && (
+                                                        <>
+                                                            {liveLocationSession ? (
+                                                                <Stack spacing={0.5}>
+                                                                    <Chip
+                                                                        size="small"
+                                                                        label={`Incident ${liveLocationSession.incident_id} • ${formatLiveCountdown(liveLocationSession.expires_at)}`}
+                                                                        color="warning"
+                                                                        variant="outlined"
+                                                                        sx={{ alignSelf: 'flex-start', height: 20, fontSize: 10, fontWeight: 700 }}
+                                                                    />
+                                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.74) }}>
+                                                                        Exact pins include last seen timestamps and stop automatically when the emergency session expires.
+                                                                    </Typography>
+                                                                    <Stack direction="row" spacing={0.75}>
+                                                                        <Button
+                                                                            variant="contained"
+                                                                            size="small"
+                                                                            color="warning"
+                                                                            onClick={() => void loadLivePresenceOverlay()}
+                                                                            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.72rem', boxShadow: 'none', flex: 1 }}
+                                                                        >
+                                                                            Refresh Pins
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="outlined"
+                                                                            size="small"
+                                                                            color="warning"
+                                                                            onClick={() => void handleStopLiveSession()}
+                                                                            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.72rem', flex: 1 }}
+                                                                        >
+                                                                            End Session
+                                                                        </Button>
+                                                                    </Stack>
+                                                                </Stack>
+                                                            ) : (
+                                                                <Stack spacing={0.5}>
+                                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.74) }}>
+                                                                        Exact pins require an active incident ID, a reason, and a time-boxed emergency session.
+                                                                    </Typography>
+                                                                    <Button
+                                                                        variant="contained"
+                                                                        size="small"
+                                                                        color="warning"
+                                                                        disabled={!liveExactPermission}
+                                                                        onClick={() => setLiveSessionDialogOpen(true)}
+                                                                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.72rem', boxShadow: 'none' }}
+                                                                    >
+                                                                        Start Emergency Session
+                                                                    </Button>
+                                                                </Stack>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Stack>
                                             )}
                                         </Box>
                                     )}
@@ -1087,8 +1452,65 @@ export const MapView: React.FC = () => {
                 </DialogActions>
             </Dialog>
 
+            <Dialog
+                open={liveSessionDialogOpen}
+                onClose={() => setLiveSessionDialogOpen(false)}
+                PaperProps={{ sx: { borderRadius: '14px', width: '100%', maxWidth: 420 } }}
+            >
+                <DialogTitle sx={{ pb: 1 }}>
+                    <Typography component="span" variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>
+                        Start Emergency Live Session
+                    </Typography>
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ fontSize: '0.8125rem', color: alpha(theme.palette.text.secondary, 0.7), mb: 1 }}>
+                        Exact pins are audited and auto-expire after 30 minutes. Enter the incident reference and the operational reason before enabling access.
+                    </DialogContentText>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Incident ID"
+                        fullWidth
+                        size="small"
+                        value={liveIncidentId}
+                        onChange={(event) => setLiveIncidentId(event.target.value)}
+                        placeholder="e.g. CYCLONE-OPS-2026-041"
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Reason"
+                        fullWidth
+                        size="small"
+                        multiline
+                        minRows={3}
+                        value={liveReason}
+                        onChange={(event) => setLiveReason(event.target.value)}
+                        placeholder="Explain why exact locations are needed for this incident."
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 2.5, pb: 2 }}>
+                    <Button
+                        onClick={() => setLiveSessionDialogOpen(false)}
+                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.6) }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="warning"
+                        disabled={livePresenceLoading}
+                        onClick={() => void handleStartLiveSession()}
+                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 2.5, boxShadow: 'none' }}
+                    >
+                        {livePresenceLoading ? 'Starting...' : 'Start Session'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Loading Indicator */}
-            <Fade in={loading || zonesLoading}>
+            <Fade in={loading || zonesLoading || livePresenceLoading}>
                 <Box
                     sx={{
                         position: 'fixed',

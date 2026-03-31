@@ -342,10 +342,10 @@ export const Users: React.FC = () => {
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 3, p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: isDark ? '#f8fafc' : '#0f172a', fontSize: '1.25rem' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
             User Management
           </Typography>
-          <Typography variant="body2" sx={{ color: isDark ? '#94a3b8' : '#64748b', mt: 0.5, fontSize: '0.8125rem' }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
             Manage platform users, roles, verification, suspension, and lifecycle actions.
           </Typography>
         </Box>

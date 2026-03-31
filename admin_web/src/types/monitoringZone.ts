@@ -36,3 +36,42 @@ export interface ZoneTransitionEvent {
   delivery_status: ZoneTransitionDeliveryStatus;
   notification_outbox_id: string | null;
 }
+
+export interface LivePresenceCell {
+  cell_key: string;
+  center_lat: number;
+  center_lng: number;
+  people_count: number;
+  latest_observed_at: string;
+}
+
+export interface LiveLocationSession {
+  id: string;
+  started_by: string;
+  incident_id: string;
+  reason: string;
+  status: 'active' | 'ended' | 'expired';
+  started_at: string;
+  expires_at: string;
+  ended_at: string | null;
+}
+
+export interface LiveExactPin {
+  device_id: string;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  observed_at: string;
+  source: ZoneTransitionSource;
+  accuracy_meters: number | null;
+}
+
+export interface LiveLocationAuditEntry {
+  id: string;
+  actor_user_id: string;
+  action: string;
+  session_id: string | null;
+  incident_id: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}

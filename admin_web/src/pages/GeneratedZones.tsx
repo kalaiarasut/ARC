@@ -46,6 +46,10 @@ import { isSupabaseConfigured } from '../core/supabase_config';
 import { monitoringZoneService } from '../services/monitoringZoneService';
 import type { MonitoringZone, ZoneTransitionEvent } from '../types/monitoringZone';
 
+// @ts-ignore - Temporary disable to allow unused imports
+import { EmptyState } from '../components/shared/StateDisplays';
+import { StatusChip } from '../components/shared/StatusChip';
+
 const levelConfig = (level: RiskZoneLevel) => {
   switch (level) {
     case 'high_risk':
@@ -280,170 +284,100 @@ export const GeneratedZones: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: isDark ? 'background.default' : alpha(theme.palette.primary.main, 0.02) }}>
-      {/* Premium Header */}
-      <Box
-        sx={{
-          px: { xs: 2, sm: 3 },
-          py: 2,
-          background: isDark
-            ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${theme.palette.background.paper} 100%)`
-            : `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
-          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-        }}
-      >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isDark
-                  ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)'
-                  : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-                boxShadow: isDark
-                  ? '0 0 15px rgba(0, 255, 209, 0.3)'
-                  : `0 4px 14px ${alpha(theme.palette.secondary.main, 0.35)}`,
-              }}
-            >
-              <RadarIcon sx={{ color: isDark ? '#040b16' : 'white', fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.2, letterSpacing: -0.5 }}>
-                Generated Risk Zones
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.3 }}>
-                AI-computed hazard clusters
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            {/* Quick Stats */}
-            <Stack direction="row" spacing={1}>
-              <Chip
-                size="small"
-                label={`${zonesByLevel.high_risk} High Risk`}
-                sx={{
-                  bgcolor: alpha('#ef4444', 0.1),
-                  color: '#ef4444',
-                  fontWeight: 600,
-                  fontSize: 11,
-                }}
-              />
-              <Chip
-                size="small"
-                label={`${zonesByLevel.caution} Caution`}
-                sx={{
-                  bgcolor: alpha('#f59e0b', 0.1),
-                  color: '#f59e0b',
-                  fontWeight: 600,
-                  fontSize: 11,
-                }}
-              />
-              <Chip
-                size="small"
-                label={`${zones.length} Total`}
-                sx={{
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                  fontWeight: 600,
-                  fontSize: 11,
-                }}
-              />
+    <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 1400, mx: 'auto' }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
+            Generated Risk Zones
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+            AI-computed hazard clusters based on threat data
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ mr: 2 }}>
+              <Chip size="small" label={`${zonesByLevel.high_risk} High Risk`} sx={{ bgcolor: alpha('#ef4444', 0.1), color: '#ef4444', fontWeight: 600, borderRadius: 2, height: 24, px: 0.5, fontSize: '0.75rem' }} />
+              <Chip size="small" label={`${zonesByLevel.caution} Caution`} sx={{ bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b', fontWeight: 600, borderRadius: 2, height: 24, px: 0.5, fontSize: '0.75rem' }} />
+              <Chip size="small" label={`${zones.length} Total`} sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: theme.palette.primary.main, fontWeight: 600, borderRadius: 2, height: 24, px: 0.5, fontSize: '0.75rem' }} />
             </Stack>
 
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={actionLoading === 'recompute' ? null : <AutoAwesomeIcon />}
-              onClick={recompute}
-              disabled={!!actionLoading}
-              sx={{
-                borderRadius: '10px',
-                textTransform: 'none',
-                fontWeight: 600,
-                background: isDark
-                  ? 'linear-gradient(135deg, #00ffd1 0%, #00ccA7 100%)'
-                  : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-                color: isDark ? '#040b16' : '#ffffff',
-                boxShadow: isDark
-                  ? '0 0 15px rgba(0, 255, 209, 0.3)'
-                  : `0 4px 12px ${alpha(theme.palette.secondary.main, 0.3)}`,
-              }}
-            >
-              {actionLoading === 'recompute' ? 'Computing…' : 'Recompute Zones'}
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={actionLoading === 'recompute' ? null : <AutoAwesomeIcon />}
+            onClick={recompute}
+            disabled={!!actionLoading}
+            sx={{ textTransform: 'none', borderRadius: '12px', bgcolor: '#0D9488', '&:hover': { bgcolor: '#0F766E' } }}
+          >
+            {actionLoading === 'recompute' ? 'Computing…' : 'Recompute Zones'}
+          </Button>
         </Stack>
       </Box>
 
-      <Box sx={{ px: { xs: 2, sm: 3 }, py: 2.5 }}>
+      <Box sx={{ pt: 1 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
 
-        {/* Bounds Filter Card */}
-        <Paper
-          elevation={0}
+        {/* Bounds Filter */}
+        <Box
           sx={{
-            p: 2,
-            mb: 2.5,
-            borderRadius: '16px',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            background: alpha(theme.palette.background.paper, 0.8),
+            display: 'flex',
+            gap: 1.5,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            mb: 3,
+            p: 1,
+            borderRadius: '12px',
+            bgcolor: isDark ? alpha('#334155', 0.5) : alpha('#f8fafc', 0.8),
+            border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap" gap={1.5}>
-            <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ minWidth: 80 }}>
-              Bounds Filter
-            </Typography>
-            <TextField
+          <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ minWidth: 60, display: { xs: 'none', sm: 'block' }, pl: 1 }}>
+            Bounds
+          </Typography>
+          <TextField
               label="Min Lat"
               size="small"
               value={minLat}
               onChange={(e) => setMinLat(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              sx={{ width: 120 }}
             />
             <TextField
               label="Max Lat"
               size="small"
               value={maxLat}
               onChange={(e) => setMaxLat(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              sx={{ width: 120 }}
             />
             <TextField
               label="Min Lon"
               size="small"
               value={minLon}
               onChange={(e) => setMinLon(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              sx={{ width: 120 }}
             />
             <TextField
               label="Max Lon"
               size="small"
               value={maxLon}
               onChange={(e) => setMaxLon(e.target.value)}
-              sx={{ width: 100, '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              sx={{ width: 120 }}
             />
             <Button
               variant="outlined"
-              size="small"
+              size="medium"
               onClick={() => { void refreshAll(); }}
               disabled={loading}
               startIcon={<RefreshIcon />}
-              sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
+              sx={{ textTransform: 'none', borderRadius: '8px', height: 40, bgcolor: 'background.paper' }}
             >
-              {loading ? 'Loading…' : 'Refresh'}
+              {loading ? 'Refreshing...' : 'Refresh'}
             </Button>
-          </Stack>
-        </Paper>
+        </Box>
 
         {/* Zones List */}
         <Stack spacing={1.5}>
@@ -454,39 +388,28 @@ export const GeneratedZones: React.FC = () => {
                 key={i}
                 elevation={0}
                 sx={{
-                  p: 2,
-                  borderRadius: '16px',
-                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  p: 1.5,
+                  borderRadius: '12px',
+                  border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                  bgcolor: isDark ? '#1e293b' : '#ffffff',
                 }}
               >
-                <Stack direction="row" spacing={2} alignItems="center">
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ pl: 1 }}>
                   <Skeleton variant="circular" width={48} height={48} />
                   <Box sx={{ flex: 1 }}>
-                    <Skeleton width="60%" height={24} />
+                    <Skeleton width="60%" height={24} sx={{ mb: 1 }} />
                     <Skeleton width="40%" height={18} />
                   </Box>
-                  <Skeleton width={200} height={36} />
+                  <Skeleton width={180} height={36} sx={{ borderRadius: 2 }} />
                 </Stack>
               </Paper>
             ))
           ) : zones.length === 0 ? (
-            <Paper
-              elevation={0}
-              sx={{
-                p: 6,
-                borderRadius: '16px',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                textAlign: 'center',
-              }}
-            >
-              <RadarIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" fontWeight={600}>
-                No Risk Zones Found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: 400, mx: 'auto' }}>
-                Click "Recompute Zones" to generate risk zones based on recent hazard reports, or adjust the bounds filter.
-              </Typography>
-            </Paper>
+            <EmptyState
+              title="No Risk Zones Found"
+              description='Click "Recompute Zones" to generate risk zones based on recent hazard reports, or adjust the bounds filter.'
+              icon={<RadarIcon />}
+            />
           ) : (
             zones.map((z) => {
               const level = levelConfig(z.level);
@@ -499,18 +422,21 @@ export const GeneratedZones: React.FC = () => {
                   key={z.id}
                   elevation={0}
                   sx={{
-                    p: 2,
-                    borderRadius: '16px',
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    background: alpha(level.bg, 0.3),
+                    p: 1.5,
+                    borderRadius: '12px',
+                    border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+                    bgcolor: isDark ? '#1e293b' : '#ffffff',
                     transition: 'all 0.2s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
                     '&:hover': {
-                      boxShadow: `0 4px 20px ${alpha(level.color, 0.15)}`,
-                      borderColor: alpha(level.color, 0.3),
+                      
+                      boxShadow: isDark ? `0 4px 20px ${alpha(level.color, 0.15)}` : `0 4px 12px ${alpha(level.color, 0.1)}`,
                     },
                   }}
                 >
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+                  
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} sx={{ pl: 1 }}>
                     {/* Level Icon */}
                     <Box
                       sx={{
@@ -534,21 +460,16 @@ export const GeneratedZones: React.FC = () => {
                           size="small"
                           label={level.label}
                           sx={{
-                            bgcolor: alpha(level.color, 0.15),
+                            bgcolor: alpha(level.color, 0.1),
                             color: level.color,
-                            fontWeight: 700,
-                            fontSize: 10,
-                            height: 22,
-                            letterSpacing: 0.5,
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            height: 24,
+                            px: 0.5,
+                            borderRadius: 2,
                           }}
                         />
-                        <Chip
-                          size="small"
-                          label={status.label}
-                          color={status.color}
-                          variant={status.variant}
-                          sx={{ height: 22, fontSize: 11 }}
-                        />
+                        <StatusChip size="small" status={status.label} />
                       </Stack>
 
                       <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap" sx={{ color: 'text.secondary' }}>
@@ -600,9 +521,9 @@ export const GeneratedZones: React.FC = () => {
                           onClick={() => setStatus(z, 'suppressed')}
                           disabled={isActionLoading || z.status === 'suppressed'}
                           sx={{
-                            bgcolor: alpha(theme.palette.grey[500], 0.1),
+                            bgcolor: alpha(theme.palette.text.primary, 0.03),
                             color: 'text.secondary',
-                            '&:hover': { bgcolor: alpha(theme.palette.grey[500], 0.2) },
+                            '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.06) },
                             '&.Mui-disabled': { opacity: 0.4 },
                           }}
                         >
@@ -650,75 +571,83 @@ export const GeneratedZones: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            mt: 3,
-            p: 2,
-            borderRadius: '16px',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            background: alpha(theme.palette.background.paper, 0.88),
+            display: 'flex',
+            flexDirection: 'column',
+            mt: 4,
+            borderRadius: '12px',
+            border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
+            bgcolor: isDark ? '#1e293b' : '#ffffff',
+            overflow: 'hidden'
           }}
         >
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ mb: 2 }}>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                Recent Monitoring Activity
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Device entry and exit events from monitoring zones
-              </Typography>
-            </Box>
+          <Box sx={{ p: 3, borderBottom: `1px solid ${isDark ? '#334155' : '#e2e8f0'}` }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ mb: 3 }}>
+              <Box>
+                <Typography variant="h6" fontWeight={700} sx={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
+                  Recent Monitoring Activity
+                </Typography>
+                <Typography variant="body2" sx={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                  Device entry and exit events from monitoring zones
+                </Typography>
+              </Box>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Chip
-                icon={<RadarIcon sx={{ fontSize: 16 }} />}
-                label={`${monitoringZones.length} monitoring zones`}
-                sx={{ fontWeight: 600 }}
-              />
-              <Chip
-                icon={<PhoneAndroidOutlinedIcon sx={{ fontSize: 16 }} />}
-                label={`${totalOccupants} active occupants`}
-                sx={{
-                  bgcolor: alpha(theme.palette.secondary.main, 0.12),
-                  color: theme.palette.secondary.dark,
-                  fontWeight: 700,
-                }}
-              />
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip
+                  icon={<RadarIcon sx={{ fontSize: 16 }} />}
+                  label={`${monitoringZones.length} monitoring zones`}
+                  sx={{ fontWeight: 600, borderRadius: 2, height: 32, px: 1, fontSize: '0.875rem' }}
+                />
+                <Chip
+                  icon={<PhoneAndroidOutlinedIcon sx={{ fontSize: 16 }} />}
+                  label={`${totalOccupants} active occupants`}
+                  sx={{
+                    bgcolor: alpha(theme.palette.secondary.main, 0.12),
+                    color: theme.palette.secondary.dark,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    height: 32,
+                    px: 1,
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </Stack>
             </Stack>
-          </Stack>
 
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 220 }}>
-              <InputLabel id="monitoring-zone-filter-label">Zone</InputLabel>
-              <Select
-                labelId="monitoring-zone-filter-label"
-                label="Zone"
-                value={selectedZoneId}
-                onChange={(event) => setSelectedZoneId(event.target.value)}
-              >
-                <MenuItem value="all">All monitoring zones</MenuItem>
-                {monitoringZones.map((zone) => (
-                  <MenuItem key={zone.id} value={zone.id}>
-                    {zone.name} ({zone.people_count})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel id="monitoring-zone-filter-label">Zone</InputLabel>
+                <Select
+                  labelId="monitoring-zone-filter-label"
+                  label="Zone"
+                  value={selectedZoneId}
+                  onChange={(event) => setSelectedZoneId(event.target.value)}
+                >
+                  <MenuItem value="all">All monitoring zones</MenuItem>
+                  {monitoringZones.map((zone) => (
+                    <MenuItem key={zone.id} value={zone.id}>
+                      {zone.name} ({zone.people_count})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel id="monitoring-event-filter-label">Event</InputLabel>
-              <Select
-                labelId="monitoring-event-filter-label"
-                label="Event"
-                value={selectedEventType}
-                onChange={(event) => setSelectedEventType(event.target.value as 'all' | 'entered' | 'exited')}
-              >
-                <MenuItem value="all">All events</MenuItem>
-                <MenuItem value="entered">Entered</MenuItem>
-                <MenuItem value="exited">Exited</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <InputLabel id="monitoring-event-filter-label">Event</InputLabel>
+                <Select
+                  labelId="monitoring-event-filter-label"
+                  label="Event"
+                  value={selectedEventType}
+                  onChange={(event) => setSelectedEventType(event.target.value as 'all' | 'entered' | 'exited')}
+                >
+                  <MenuItem value="all">All events</MenuItem>
+                  <MenuItem value="entered">Entered</MenuItem>
+                  <MenuItem value="exited">Exited</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </Box>
 
-          <TableContainer sx={{ borderRadius: '14px', border: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
+          <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -744,12 +673,11 @@ export const GeneratedZones: React.FC = () => {
                   ))
                 ) : activity.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6}>
-                      <Box sx={{ py: 4, textAlign: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No monitoring activity yet.
-                        </Typography>
-                      </Box>
+                    <TableCell colSpan={6} sx={{ p: 4 }}>
+                      <EmptyState
+                        title="No Activity"
+                        description="No monitoring activity yet. Activity will show up when users enter or exit active zones."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -767,7 +695,11 @@ export const GeneratedZones: React.FC = () => {
                             sx={{
                               bgcolor: eventMeta.bg,
                               color: eventMeta.color,
-                              fontWeight: 700,
+                              fontWeight: 600,
+                              height: 24,
+                              px: 0.5,
+                              fontSize: '0.75rem',
+                              borderRadius: 2,
                             }}
                           />
                         </TableCell>
@@ -795,16 +727,19 @@ export const GeneratedZones: React.FC = () => {
                           <Chip
                             size="small"
                             label={event.source === 'background' ? 'Background' : 'Foreground'}
-                            variant="outlined"
+                            sx={{
+                              bgcolor: isDark ? alpha('#6b7280', 0.1) : '#f3f4f6',
+                              color: isDark ? '#9ca3af' : '#4b5563',
+                              fontWeight: 600,
+                              height: 24,
+                              px: 0.5,
+                              fontSize: '0.75rem',
+                              borderRadius: 2,
+                            }}
                           />
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            size="small"
-                            label={delivery.label}
-                            color={delivery.color}
-                            variant={delivery.variant}
-                          />
+                          <StatusChip size="small" status={delivery.label} />   
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={600}>

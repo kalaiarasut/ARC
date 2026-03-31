@@ -112,10 +112,10 @@ export function AuditLogs() {
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.1rem', lineHeight: 1.2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
             Audit Trail
           </Typography>
-          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.5), fontSize: '0.7rem' }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
             Track all status changes made by administrators
           </Typography>
         </Box>
@@ -163,10 +163,10 @@ export function AuditLogs() {
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: '10px',
-              bgcolor: alpha(theme.palette.grey[100], 0.4),
+              bgcolor: alpha(theme.palette.text.primary, 0.04),
               fontSize: '0.875rem',
               '& fieldset': { borderColor: alpha(theme.palette.divider, 0.12) },
-              '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.7), '& fieldset': { borderColor: alpha(theme.palette.divider, 0.25) } },
+              '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08), '& fieldset': { borderColor: alpha(theme.palette.divider, 0.25) } },
               '&.Mui-focused': { bgcolor: 'background.paper', '& fieldset': { borderColor: theme.palette.primary.main, borderWidth: '1.5px' } },
             },
           }}
@@ -206,7 +206,7 @@ export function AuditLogs() {
               py: 1.25, fontSize: '0.6875rem', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.06em',
               color: alpha(theme.palette.text.secondary, 0.7),
-              bgcolor: alpha(theme.palette.grey[50], 0.6),
+              bgcolor: alpha(theme.palette.text.primary, 0.02),
               borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             },
           }}>
@@ -239,7 +239,7 @@ export function AuditLogs() {
               ) : (
                 logs.map((log, index) => (
                   <TableRow key={log.id} sx={{
-                    bgcolor: index % 2 === 0 ? 'transparent' : alpha(theme.palette.grey[50], 0.35),
+                    bgcolor: index % 2 === 0 ? 'transparent' : alpha(theme.palette.text.primary, 0.01),
                     transition: 'background-color 0.15s ease',
                     '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
                   }}>
@@ -275,7 +275,7 @@ export function AuditLogs() {
                           <Typography variant="caption" sx={{
                             fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                             fontSize: '0.65rem', fontWeight: 500,
-                            bgcolor: alpha(theme.palette.grey[200], 0.35),
+                            bgcolor: alpha(theme.palette.text.primary, 0.12),
                             color: alpha(theme.palette.text.secondary, 0.7),
                             px: 0.75, py: 0.25, borderRadius: '6px',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -326,7 +326,7 @@ export function AuditLogs() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           px: 2, py: 0.75,
           borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-          bgcolor: alpha(theme.palette.grey[50], 0.3),
+          bgcolor: alpha(theme.palette.text.primary, 0.03),
         }}>
           <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.75rem' }}>
             {totalCount.toLocaleString()} entries

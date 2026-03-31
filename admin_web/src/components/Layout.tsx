@@ -21,7 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     width: '100vw',
                     height: '100vh',
                     overflow: 'hidden',
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: 'background.default',
                     margin: 0,
                     padding: 0,
                 }}
@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         width: { xs: '100%', md: `calc(100vw - ${DRAWER_WIDTH}px)` },
                         height: '100vh',
                         overflow: 'auto',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: 'background.default',
                         margin: 0,
                         padding: 0,
                     }}

@@ -1,6 +1,9 @@
 import { supabase, safeDelete, safeInsert, safeUpdate } from '../core/supabase_config';
 import { isSupabaseConfigured } from '../core/supabase_config';
 import type {
+  LiveExactPin,
+  LiveLocationSession,
+  LivePresenceCell,
   MonitoringZone,
   MonitoringZoneCoordinate,
   MonitoringZoneShape,
@@ -38,6 +41,99 @@ const normalizeMonitoringZone = (row: any): MonitoringZone => ({
 });
 
 export const monitoringZoneService = {
+  async hasExactLocationPermission(): Promise<boolean> {
+    if (!isSupabaseConfigured()) return false;
+
+    const { data, error } = await supabase.rpc('has_admin_permission', {
+      p_permission_code: 'live_location_exact_view',
+    });
+
+    if (error) throw error;
+    return Boolean(data);
+  },
+
+  async getActiveLiveLocationSession(): Promise<LiveLocationSession | null> {
+    if (!isSupabaseConfigured()) return null;
+
+    const { data, error } = await supabase.rpc('admin_get_active_live_location_session');
+    if (error) throw error;
+
+    const row = Array.isArray(data) ? data[0] : null;
+    return (row as LiveLocationSession | null) ?? null;
+  },
+
+  async startLiveLocationSession(params: {
+    incidentId: string;
+    reason: string;
+  }): Promise<LiveLocationSession> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured');
+    }
+
+    const { data, error } = await supabase.rpc('admin_start_live_location_session', {
+      p_incident_id: params.incidentId.trim(),
+      p_reason: params.reason.trim(),
+    });
+
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row) {
+      throw new Error('Failed to start live location session');
+    }
+    return row as LiveLocationSession;
+  },
+
+  async stopLiveLocationSession(sessionId: string): Promise<boolean> {
+    if (!isSupabaseConfigured()) return false;
+
+    const { data, error } = await supabase.rpc('admin_stop_live_location_session', {
+      p_session_id: sessionId,
+    });
+
+    if (error) throw error;
+    return Boolean(data);
+  },
+
+  async getLivePresenceAnonymized(params: {
+    bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
+    zoom: number;
+    minutes?: number;
+  }): Promise<LivePresenceCell[]> {
+    if (!isSupabaseConfigured()) return [];
+
+    const { data, error } = await supabase.rpc('admin_get_live_presence_anonymized', {
+      p_min_lat: params.bounds.minLat,
+      p_max_lat: params.bounds.maxLat,
+      p_min_lon: params.bounds.minLon,
+      p_max_lon: params.bounds.maxLon,
+      p_zoom: Math.round(params.zoom),
+      p_minutes: Math.max(1, Math.min(params.minutes ?? 15, 60)),
+    });
+
+    if (error) throw error;
+    return (data as LivePresenceCell[]) ?? [];
+  },
+
+  async getLiveExactPins(params: {
+    sessionId: string;
+    bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
+    minutes?: number;
+  }): Promise<LiveExactPin[]> {
+    if (!isSupabaseConfigured()) return [];
+
+    const { data, error } = await supabase.rpc('admin_get_live_exact_pins', {
+      p_session_id: params.sessionId,
+      p_min_lat: params.bounds.minLat,
+      p_max_lat: params.bounds.maxLat,
+      p_min_lon: params.bounds.minLon,
+      p_max_lon: params.bounds.maxLon,
+      p_minutes: Math.max(1, Math.min(params.minutes ?? 15, 15)),
+    });
+
+    if (error) throw error;
+    return (data as LiveExactPin[]) ?? [];
+  },
+
   async list(): Promise<MonitoringZone[]> {
     if (!isSupabaseConfigured()) return [];
 

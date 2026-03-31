@@ -12,6 +12,7 @@ import 'android_workmanager_report_sync.dart';
 import 'device_id_service.dart';
 import 'fcm_push_service.dart';
 import 'notification_service.dart';
+import 'push_token_service.dart';
 import 'zone_monitoring_settings_service.dart';
 
 enum ZoneMonitoringMode {
@@ -85,6 +86,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
     }
 
     await _settings.setEnabled(true);
+    await PushTokenService().syncZoneMonitoringOptIn(true);
     await NotificationService.instance.initialize();
     await NotificationService.instance.requestPermissionIfNeeded();
     try {
@@ -120,6 +122,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
 
   Future<void> disable() async {
     await _settings.setEnabled(false);
+    await PushTokenService().syncZoneMonitoringOptIn(false);
     _lastForegroundHeartbeatAt = null;
     await _restart();
   }
@@ -276,6 +279,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
     if (userId == null) return;
 
     final deviceId = await DeviceIdService().getOrCreate();
+    final zoneMonitoringOptIn = await ZoneMonitoringSettingsService().isEnabled();
 
     await SupabaseConfig.client.functions.invoke(
       'process_zone_heartbeat',
@@ -286,6 +290,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
         'accuracy_meters': position.accuracy,
         'observed_at': position.timestamp.toUtc().toIso8601String(),
         'source': source,
+        'zone_monitoring_opt_in': zoneMonitoringOptIn,
       },
     );
   }

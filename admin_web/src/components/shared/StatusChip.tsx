@@ -3,8 +3,8 @@ import { Chip, alpha } from '@mui/material';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
 export type StatusType = 
-  | 'Active' | 'Approved' 
-  | 'Suspended' | 'Rejected' | 'Escalated' | 'Error'
+  | 'Active' | 'Approved' | 'Verified' 
+  | 'Suspended' | 'Rejected' | 'Locked' | 'Candidate' | 'Escalated' | 'Error'
   | 'Pending Verification' | 'Pending Approval' | 'Awaiting Rework' | 'Warning'
   | 'Deactivated' | 'Terminated' | 'Default'
   | 'New Submission' | 'In Review' | 'Info' 
@@ -19,19 +19,19 @@ export const getStatusColors = (status: string, isDark: boolean) => {
   const normalizedStatus = status.toLowerCase().replace(/_/g, ' ');
 
   // Success / Positive
-  if (['active', 'approved', 'success'].includes(normalizedStatus)) {
+  if (['active', 'approved', 'success', 'verified', 'sent'].includes(normalizedStatus)) {
     return { bg: isDark ? alpha('#10b981', 0.1) : '#dcfce7', color: isDark ? '#34d399' : '#166534' };
   }
   // Error / Negative
-  if (['suspended', 'rejected', 'escalated', 'error', 'terminated'].includes(normalizedStatus)) {
+  if (['suspended', 'rejected', 'escalated', 'error', 'terminated', 'failed'].includes(normalizedStatus)) {
     return { bg: isDark ? alpha('#ef4444', 0.1) : '#fee2e2', color: isDark ? '#f87171' : '#991b1b' };
   }
   // Warning / Pending
-  if (['pending verification', 'pending approval', 'awaiting rework', 'warning', 'pending', 'deactivated'].includes(normalizedStatus)) {
+  if (['pending verification', 'pending approval', 'awaiting rework', 'warning', 'pending', 'deactivated', 'locked', 'skipped', 'queued'].includes(normalizedStatus)) {
     return { bg: isDark ? alpha('#f59e0b', 0.1) : '#fef3c7', color: isDark ? '#fbbf24' : '#92400e' };
   }
   // Info / Blue
-  if (['new submission', 'in review', 'info'].includes(normalizedStatus)) {
+  if (['new submission', 'in review', 'info', 'candidate'].includes(normalizedStatus)) {
     return { bg: isDark ? alpha('#3b82f6', 0.1) : '#eff6ff', color: isDark ? '#60a5fa' : '#2563eb' };
   }
   

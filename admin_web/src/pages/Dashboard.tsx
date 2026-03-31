@@ -165,6 +165,7 @@ export function Dashboard() {
     <Box>
       {/* Header removed */}
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        
 
         {/* Key Metrics */}
         <Grid container spacing={3} mb={4}>
@@ -292,7 +293,7 @@ export function Dashboard() {
                     <Box key={type} sx={{
                       py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
                       transition: 'background 0.2s',
-                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                      '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.06) },
                     }}>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
                         <Box display="flex" alignItems="center" gap={1}>
@@ -318,7 +319,7 @@ export function Dashboard() {
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.text.primary, 0.12), borderRadius: 3, overflow: 'hidden' }}>
                         <Box sx={{
                           width: `${pct}%`, height: '100%', borderRadius: 3,
                           background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
@@ -376,7 +377,7 @@ export function Dashboard() {
                     <Box key={status} sx={{
                       py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
                       transition: 'background 0.2s',
-                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                      '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.06) },
                     }}>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
                         <Box display="flex" alignItems="center" gap={1}>
@@ -402,7 +403,7 @@ export function Dashboard() {
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.text.primary, 0.12), borderRadius: 3, overflow: 'hidden' }}>
                         <Box sx={{
                           width: `${pct}%`, height: '100%', borderRadius: 3,
                           background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
@@ -459,7 +460,7 @@ export function Dashboard() {
                     <Box key={level} sx={{
                       py: 1.25, px: 1.5, mx: -1.5, borderRadius: '10px',
                       transition: 'background 0.2s',
-                      '&:hover': { bgcolor: alpha(theme.palette.grey[100], 0.6) },
+                      '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.06) },
                     }}>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
                         <Box display="flex" alignItems="center" gap={1}>
@@ -485,7 +486,7 @@ export function Dashboard() {
                           </Box>
                         </Box>
                       </Box>
-                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.grey[300], 0.25), borderRadius: 3, overflow: 'hidden' }}>
+                      <Box sx={{ height: 6, bgcolor: alpha(theme.palette.text.primary, 0.12), borderRadius: 3, overflow: 'hidden' }}>
                         <Box sx={{
                           width: `${pct}%`, height: '100%', borderRadius: 3,
                           background: `linear-gradient(90deg, ${barColor}, ${alpha(barColor, 0.65)})`,
@@ -507,7 +508,7 @@ export function Dashboard() {
             sx={{
               mb: 3,
               p: 3,
-              bgcolor: 'white',
+              bgcolor: 'background.paper',
               borderRadius: 3,
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
             }}

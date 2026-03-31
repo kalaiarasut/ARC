@@ -7,6 +7,8 @@ import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
 import type {
+  LiveExactPin,
+  LivePresenceCell,
   MonitoringZone,
   MonitoringZoneCoordinate,
   MonitoringZoneShape,
@@ -284,6 +286,41 @@ const getMarkerIcon = (marker: ReportMarker) => {
   });
 };
 
+const formatTimestampLabel = (timestamp: string) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleString();
+};
+
+const maskIdentifier = (value: string) => {
+  if (!value) return 'Unknown';
+  if (value.length <= 8) return value;
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+};
+
+const getPresenceCellIcon = (peopleCount: number) =>
+  L.divIcon({
+    html: `
+      <div style="
+        width:${Math.min(44, Math.max(24, 18 + peopleCount * 3))}px;
+        height:${Math.min(44, Math.max(24, 18 + peopleCount * 3))}px;
+        border-radius:999px;
+        background:rgba(8,145,178,0.86);
+        border:2px solid rgba(255,255,255,0.92);
+        box-shadow:0 10px 24px rgba(8,145,178,0.35);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#ffffff;
+        font-weight:800;
+        font-size:12px;
+      ">${peopleCount}</div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    className: 'live-presence-cell-marker',
+  });
+
 export interface MapMethods {
   handleTabVisible: () => void;
   addMarker: (report: ReportMarker) => void;
@@ -323,6 +360,10 @@ export interface MapMethods {
   clearMonitoringZones: () => void;
   finalizeMonitoringZone: (tempLayerId: number, zone: MonitoringZone) => void;
   discardPendingMonitoringZone: (tempLayerId: number) => void;
+  setLivePresenceCells: (cells: LivePresenceCell[]) => void;
+  clearLivePresenceCells: () => void;
+  setLiveExactPins: (pins: LiveExactPin[]) => void;
+  clearLiveExactPins: () => void;
   /** Returns the raw map container DOM element for image capture */
   getMapContainer: () => HTMLElement | null;
 }
@@ -356,6 +397,8 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
     // Monitoring zones live in a separate FeatureGroup so refreshing generated zones doesn't wipe them.
     const monitoringGroupRef = useRef<L.FeatureGroup>(L.featureGroup());
+    const livePresenceGroupRef = useRef<L.FeatureGroup>(L.featureGroup());
+    const liveExactPinsGroupRef = useRef<L.FeatureGroup>(L.featureGroup());
     const monitoringZonesRef = useRef<Map<string, L.Circle | L.Polygon>>(new Map());
     const pendingMonitoringRef = useRef<Map<number, L.Circle | L.Polygon>>(new Map());
     const drawControlRef = useRef<any | null>(null);
@@ -654,6 +697,72 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       onMonitoringZoneSelectedRef.current?.(null);
     };
 
+    const clearLivePresenceCells = () => {
+      livePresenceGroupRef.current.clearLayers();
+    };
+
+    const clearLiveExactPins = () => {
+      liveExactPinsGroupRef.current.clearLayers();
+    };
+
+    const setLivePresenceCells = (cells: LivePresenceCell[]) => {
+      clearLivePresenceCells();
+
+      cells.forEach((cell) => {
+        const marker = L.marker([cell.center_lat, cell.center_lng], {
+          icon: getPresenceCellIcon(cell.people_count),
+          title: `${cell.people_count} live device${cell.people_count === 1 ? '' : 's'}`,
+        });
+
+        marker.bindPopup(`
+          <div style="font-size: 12px; width: 220px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #e2e8f0;">
+              <strong style="font-size:13px; color:#0f172a;">Live Presence Cell</strong>
+              <span style="padding:2px 8px; border-radius:999px; background:rgba(8,145,178,0.12); color:#0f766e; font-weight:700; font-size:10px;">ANONYMIZED</span>
+            </div>
+            <div style="display:grid; gap:6px; color:#334155;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">People</span><strong>${cell.people_count}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Last Seen</span><strong>${escapeHtml(formatTimestampLabel(cell.latest_observed_at))}</strong></div>
+            </div>
+          </div>
+        `);
+
+        livePresenceGroupRef.current.addLayer(marker);
+      });
+    };
+
+    const setLiveExactPins = (pins: LiveExactPin[]) => {
+      clearLiveExactPins();
+
+      pins.forEach((pin) => {
+        const marker = L.circleMarker([pin.latitude, pin.longitude], {
+          radius: 8,
+          color: '#0f172a',
+          weight: 2,
+          fillColor: '#f97316',
+          fillOpacity: 0.92,
+        });
+
+        marker.bindPopup(`
+          <div style="font-size: 12px; width: 250px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #e2e8f0;">
+              <strong style="font-size:13px; color:#0f172a;">Emergency Live Pin</strong>
+              <span style="padding:2px 8px; border-radius:999px; background:rgba(249,115,22,0.12); color:#c2410c; font-weight:700; font-size:10px;">EXACT</span>
+            </div>
+            <div style="display:grid; gap:6px; color:#334155;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Device</span><strong>${escapeHtml(maskIdentifier(pin.device_id))}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">User</span><strong>${escapeHtml(maskIdentifier(pin.user_id))}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Source</span><strong>${escapeHtml(pin.source)}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Accuracy</span><strong>${pin.accuracy_meters == null ? 'Unknown' : `${Math.round(pin.accuracy_meters)} m`}</strong></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8;">Last Seen</span><strong>${escapeHtml(formatTimestampLabel(pin.observed_at))}</strong></div>
+            </div>
+          </div>
+        `);
+
+        liveExactPinsGroupRef.current.addLayer(marker);
+      });
+    };
+
     const setMonitoringZonesVisible = (visible: boolean) => {
       ensureMonitoringGroupOnMap(visible);
     };
@@ -905,6 +1014,10 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       clearMonitoringZones,
       finalizeMonitoringZone,
       discardPendingMonitoringZone,
+      setLivePresenceCells,
+      clearLivePresenceCells,
+      setLiveExactPins,
+      clearLiveExactPins,
       getMapContainer: () => mapContainerRef.current,
     }));
 
@@ -943,6 +1056,8 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
         // Monitoring zones group (manual circles)
         monitoringGroupRef.current.addTo(map);
+        livePresenceGroupRef.current.addTo(map);
+        liveExactPinsGroupRef.current.addTo(map);
         if (!showMonitoringZonesRef.current) {
           monitoringGroupRef.current.removeFrom(map);
         }

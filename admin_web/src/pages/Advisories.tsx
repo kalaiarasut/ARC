@@ -496,10 +496,10 @@ export function Advisories() {
               <CampaignOutlinedIcon sx={{ fontSize: 22 }} />
             </Box>
             <Box>
-              <Typography variant="h5" fontWeight={600} color="text.primary">
-                Official Updates
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
+            Official Updates
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
                 Publish alerts and advisories to citizens
               </Typography>
             </Box>
@@ -1066,14 +1066,6 @@ export function Advisories() {
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1.5}>
-              <Box
-                sx={{
-                  width: 4,
-                  height: 24,
-                  borderRadius: '2px',
-                  background: `linear-gradient(180deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                }}
-              />
               <Typography variant="subtitle1" fontWeight={700}>
                 Recent Updates
               </Typography>

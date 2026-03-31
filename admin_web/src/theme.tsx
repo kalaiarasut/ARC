@@ -1,4 +1,4 @@
-import { createTheme, alpha, type PaletteMode } from '@mui/material/styles';
+﻿import { createTheme, alpha, type PaletteMode } from '@mui/material/styles';
 
 // Premium Ocean-themed palette matching Login page
 const PRIMARY_MAIN = '#088395'; // Ocean Teal
@@ -21,8 +21,8 @@ const TEXT_SECONDARY_DARK = '#8892b0'; // Muted Ice
 const BG_DEFAULT_LIGHT = '#f1f5f9'; // Slate 100
 const BG_PAPER_LIGHT = '#ffffff';
 
-const BG_DEFAULT_DARK = '#040b16'; // Midnight Trench
-const BG_PAPER_DARK = '#0a192f'; // Deep Navy
+const BG_DEFAULT_DARK = '#0f172a'; // Slate 900
+const BG_PAPER_DARK = '#1e293b'; // Slate 800
 
 const DIVIDER_LIGHT = '#e2e8f0'; // Slate 200
 const DIVIDER_DARK = 'rgba(0, 255, 209, 0.1)'; // Glowing Cyan Subtlety
@@ -240,13 +240,98 @@ export const getTheme = (mode: PaletteMode) => {
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                         borderColor: isDark ? '#00ffd1' : PRIMARY_MAIN,
                         borderWidth: 1,
-                        boxShadow: isDark 
+                        boxShadow: isDark
                             ? `0 0 10px ${alpha('#00ffd1', 0.15)}`
                             : `0 0 0 3px ${alpha(PRIMARY_MAIN, 0.1)}`,
                     },
                 },
             },
         },
-    },
+        MuiAlert: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '10px',
+                    fontSize: '0.875rem',
+                },
+                standardError: {
+                    backgroundColor: isDark ? alpha('#ef4444', 0.15) : '#fef2f2',
+                    color: isDark ? '#fca5a5' : '#b91c1c',
+                    border: `1px solid ${isDark ? alpha('#ef4444', 0.3) : '#fecaca'}`,
+                    '& .MuiAlert-icon': {
+                        color: isDark ? '#fca5a5' : '#ef4444',
+                    }
+                },
+                standardWarning: {
+                    backgroundColor: isDark ? alpha('#f59e0b', 0.15) : '#fffbeb',
+                    color: isDark ? '#fcd34d' : '#b45309',
+                    border: `1px solid ${isDark ? alpha('#f59e0b', 0.3) : '#fde68a'}`,
+                    '& .MuiAlert-icon': {
+                        color: isDark ? '#fcd34d' : '#f59e0b',
+                    }
+                },
+                standardInfo: {
+                    backgroundColor: isDark ? alpha('#3b82f6', 0.15) : '#eff6ff',
+                    color: isDark ? '#93c5fd' : '#1d4ed8',
+                    border: `1px solid ${isDark ? alpha('#3b82f6', 0.3) : '#bfdbfe'}`,
+                    '& .MuiAlert-icon': {
+                        color: isDark ? '#93c5fd' : '#3b82f6',
+                    }
+                },
+                standardSuccess: {
+                    backgroundColor: isDark ? alpha('#10b981', 0.15) : '#f0fdf4',
+                    color: isDark ? '#6ee7b7' : '#047857',
+                    border: `1px solid ${isDark ? alpha('#10b981', 0.3) : '#a7f3d0'}`,
+                    '& .MuiAlert-icon': {
+                        color: isDark ? '#6ee7b7' : '#10b981',
+                    }
+                }
+            }
+        },
+        MuiSwitch: {
+            styleOverrides: {
+                root: {
+                    width: 32,
+                    height: 20,
+                    padding: 0,
+                    margin: 4,
+                    '& .MuiSwitch-switchBase': {
+                        padding: 0,
+                        margin: 2,
+                        transitionDuration: '300ms',
+                        '&.Mui-checked': {
+                            transform: 'translateX(12px)',
+                            color: '#fff',
+                            '& + .MuiSwitch-track': {
+                                backgroundColor: '#3b82f6',
+                                opacity: 1,
+                                border: 0,
+                            },
+                            '&.Mui-disabled + .MuiSwitch-track': {
+                                opacity: 0.5,
+                            },
+                        },
+                        '&.Mui-disabled .MuiSwitch-thumb': {
+                            color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                        },
+                        '&.Mui-disabled + .MuiSwitch-track': {
+                            opacity: isDark ? 0.3 : 0.7,
+                        },
+                    },
+                    '& .MuiSwitch-thumb': {
+                        boxSizing: 'border-box',
+                        width: 16,
+                        height: 16,
+                        boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
+                    },
+                    '& .MuiSwitch-track': {
+                        borderRadius: 20 / 2,
+                        backgroundColor: isDark ? alpha('#334155', 0.5) : '#e2e8f0',
+                        opacity: 1,
+                        transition: 'background-color 500ms',
+                    },
+                },
+            },
+        }
+    }
 });
-};
+}

@@ -23,6 +23,7 @@ type HeartbeatPayload = {
   accuracy_meters?: number | null;
   observed_at?: string | null;
   source?: "foreground" | "background";
+  zone_monitoring_opt_in?: boolean | null;
 };
 
 type TransitionRow = {
@@ -224,6 +225,7 @@ Deno.serve(async (request: Request) => {
   const accuracyMeters = payload?.accuracy_meters == null ? null : Number(payload.accuracy_meters);
   const observedAt = String(payload?.observed_at ?? "").trim();
   const source = payload?.source === "background" ? "background" : "foreground";
+  const zoneMonitoringOptIn = payload?.zone_monitoring_opt_in !== false;
 
   if (!deviceId) {
     return jsonResponse({ error: "device_id is required" }, 400);
@@ -263,6 +265,37 @@ Deno.serve(async (request: Request) => {
   }
 
   const transitionRows = (transitions as TransitionRow[] | null) ?? [];
+
+  const heartbeatTimestamp = observedAt || new Date().toISOString();
+
+  await auth.supabase
+    .from("push_tokens")
+    .update({
+      zone_monitoring_opt_in: zoneMonitoringOptIn,
+      last_seen_at: heartbeatTimestamp,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", auth.user.id)
+    .eq("device_id", deviceId);
+
+  if (zoneMonitoringOptIn) {
+    const { error: heartbeatError } = await auth.supabase
+      .from("device_location_heartbeats")
+      .insert({
+        device_id: deviceId,
+        user_id: auth.user.id,
+        latitude,
+        longitude,
+        accuracy_meters: Number.isFinite(accuracyMeters ?? Number.NaN) ? accuracyMeters : null,
+        observed_at: heartbeatTimestamp,
+        source,
+        zone_monitoring_opt_in_snapshot: true,
+      });
+
+    if (heartbeatError) {
+      return jsonResponse({ error: heartbeatError.message }, 500);
+    }
+  }
 
   if (transitionRows.length === 0) {
     return jsonResponse({
