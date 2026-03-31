@@ -62,9 +62,24 @@ Deno.serve(async (_req: Request) => {
 
   const results: Array<{ id: string; sent: number; failed: number }> = [];
 
+  const syncTransitionEventStatus = async (
+    eventId: string | null,
+    status: "sent" | "failed" | "skipped",
+  ) => {
+    if (!eventId) return;
+    await supabase
+      .from("zone_transition_events")
+      .update({ delivery_status: status })
+      .eq("id", eventId);
+  };
+
   for (const item of outbox ?? []) {
     let tokens: PushTokenRow[] | null = null;
     let tokenError: { message: string } | null = null;
+
+    const transitionEventId = typeof item.data?.transition_event_id === "string"
+      ? item.data.transition_event_id
+      : null;
 
     if (item.push_token_id) {
       const response = await supabase
@@ -87,6 +102,7 @@ Deno.serve(async (_req: Request) => {
         .from("notification_outbox")
         .update({ status: "failed", last_error: "missing_recipient" })
         .eq("id", item.id);
+      await syncTransitionEventStatus(transitionEventId, "failed");
       continue;
     }
 
@@ -95,6 +111,7 @@ Deno.serve(async (_req: Request) => {
         .from("notification_outbox")
         .update({ status: "failed", last_error: `token_query:${tokenError.message}` })
         .eq("id", item.id);
+      await syncTransitionEventStatus(transitionEventId, "failed");
       continue;
     }
 
@@ -108,6 +125,20 @@ Deno.serve(async (_req: Request) => {
 
     let sent = 0;
     let failed = 0;
+
+    if (uniqueTokens.length === 0) {
+      await supabase
+        .from("notification_outbox")
+        .update({
+          attempts: (item.attempts ?? 0) + 1,
+          last_error: "no_tokens",
+          status: "failed",
+        })
+        .eq("id", item.id);
+      await syncTransitionEventStatus(transitionEventId, "skipped");
+      results.push({ id: item.id, sent: 0, failed: 0 });
+      continue;
+    }
 
     for (const token of uniqueTokens) {
       const payload = {
@@ -156,6 +187,7 @@ Deno.serve(async (_req: Request) => {
         .from("notification_outbox")
         .update({ status: "sent", sent_at: new Date().toISOString() })
         .eq("id", item.id);
+      await syncTransitionEventStatus(transitionEventId, "sent");
     } else {
       await supabase
         .from("notification_outbox")
@@ -166,6 +198,7 @@ Deno.serve(async (_req: Request) => {
           sent_at: sent > 0 ? new Date().toISOString() : null,
         })
         .eq("id", item.id);
+      await syncTransitionEventStatus(transitionEventId, failed > 0 ? "failed" : "skipped");
     }
 
     results.push({ id: item.id, sent, failed });
