@@ -69,6 +69,8 @@ export const MapView: React.FC = () => {
 
     const [showMonitoringZones, setShowMonitoringZones] = useState(true);
     const [monitoringEditEnabled, setMonitoringEditEnabled] = useState(false);
+    const [monitoringZones, setMonitoringZones] = useState<MonitoringZone[]>([]);
+    const [selectedMonitoringZone, setSelectedMonitoringZone] = useState<MonitoringZone | null>(null);
     const [monitoringZonesCount, setMonitoringZonesCount] = useState(0);
     const [zoomOnLoad, setZoomOnLoad] = useState(true);
 
@@ -77,8 +79,10 @@ export const MapView: React.FC = () => {
     const [markerCount, setMarkerCount] = useState(0);
     const [zoneCount, setZoneCount] = useState(0);
 
-    const [nameDialogOpen, setNameDialogOpen] = useState(false);
-    const [newZoneName, setNewZoneName] = useState('');
+    const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
+    const [zoneDialogMode, setZoneDialogMode] = useState<'create' | 'edit'>('create');
+    const [zoneDraftName, setZoneDraftName] = useState('');
+    const [zoneDraftDescription, setZoneDraftDescription] = useState('');
     const [exportAnchorEl, setExportAnchorEl] = useState<HTMLElement | null>(null);
     const [exporting, setExporting] = useState(false);
     const initialAutoFitDoneRef = useRef(false);
@@ -118,12 +122,16 @@ export const MapView: React.FC = () => {
             void (async () => {
                 try {
                     const zones = await monitoringZoneService.list();
+                    setMonitoringZones(zones);
                     mapRef.current?.setMonitoringZones(zones);
                     setMonitoringZonesCount(zones.length);
+                    setSelectedMonitoringZone((current) => current ? zones.find((zone) => zone.id === current.id) ?? null : null);
                 } catch (e) {
                     console.error(e);
                 }
             })();
+        } else {
+            setSelectedMonitoringZone(null);
         }
     }, [showMonitoringZones]);
 
@@ -273,13 +281,56 @@ export const MapView: React.FC = () => {
         if (!isSupabaseConfigured()) return;
         try {
             const zones = await monitoringZoneService.list();
+            setMonitoringZones(zones);
             mapRef.current?.setMonitoringZones(zones);
             setMonitoringZonesCount(zones.length);
+            setSelectedMonitoringZone((current) => current ? zones.find((zone) => zone.id === current.id) ?? null : null);
             tryAutoFitOnOpen({ monitoringZones: zones });
         } catch (e) {
             console.error(e);
             setError(`Failed to load monitoring zones: ${formatRpcError(e)}`);
         }
+    };
+
+    const resetZoneDialog = () => {
+        setZoneDraftName('');
+        setZoneDraftDescription('');
+        setZoneDialogMode('create');
+        setZoneDialogOpen(false);
+    };
+
+    const closeZoneDialog = (discardPendingCreate = false) => {
+        if (discardPendingCreate && zoneDialogMode === 'create') {
+            const pending = pendingMonitoringRef.current;
+            if (pending) {
+                mapRef.current?.discardPendingMonitoringZone(pending.tempLayerId);
+            }
+            pendingMonitoringRef.current = null;
+        }
+        resetZoneDialog();
+    };
+
+    const openZoneCreateDialog = (params: {
+        tempLayerId: number;
+        shape: 'circle' | 'polygon';
+        center_lat: number;
+        center_lng: number;
+        radius_meters: number;
+        polygon_points?: MonitoringZoneCoordinate[] | null;
+    }) => {
+        pendingMonitoringRef.current = params;
+        setZoneDialogMode('create');
+        setZoneDraftName('');
+        setZoneDraftDescription('');
+        setZoneDialogOpen(true);
+    };
+
+    const openZoneEditDialog = () => {
+        if (!selectedMonitoringZone) return;
+        setZoneDialogMode('edit');
+        setZoneDraftName(selectedMonitoringZone.name);
+        setZoneDraftDescription(selectedMonitoringZone.description ?? '');
+        setZoneDialogOpen(true);
     };
 
     const zoneLevelColor = (level: GeneratedRiskZone['level']) => {
@@ -526,7 +577,7 @@ export const MapView: React.FC = () => {
                         {showMonitoringZones && (
                             <Chip
                                 icon={<GridViewIcon sx={{ fontSize: 13 }} />}
-                                label={`${monitoringZonesCount} monitoring`}
+                                label={`${monitoringZones.length || monitoringZonesCount} monitoring`}
                                 size="small"
                                 sx={{
                                     height: 26,
@@ -708,11 +759,7 @@ export const MapView: React.FC = () => {
                         zoneReviewMode={showZones}
                         showMonitoringZones={showMonitoringZones}
                         monitoringEditEnabled={monitoringEditEnabled}
-                        onMonitoringZoneCreateRequested={(params) => {
-                            pendingMonitoringRef.current = params;
-                            setNewZoneName('');
-                            setNameDialogOpen(true);
-                        }}
+                        onMonitoringZoneCreateRequested={openZoneCreateDialog}
                         onMonitoringZoneEdited={async (params) => {
                             try {
                                 await monitoringZoneService.update(params.zoneId, {
@@ -722,6 +769,7 @@ export const MapView: React.FC = () => {
                                     radius_meters: params.radius_meters,
                                     polygon_points: params.polygon_points ?? null,
                                 });
+                                void loadMonitoringZones();
                             } catch (e) {
                                 console.error(e);
                                 setError(`Failed to update monitoring zone: ${formatRpcError(e)}`);
@@ -736,6 +784,7 @@ export const MapView: React.FC = () => {
                                 setError(`Failed to delete monitoring zone: ${formatRpcError(e)}`);
                             }
                         }}
+                        onMonitoringZoneSelected={setSelectedMonitoringZone}
                         onMapReady={(map) => {
                             if (showZonesRef.current) scheduleZonesRefresh();
                             if (zoneMoveHandlerBoundRef.current) return;
@@ -835,6 +884,53 @@ export const MapView: React.FC = () => {
                                         </Stack>
                                     </Box>
 
+                                    {showMonitoringZones && (
+                                        <Box sx={{ borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`, pt: 0.75 }}>
+                                            <Typography variant="caption" sx={{ fontSize: '0.575rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: alpha(theme.palette.text.secondary, 0.4), mb: 0.4, display: 'block' }}>
+                                                Monitoring Zone Details
+                                            </Typography>
+                                            {selectedMonitoringZone ? (
+                                                <Stack spacing={0.75}>
+                                                    <Chip
+                                                        size="small"
+                                                        label={selectedMonitoringZone.name}
+                                                        sx={{
+                                                            alignSelf: 'flex-start',
+                                                            height: 20,
+                                                            fontSize: 10,
+                                                            fontWeight: 700,
+                                                            bgcolor: alpha(theme.palette.success.main, 0.08),
+                                                            color: alpha(theme.palette.success.main, 0.85),
+                                                        }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.78) }}>
+                                                        {selectedMonitoringZone.description.trim() || 'No description added yet.'}
+                                                    </Typography>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={openZoneEditDialog}
+                                                        disabled={isAdmin !== true}
+                                                        sx={{
+                                                            alignSelf: 'flex-start',
+                                                            borderRadius: '8px',
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.72rem',
+                                                            px: 1.25,
+                                                        }}
+                                                    >
+                                                        Edit Details
+                                                    </Button>
+                                                </Stack>
+                                            ) : (
+                                                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.68) }}>
+                                                    Select a monitoring zone on the map to edit its name and description.
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
+
                                     {isAdmin && (
                                         <Stack
                                             direction="row"
@@ -892,20 +988,25 @@ export const MapView: React.FC = () => {
                 </Paper>
             </Box>
 
-            <Dialog open={nameDialogOpen} onClose={() => {
-                const pending = pendingMonitoringRef.current;
-                if (pending) mapRef.current?.discardPendingMonitoringZone(pending.tempLayerId);
-                pendingMonitoringRef.current = null;
-                setNameDialogOpen(false);
-            }} PaperProps={{ sx: { borderRadius: '14px' } }}>
+            <Dialog
+                open={zoneDialogOpen}
+                onClose={() => closeZoneDialog(zoneDialogMode === 'create')}
+                PaperProps={{ sx: { borderRadius: '14px' } }}
+            >
                 <DialogTitle sx={{ pb: 1 }}>
                     <Typography component="span" variant="subtitle1" fontWeight={700} sx={{ fontSize: '1rem' }}>
-                        {pendingMonitoringRef.current?.shape === 'polygon' ? 'Name polygon zone' : 'Name monitoring zone'}
+                        {zoneDialogMode === 'edit'
+                            ? 'Edit monitoring zone'
+                            : pendingMonitoringRef.current?.shape === 'polygon'
+                                ? 'Create polygon zone'
+                                : 'Create monitoring zone'}
                     </Typography>
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText sx={{ fontSize: '0.8125rem', color: alpha(theme.palette.text.secondary, 0.7), mb: 1 }}>
-                        Give this zone a descriptive name. It will be saved and editable on the live map.
+                        {zoneDialogMode === 'edit'
+                            ? 'Update the zone metadata shown to operators and mobile users.'
+                            : 'Give this zone a descriptive name and optional description. Both fields can be updated later.'}
                     </DialogContentText>
                     <TextField
                         autoFocus
@@ -913,30 +1014,58 @@ export const MapView: React.FC = () => {
                         label="Zone name"
                         fullWidth
                         size="small"
-                        value={newZoneName}
-                        onChange={(e) => setNewZoneName(e.target.value)}
-                        placeholder={pendingMonitoringRef.current?.shape === 'polygon' ? 'e.g. Marina evacuation boundary' : 'e.g. Marina Beach'}
+                        value={zoneDraftName}
+                        onChange={(e) => setZoneDraftName(e.target.value)}
+                        placeholder={
+                            (zoneDialogMode === 'edit' ? selectedMonitoringZone?.shape : pendingMonitoringRef.current?.shape) === 'polygon'
+                                ? 'e.g. Marina evacuation boundary'
+                                : 'e.g. Marina Beach'
+                        }
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Description"
+                        fullWidth
+                        size="small"
+                        multiline
+                        minRows={3}
+                        value={zoneDraftDescription}
+                        onChange={(e) => setZoneDraftDescription(e.target.value)}
+                        placeholder="Explain what this zone covers, why it exists, or who it applies to."
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
                     />
                 </DialogContent>
                 <DialogActions sx={{ px: 2.5, pb: 2 }}>
-                    <Button onClick={() => {
-                        const pending = pendingMonitoringRef.current;
-                        if (pending) mapRef.current?.discardPendingMonitoringZone(pending.tempLayerId);
-                        pendingMonitoringRef.current = null;
-                        setNameDialogOpen(false);
-                    }} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.6) }}>Cancel</Button>
+                    <Button
+                        onClick={() => closeZoneDialog(zoneDialogMode === 'create')}
+                        sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, color: alpha(theme.palette.text.secondary, 0.6) }}
+                    >
+                        Cancel
+                    </Button>
                     <Button
                         variant="contained"
                         sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 2.5, boxShadow: 'none' }}
                         onClick={async () => {
-                            const pending = pendingMonitoringRef.current;
-                            if (!pending) return;
-                            const fallbackName = pending.shape === 'polygon' ? 'Polygon Zone' : 'Monitoring Zone';
-                            const name = newZoneName.trim() || fallbackName;
                             try {
+                                if (zoneDialogMode === 'edit') {
+                                    if (!selectedMonitoringZone) return;
+                                    const fallbackName = selectedMonitoringZone.shape === 'polygon' ? 'Polygon Zone' : 'Monitoring Zone';
+                                    await monitoringZoneService.update(selectedMonitoringZone.id, {
+                                        name: zoneDraftName.trim() || fallbackName,
+                                        description: zoneDraftDescription,
+                                    });
+                                    resetZoneDialog();
+                                    void loadMonitoringZones();
+                                    return;
+                                }
+
+                                const pending = pendingMonitoringRef.current;
+                                if (!pending) return;
+                                const fallbackName = pending.shape === 'polygon' ? 'Polygon Zone' : 'Monitoring Zone';
                                 const created = await monitoringZoneService.create({
-                                    name,
+                                    name: zoneDraftName.trim() || fallbackName,
+                                    description: zoneDraftDescription,
                                     shape: pending.shape,
                                     center_lat: pending.center_lat,
                                     center_lng: pending.center_lng,
@@ -945,7 +1074,7 @@ export const MapView: React.FC = () => {
                                 });
                                 mapRef.current?.finalizeMonitoringZone(pending.tempLayerId, created as MonitoringZone);
                                 pendingMonitoringRef.current = null;
-                                setNameDialogOpen(false);
+                                resetZoneDialog();
                                 void loadMonitoringZones();
                             } catch (e) {
                                 console.error(e);
@@ -953,7 +1082,7 @@ export const MapView: React.FC = () => {
                             }
                         }}
                     >
-                        Save
+                        {zoneDialogMode === 'edit' ? 'Update' : 'Save'}
                     </Button>
                 </DialogActions>
             </Dialog>

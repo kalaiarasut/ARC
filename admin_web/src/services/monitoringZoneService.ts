@@ -4,6 +4,7 @@ import type {
   MonitoringZone,
   MonitoringZoneCoordinate,
   MonitoringZoneShape,
+  ZoneTransitionEvent,
 } from '../types/monitoringZone';
 
 const parsePolygonPoints = (value: unknown): MonitoringZoneCoordinate[] | null => {
@@ -30,6 +31,7 @@ const normalizeMonitoringZone = (row: any): MonitoringZone => ({
     : row?.shape === 'polygon'
       ? 'Polygon Zone'
       : 'Monitoring Zone',
+  description: typeof row?.description === 'string' ? row.description.trim() : '',
   shape: row?.shape === 'polygon' ? 'polygon' : 'circle',
   polygon_points: parsePolygonPoints(row?.polygon_points),
   people_count: Number.isFinite(Number(row?.people_count)) ? Number(row.people_count) : 0,
@@ -39,17 +41,62 @@ export const monitoringZoneService = {
   async list(): Promise<MonitoringZone[]> {
     if (!isSupabaseConfigured()) return [];
 
-    const { data, error } = await supabase
-      .from('monitoring_zones')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.rpc('admin_get_monitoring_zones');
 
     if (error) throw error;
     return ((data as any[]) ?? []).map(normalizeMonitoringZone);
   },
 
+  async listRecentActivity(params?: {
+    limit?: number;
+    zoneId?: string | null;
+    eventType?: 'entered' | 'exited' | null;
+  }): Promise<ZoneTransitionEvent[]> {
+    if (!isSupabaseConfigured()) return [];
+
+    const { data, error } = await supabase.rpc('admin_get_zone_transition_events', {
+      p_limit: Math.max(1, Math.min(params?.limit ?? 50, 200)),
+      p_zone_id: params?.zoneId ?? null,
+      p_event_type: params?.eventType ?? null,
+    });
+
+    if (error) throw error;
+    return ((data as ZoneTransitionEvent[]) ?? []).map((row) => ({
+      ...row,
+      notification_outbox_id: row.notification_outbox_id ?? null,
+    }));
+  },
+
+  subscribeToMonitoringActivity(handlers: {
+    onEvent?: () => void;
+    onZoneChange?: () => void;
+  }) {
+    if (!isSupabaseConfigured()) {
+      return {
+        unsubscribe: () => {},
+      } as any;
+    }
+
+    const channel = supabase.channel('monitoring_zone_activity_changes');
+
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'zone_transition_events' },
+      () => handlers.onEvent?.(),
+    );
+
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'monitoring_zones' },
+      () => handlers.onZoneChange?.(),
+    );
+
+    return channel.subscribe();
+  },
+
   async create(params: {
     name: string;
+    description?: string;
     shape: MonitoringZoneShape;
     center_lat: number;
     center_lng: number;
@@ -58,6 +105,7 @@ export const monitoringZoneService = {
   }): Promise<MonitoringZone> {
     const result = await safeInsert('monitoring_zones', {
       name: params.name,
+      description: params.description?.trim() ?? '',
       shape: params.shape,
       center_lat: params.center_lat,
       center_lng: params.center_lng,
@@ -77,6 +125,7 @@ export const monitoringZoneService = {
   async update(zoneId: string, patch: {
     shape?: MonitoringZoneShape;
     name?: string;
+    description?: string;
     center_lat?: number;
     center_lng?: number;
     radius_meters?: number;
@@ -84,6 +133,7 @@ export const monitoringZoneService = {
     people_count?: number;
   }): Promise<void> {
     const payload: Record<string, any> = { ...patch };
+    if (typeof payload.description === 'string') payload.description = payload.description.trim();
     if (typeof payload.radius_meters === 'number') payload.radius_meters = Math.round(payload.radius_meters);
     if (payload.shape && payload.shape !== 'polygon') {
       payload.polygon_points = null;

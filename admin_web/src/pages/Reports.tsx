@@ -36,7 +36,7 @@ import {
   Badge,
   Tooltip,
   Divider,
-
+  Skeleton,
   Popover,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
@@ -1259,14 +1259,23 @@ export function Reports() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6, border: 'none' }}>
-                      <CircularProgress size={28} thickness={3} />
-                      <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: alpha(theme.palette.text.secondary, 0.5) }}>
-                        Loading reports...
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
+                  [...Array(5)].map((_, index) => (
+                    <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      <TableCell><Skeleton variant="circular" width={32} height={32} sx={{ mb: 0.5 }} /><Skeleton variant="text" width="60%" /></TableCell>
+                      <TableCell><Skeleton variant="text" width="80%" /><Skeleton variant="text" width="40%" /></TableCell>
+                      <TableCell><Skeleton variant="text" width="70%" /><Skeleton variant="text" width="50%" /></TableCell>
+                      <TableCell align="center"><Skeleton variant="rounded" width={50} height={20} sx={{ mx: 'auto' }} /></TableCell>
+                      <TableCell align="center"><Skeleton variant="circular" width={24} height={24} sx={{ mx: 'auto' }} /></TableCell>
+                      <TableCell align="center"><Skeleton variant="rounded" width={40} height={20} sx={{ mx: 'auto' }} /></TableCell>
+                      <TableCell align="right"><Skeleton variant="text" width="80%" sx={{ ml: 'auto' }} /></TableCell>
+                      <TableCell align="center">
+                        <Stack direction="row" spacing={1} justifyContent="center">
+                          <Skeleton variant="rounded" width={28} height={28} />
+                          <Skeleton variant="rounded" width={28} height={28} />
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : reports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 6, border: 'none' }}>

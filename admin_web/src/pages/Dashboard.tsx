@@ -4,7 +4,6 @@ import {
   Container,
   Grid,
   Typography,
-  CircularProgress,
   Alert,
   Button,
   Chip,
@@ -27,6 +26,7 @@ import {
 import { StatCard } from '../components/ReportCard';
 import { RecentReportsTable } from '../components/RecentReportsTable';
 import { hazardService } from '../services/hazardService';
+import { LoadingState } from '../components/shared/StateDisplays';
 import { isSupabaseConfigured, supabase } from '../core/supabase_config';
 import type { HazardReport, DashboardStats } from '../types/hazard';
 
@@ -143,16 +143,7 @@ export function Dashboard() {
   */
 
   if (loading) {
-    return (
-      <Container maxWidth="xl" sx={{ py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Box textAlign="center">
-          <CircularProgress size={60} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-            Loading Dashboard...
-          </Typography>
-        </Box>
-      </Container>
-    );
+    return <LoadingState type="dashboard" message="Loading Dashboard..." />;
   }
 
   if (error || !stats) {

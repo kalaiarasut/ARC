@@ -269,12 +269,26 @@ export const RecentReportsTable: React.FC<RecentReportsTableProps> = ({
               // Empty state
               <TableRow>
                 <TableCell colSpan={7} sx={{ py: 8, textAlign: 'center' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <WavesIcon sx={{ fontSize: 48, color: 'text.disabled', opacity: 0.5 }} />
-                    <Typography color="text.secondary" fontWeight={500}>
-                      No recent reports
-                    </Typography>
-                    <Typography variant="body2" color="text.disabled">
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        p: 6,
+                        m: 2,
+                        textAlign: 'center',
+                        bgcolor: 'background.default',
+                        borderRadius: 3,
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                        minHeight: 250,
+                      }}
+                    >
+                      <WavesIcon sx={{ fontSize: 64, color: 'text.disabled', opacity: 0.5, mb: 2 }} />
+                      <Typography variant="h6" color="text.primary" fontWeight={600} gutterBottom>
+                        No recent reports
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
                       Reports will appear here when submitted
                     </Typography>
                   </Box>

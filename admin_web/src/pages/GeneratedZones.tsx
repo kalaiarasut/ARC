@@ -4,10 +4,20 @@ import {
   Box,
   Button,
   Chip,
+  FormControl,
+  InputLabel,
   IconButton,
+  MenuItem,
   Paper,
+  Select,
   Skeleton,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -26,10 +36,15 @@ import RadarIcon from '@mui/icons-material/Radar';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ShieldIcon from '@mui/icons-material/Shield';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import PhoneAndroidOutlinedIcon from '@mui/icons-material/PhoneAndroidOutlined';
 
 import type { GeneratedRiskZone, RiskZoneLevel, RiskZoneStatus } from '../types/riskZone';
 import { riskZoneService } from '../services/riskZoneService';
 import { isSupabaseConfigured } from '../core/supabase_config';
+import { monitoringZoneService } from '../services/monitoringZoneService';
+import type { MonitoringZone, ZoneTransitionEvent } from '../types/monitoringZone';
 
 const levelConfig = (level: RiskZoneLevel) => {
   switch (level) {
@@ -61,10 +76,15 @@ export const GeneratedZones: React.FC = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const [zones, setZones] = useState<GeneratedRiskZone[]>([]);
+  const [monitoringZones, setMonitoringZones] = useState<MonitoringZone[]>([]);
+  const [activity, setActivity] = useState<ZoneTransitionEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
+  const [selectedZoneId, setSelectedZoneId] = useState('all');
+  const [selectedEventType, setSelectedEventType] = useState<'all' | 'entered' | 'exited'>('all');
 
   // Default bounds: broadly India
   const [minLat, setMinLat] = useState('6');
@@ -111,12 +131,41 @@ export const GeneratedZones: React.FC = () => {
     }
   };
 
+  const loadMonitoringActivity = async () => {
+    if (!isSupabaseConfigured()) return;
+
+    try {
+      setActivityLoading(true);
+      const [zoneRows, eventRows] = await Promise.all([
+        monitoringZoneService.list(),
+        monitoringZoneService.listRecentActivity({
+          limit: 50,
+          zoneId: selectedZoneId === 'all' ? null : selectedZoneId,
+          eventType: selectedEventType === 'all' ? null : selectedEventType,
+        }),
+      ]);
+
+      setMonitoringZones(zoneRows);
+      setActivity(eventRows);
+    } catch (e) {
+      console.error(e);
+      const msg = (e as any)?.message || (e as any)?.error_description || 'Unknown error';
+      setError(`Failed to load monitoring activity: ${msg}`);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  const refreshAll = async () => {
+    await Promise.all([loadZones(), loadMonitoringActivity()]);
+  };
+
   const recompute = async () => {
     try {
       setActionLoading('recompute');
       setError(null);
       await riskZoneService.recompute();
-      await loadZones();
+      await refreshAll();
     } catch (e) {
       console.error(e);
       const msg = (e as any)?.message || (e as any)?.error_description || 'Unknown error';
@@ -143,34 +192,52 @@ export const GeneratedZones: React.FC = () => {
   };
 
   useEffect(() => {
-    loadZones();
+    void refreshAll();
 
     const channel = riskZoneService.subscribeToRiskZones({
       onInsert: () => {
         if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = window.setTimeout(() => {
           refreshTimerRef.current = null;
-          void loadZones();
+          void refreshAll();
         }, 400);
       },
       onUpdate: () => {
         if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = window.setTimeout(() => {
           refreshTimerRef.current = null;
-          void loadZones();
+          void refreshAll();
         }, 400);
       },
       onDelete: () => {
         if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = window.setTimeout(() => {
           refreshTimerRef.current = null;
-          void loadZones();
+          void refreshAll();
+        }, 400);
+      },
+    });
+
+    const monitoringChannel = monitoringZoneService.subscribeToMonitoringActivity({
+      onEvent: () => {
+        if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = window.setTimeout(() => {
+          refreshTimerRef.current = null;
+          void loadMonitoringActivity();
+        }, 400);
+      },
+      onZoneChange: () => {
+        if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = window.setTimeout(() => {
+          refreshTimerRef.current = null;
+          void loadMonitoringActivity();
         }, 400);
       },
     });
 
     return () => {
       channel.unsubscribe();
+      monitoringChannel.unsubscribe();
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
       }
@@ -178,10 +245,38 @@ export const GeneratedZones: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    void loadMonitoringActivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedZoneId, selectedEventType]);
+
   const zonesByLevel = {
     high_risk: zones.filter(z => z.level === 'high_risk').length,
     caution: zones.filter(z => z.level === 'caution').length,
     informational: zones.filter(z => z.level === 'informational').length,
+  };
+  const totalOccupants = monitoringZones.reduce((sum, zone) => sum + (zone.people_count || 0), 0);
+
+  const formatCompactId = (value: string) =>
+    value.length <= 12 ? value : `${value.slice(0, 8)}…${value.slice(-4)}`;
+
+  const eventConfig = (eventType: ZoneTransitionEvent['event_type']) =>
+    eventType === 'entered'
+      ? { label: 'Entered', color: '#0f766e', bg: alpha('#0f766e', 0.12), icon: LoginOutlinedIcon }
+      : { label: 'Exited', color: '#b45309', bg: alpha('#b45309', 0.12), icon: LogoutOutlinedIcon };
+
+  const deliveryConfig = (status: ZoneTransitionEvent['delivery_status']) => {
+    switch (status) {
+      case 'sent':
+        return { label: 'Sent', color: 'success' as const, variant: 'filled' as const };
+      case 'failed':
+        return { label: 'Failed', color: 'error' as const, variant: 'filled' as const };
+      case 'skipped':
+        return { label: 'Skipped', color: 'warning' as const, variant: 'outlined' as const };
+      case 'queued':
+      default:
+        return { label: 'Queued', color: 'info' as const, variant: 'outlined' as const };
+    }
   };
 
   return (
@@ -340,7 +435,7 @@ export const GeneratedZones: React.FC = () => {
             <Button
               variant="outlined"
               size="small"
-              onClick={loadZones}
+              onClick={() => { void refreshAll(); }}
               disabled={loading}
               startIcon={<RefreshIcon />}
               sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
@@ -551,6 +646,182 @@ export const GeneratedZones: React.FC = () => {
             })
           )}
         </Stack>
+
+        <Paper
+          elevation={0}
+          sx={{
+            mt: 3,
+            p: 2,
+            borderRadius: '16px',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            background: alpha(theme.palette.background.paper, 0.88),
+          }}
+        >
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                Recent Monitoring Activity
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Device entry and exit events from monitoring zones
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip
+                icon={<RadarIcon sx={{ fontSize: 16 }} />}
+                label={`${monitoringZones.length} monitoring zones`}
+                sx={{ fontWeight: 600 }}
+              />
+              <Chip
+                icon={<PhoneAndroidOutlinedIcon sx={{ fontSize: 16 }} />}
+                label={`${totalOccupants} active occupants`}
+                sx={{
+                  bgcolor: alpha(theme.palette.secondary.main, 0.12),
+                  color: theme.palette.secondary.dark,
+                  fontWeight: 700,
+                }}
+              />
+            </Stack>
+          </Stack>
+
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel id="monitoring-zone-filter-label">Zone</InputLabel>
+              <Select
+                labelId="monitoring-zone-filter-label"
+                label="Zone"
+                value={selectedZoneId}
+                onChange={(event) => setSelectedZoneId(event.target.value)}
+              >
+                <MenuItem value="all">All monitoring zones</MenuItem>
+                {monitoringZones.map((zone) => (
+                  <MenuItem key={zone.id} value={zone.id}>
+                    {zone.name} ({zone.people_count})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="monitoring-event-filter-label">Event</InputLabel>
+              <Select
+                labelId="monitoring-event-filter-label"
+                label="Event"
+                value={selectedEventType}
+                onChange={(event) => setSelectedEventType(event.target.value as 'all' | 'entered' | 'exited')}
+              >
+                <MenuItem value="all">All events</MenuItem>
+                <MenuItem value="entered">Entered</MenuItem>
+                <MenuItem value="exited">Exited</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+
+          <TableContainer sx={{ borderRadius: '14px', border: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Event</TableCell>
+                  <TableCell>Zone</TableCell>
+                  <TableCell>User / Device</TableCell>
+                  <TableCell>Source</TableCell>
+                  <TableCell>Delivery</TableCell>
+                  <TableCell>Time</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {activityLoading ? (
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <TableRow key={`activity-skeleton-${index}`}>
+                      <TableCell><Skeleton variant="circular" width={24} height={24} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={140} /></TableCell>
+                      <TableCell><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 2 }} /></TableCell>
+                      <TableCell><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 2 }} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                    </TableRow>
+                  ))
+                ) : activity.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Box sx={{ py: 4, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No monitoring activity yet.
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  activity.map((event) => {
+                    const eventMeta = eventConfig(event.event_type);
+                    const delivery = deliveryConfig(event.delivery_status);
+                    const EventIcon = eventMeta.icon;
+
+                    return (
+                      <TableRow key={event.id} hover>
+                        <TableCell>
+                          <Chip
+                            icon={<EventIcon sx={{ fontSize: 14 }} />}
+                            label={eventMeta.label}
+                            sx={{
+                              bgcolor: eventMeta.bg,
+                              color: eventMeta.color,
+                              fontWeight: 700,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.25}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {event.zone_name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {event.latitude.toFixed(4)}, {event.longitude.toFixed(4)}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.25}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {formatCompactId(event.user_id)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {formatCompactId(event.device_id)}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={event.source === 'background' ? 'Background' : 'Foreground'}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={delivery.label}
+                            color={delivery.color}
+                            variant={delivery.variant}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {new Date(event.occurred_at).toLocaleDateString()}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(event.occurred_at).toLocaleTimeString()}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Box>
     </Box>
   );

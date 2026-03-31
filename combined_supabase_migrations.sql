@@ -248,6 +248,7 @@ CREATE TABLE IF NOT EXISTS public.report_status_audit (
 CREATE TABLE IF NOT EXISTS public.monitoring_zones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL DEFAULT 'Monitoring Zone',
+  description TEXT NOT NULL DEFAULT '',
   shape TEXT NOT NULL DEFAULT 'circle' CHECK (shape IN ('circle', 'polygon')),
   polygon_points JSONB CHECK ((shape = 'circle' AND (polygon_points IS NULL OR jsonb_typeof(polygon_points) = 'array')) OR (shape = 'polygon' AND polygon_points IS NOT NULL AND jsonb_typeof(polygon_points) = 'array' AND jsonb_array_length(polygon_points) >= 3)),
   people_count INTEGER NOT NULL DEFAULT 0,
@@ -617,6 +618,8 @@ $$;
 
 ALTER TABLE public.monitoring_zones ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT ON TABLE public.monitoring_zones TO authenticated;
+
 DROP POLICY IF EXISTS "Authenticated read monitoring zones" ON public.monitoring_zones;
 CREATE POLICY "Authenticated read monitoring zones"
   ON public.monitoring_zones
@@ -625,3 +628,445 @@ CREATE POLICY "Authenticated read monitoring zones"
   USING (true);
 
 -- END MIGRATION: 027_mobile_monitoring_zone_read.sql
+
+-- ============================================================================
+-- BEGIN MIGRATION: 029_monitoring_zone_description.sql
+-- ============================================================================
+
+ALTER TABLE public.monitoring_zones
+  ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+
+-- END MIGRATION: 029_monitoring_zone_description.sql
+
+-- ============================================================================
+-- BEGIN MIGRATION: 028_monitoring_zone_entry_exit_detection.sql
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.device_zone_presence (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  zone_id UUID NOT NULL REFERENCES public.monitoring_zones(id) ON DELETE CASCADE,
+  is_inside BOOLEAN NOT NULL DEFAULT false,
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_transition_at TIMESTAMPTZ,
+  last_latitude DOUBLE PRECISION,
+  last_longitude DOUBLE PRECISION,
+  source TEXT NOT NULL DEFAULT 'foreground' CHECK (source IN ('foreground', 'background')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (device_id, zone_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.zone_transition_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  zone_id UUID NOT NULL REFERENCES public.monitoring_zones(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('entered', 'exited')),
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('foreground', 'background')),
+  notification_outbox_id UUID REFERENCES public.notification_outbox(id) ON DELETE SET NULL,
+  delivery_status TEXT NOT NULL DEFAULT 'queued' CHECK (delivery_status IN ('queued', 'sent', 'failed', 'skipped')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_zone_presence_zone_active
+  ON public.device_zone_presence (zone_id, is_inside, last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_zone_presence_device
+  ON public.device_zone_presence (device_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_zone_presence_user
+  ON public.device_zone_presence (user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_zone_transition_events_zone_time
+  ON public.zone_transition_events (zone_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_zone_transition_events_user_time
+  ON public.zone_transition_events (user_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_zone_transition_events_device_time
+  ON public.zone_transition_events (device_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_zone_transition_events_delivery
+  ON public.zone_transition_events (delivery_status, occurred_at DESC);
+
+ALTER TABLE public.device_zone_presence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.zone_transition_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "No direct device zone presence access" ON public.device_zone_presence;
+CREATE POLICY "No direct device zone presence access"
+  ON public.device_zone_presence FOR ALL
+  USING (false)
+  WITH CHECK (false);
+
+DROP POLICY IF EXISTS "Admins read zone transition events" ON public.zone_transition_events;
+CREATE POLICY "Admins read zone transition events"
+  ON public.zone_transition_events FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "No direct zone transition event writes" ON public.zone_transition_events;
+CREATE POLICY "No direct zone transition event writes"
+  ON public.zone_transition_events FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+DROP TRIGGER IF EXISTS trg_device_zone_presence_updated_at ON public.device_zone_presence;
+CREATE TRIGGER trg_device_zone_presence_updated_at
+  BEFORE UPDATE ON public.device_zone_presence
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_updated_at();
+
+CREATE OR REPLACE FUNCTION public.refresh_monitoring_zone_people_counts(
+  p_zone_ids UUID[] DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.monitoring_zones AS mz
+  SET people_count = COALESCE(src.people_count, 0)
+  FROM (
+    SELECT zone_id, COUNT(DISTINCT device_id)::INTEGER AS people_count
+    FROM public.device_zone_presence
+    WHERE is_inside = true
+      AND last_seen_at >= NOW() - INTERVAL '30 minutes'
+      AND (p_zone_ids IS NULL OR zone_id = ANY(p_zone_ids))
+    GROUP BY zone_id
+  ) AS src
+  WHERE mz.id = src.zone_id;
+
+  UPDATE public.monitoring_zones AS mz
+  SET people_count = 0
+  WHERE (p_zone_ids IS NULL OR mz.id = ANY(p_zone_ids))
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.device_zone_presence AS dzp
+      WHERE dzp.zone_id = mz.id
+        AND dzp.is_inside = true
+        AND dzp.last_seen_at >= NOW() - INTERVAL '30 minutes'
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_get_monitoring_zones()
+RETURNS TABLE (
+  id UUID,
+  name TEXT,
+  description TEXT,
+  shape TEXT,
+  center_lat DOUBLE PRECISION,
+  center_lng DOUBLE PRECISION,
+  radius_meters DOUBLE PRECISION,
+  polygon_points JSONB,
+  people_count INTEGER,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
+  END IF;
+
+  PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+
+  RETURN QUERY
+  SELECT
+    mz.id,
+    mz.name,
+    mz.description,
+    mz.shape,
+    mz.center_lat,
+    mz.center_lng,
+    mz.radius_meters,
+    mz.polygon_points,
+    mz.people_count,
+    mz.created_at,
+    mz.updated_at
+  FROM public.monitoring_zones AS mz
+  ORDER BY mz.created_at DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_get_zone_transition_events(
+  p_limit INTEGER DEFAULT 50,
+  p_zone_id UUID DEFAULT NULL,
+  p_event_type TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID,
+  zone_id UUID,
+  zone_name TEXT,
+  user_id UUID,
+  device_id TEXT,
+  event_type TEXT,
+  occurred_at TIMESTAMPTZ,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  source TEXT,
+  delivery_status TEXT,
+  notification_outbox_id UUID
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
+  END IF;
+
+  PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+
+  RETURN QUERY
+  SELECT
+    zte.id,
+    zte.zone_id,
+    mz.name AS zone_name,
+    zte.user_id,
+    zte.device_id,
+    zte.event_type,
+    zte.occurred_at,
+    zte.latitude,
+    zte.longitude,
+    zte.source,
+    zte.delivery_status,
+    zte.notification_outbox_id
+  FROM public.zone_transition_events AS zte
+  JOIN public.monitoring_zones AS mz ON mz.id = zte.zone_id
+  WHERE (p_zone_id IS NULL OR zte.zone_id = p_zone_id)
+    AND (p_event_type IS NULL OR zte.event_type = p_event_type)
+  ORDER BY zte.occurred_at DESC
+  LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 50), 200));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.process_zone_heartbeat_state(
+  p_device_id TEXT,
+  p_latitude DOUBLE PRECISION,
+  p_longitude DOUBLE PRECISION,
+  p_accuracy_meters DOUBLE PRECISION DEFAULT NULL,
+  p_observed_at TIMESTAMPTZ DEFAULT NOW(),
+  p_source TEXT DEFAULT 'foreground',
+  p_inside_zone_ids UUID[] DEFAULT ARRAY[]::UUID[]
+)
+RETURNS TABLE (
+  event_id UUID,
+  zone_id UUID,
+  zone_name TEXT,
+  event_type TEXT,
+  occurred_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_now TIMESTAMPTZ := COALESCE(p_observed_at, NOW());
+  v_zone_id UUID;
+  v_zone_name TEXT;
+  v_last_transition_at TIMESTAMPTZ;
+  v_was_inside BOOLEAN;
+  v_event_id UUID;
+  v_changed_zone_ids UUID[] := ARRAY[]::UUID[];
+  v_zone_row RECORD;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'auth_required' USING ERRCODE = '28000';
+  END IF;
+
+  IF p_device_id IS NULL OR btrim(p_device_id) = '' THEN
+    RAISE EXCEPTION 'device_id_required' USING ERRCODE = '22023';
+  END IF;
+
+  IF p_source NOT IN ('foreground', 'background') THEN
+    RAISE EXCEPTION 'invalid_source' USING ERRCODE = '22023';
+  END IF;
+
+  p_inside_zone_ids := COALESCE(
+    ARRAY(
+      SELECT DISTINCT zone_id
+      FROM unnest(COALESCE(p_inside_zone_ids, ARRAY[]::UUID[])) AS zone_id
+      WHERE zone_id IS NOT NULL
+    ),
+    ARRAY[]::UUID[]
+  );
+
+  FOREACH v_zone_id IN ARRAY p_inside_zone_ids LOOP
+    SELECT mz.name INTO v_zone_name
+    FROM public.monitoring_zones AS mz
+    WHERE mz.id = v_zone_id;
+
+    IF v_zone_name IS NULL THEN
+      CONTINUE;
+    END IF;
+
+    SELECT dzp.is_inside, dzp.last_transition_at
+    INTO v_was_inside, v_last_transition_at
+    FROM public.device_zone_presence AS dzp
+    WHERE dzp.device_id = p_device_id
+      AND dzp.zone_id = v_zone_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+      v_was_inside := false;
+      v_last_transition_at := NULL;
+
+      INSERT INTO public.device_zone_presence (
+        device_id,
+        user_id,
+        zone_id,
+        is_inside,
+        last_seen_at,
+        last_latitude,
+        last_longitude,
+        source
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_id,
+        true,
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source
+      );
+    ELSE
+      UPDATE public.device_zone_presence
+      SET user_id = v_user_id,
+          is_inside = true,
+          last_seen_at = v_now,
+          last_latitude = p_latitude,
+          last_longitude = p_longitude,
+          source = p_source
+      WHERE device_id = p_device_id
+        AND zone_id = v_zone_id;
+    END IF;
+
+    v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_id);
+
+    IF v_was_inside IS DISTINCT FROM true
+      AND (v_last_transition_at IS NULL OR v_last_transition_at <= v_now - INTERVAL '5 minutes')
+    THEN
+      INSERT INTO public.zone_transition_events (
+        device_id,
+        user_id,
+        zone_id,
+        event_type,
+        occurred_at,
+        latitude,
+        longitude,
+        source,
+        delivery_status
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_id,
+        'entered',
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source,
+        'queued'
+      )
+      RETURNING id INTO v_event_id;
+
+      UPDATE public.device_zone_presence
+      SET last_transition_at = v_now
+      WHERE device_id = p_device_id
+        AND zone_id = v_zone_id;
+
+      event_id := v_event_id;
+      zone_id := v_zone_id;
+      zone_name := v_zone_name;
+      event_type := 'entered';
+      occurred_at := v_now;
+      RETURN NEXT;
+    END IF;
+  END LOOP;
+
+  FOR v_zone_row IN
+    SELECT dzp.zone_id, dzp.is_inside, dzp.last_transition_at, mz.name
+    FROM public.device_zone_presence AS dzp
+    JOIN public.monitoring_zones AS mz ON mz.id = dzp.zone_id
+    WHERE dzp.device_id = p_device_id
+      AND dzp.user_id = v_user_id
+      AND NOT (dzp.zone_id = ANY(p_inside_zone_ids))
+    FOR UPDATE OF dzp
+  LOOP
+    UPDATE public.device_zone_presence
+    SET is_inside = false,
+        last_seen_at = v_now,
+        last_latitude = p_latitude,
+        last_longitude = p_longitude,
+        source = p_source,
+        user_id = v_user_id
+    WHERE device_id = p_device_id
+      AND zone_id = v_zone_row.zone_id;
+
+    v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_row.zone_id);
+
+    IF v_zone_row.is_inside IS TRUE
+      AND (v_zone_row.last_transition_at IS NULL OR v_zone_row.last_transition_at <= v_now - INTERVAL '5 minutes')
+    THEN
+      INSERT INTO public.zone_transition_events (
+        device_id,
+        user_id,
+        zone_id,
+        event_type,
+        occurred_at,
+        latitude,
+        longitude,
+        source,
+        delivery_status
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_row.zone_id,
+        'exited',
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source,
+        'queued'
+      )
+      RETURNING id INTO v_event_id;
+
+      UPDATE public.device_zone_presence
+      SET last_transition_at = v_now
+      WHERE device_id = p_device_id
+        AND zone_id = v_zone_row.zone_id;
+
+      event_id := v_event_id;
+      zone_id := v_zone_row.zone_id;
+      zone_name := v_zone_row.name;
+      event_type := 'exited';
+      occurred_at := v_now;
+      RETURN NEXT;
+    END IF;
+  END LOOP;
+
+  PERFORM public.refresh_monitoring_zone_people_counts(
+    COALESCE(
+      ARRAY(
+        SELECT DISTINCT changed_zone_id
+        FROM unnest(COALESCE(v_changed_zone_ids, ARRAY[]::UUID[])) AS changed_zone_id
+        WHERE changed_zone_id IS NOT NULL
+      ),
+      ARRAY[]::UUID[]
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.refresh_monitoring_zone_people_counts(UUID[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_monitoring_zones() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_zone_transition_events(INTEGER, UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.process_zone_heartbeat_state(TEXT, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, TIMESTAMPTZ, TEXT, UUID[]) TO authenticated;
+
+-- END MIGRATION: 028_monitoring_zone_entry_exit_detection.sql

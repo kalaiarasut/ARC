@@ -154,6 +154,7 @@ interface LeafletMapProps {
   }) => void;
 
   onMonitoringZoneDeleted?: (params: { zoneId: string }) => void;
+  onMonitoringZoneSelected?: (zone: MonitoringZone | null) => void;
 }
 
 interface ReportMarker {
@@ -343,6 +344,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       onMonitoringZoneCreateRequested,
       onMonitoringZoneEdited,
       onMonitoringZoneDeleted,
+      onMonitoringZoneSelected,
     },
     ref
   ) => {
@@ -368,6 +370,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
     );
     const onMonitoringZoneEditedRef = useRef<LeafletMapProps['onMonitoringZoneEdited']>(onMonitoringZoneEdited);
     const onMonitoringZoneDeletedRef = useRef<LeafletMapProps['onMonitoringZoneDeleted']>(onMonitoringZoneDeleted);
+    const onMonitoringZoneSelectedRef = useRef<LeafletMapProps['onMonitoringZoneSelected']>(onMonitoringZoneSelected);
 
     // State management
     const [isLoading, setIsLoading] = useState(true);
@@ -392,6 +395,10 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
     useEffect(() => {
       onMonitoringZoneDeletedRef.current = onMonitoringZoneDeleted;
     }, [onMonitoringZoneDeleted]);
+
+    useEffect(() => {
+      onMonitoringZoneSelectedRef.current = onMonitoringZoneSelected;
+    }, [onMonitoringZoneSelected]);
 
     const getMonitoringZoneColor = (peopleCount: number): string => {
       if (peopleCount >= 50) return '#ff9800';
@@ -471,6 +478,12 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       const coverageLabel = zone.shape === 'polygon'
         ? `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Vertices</span> <strong>${zone.polygon_points?.length ?? 0}</strong></div>`
         : `<div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">Radius</span> <strong>${Math.round(Number(zone.radius_meters) || 0)} m</strong></div>`;
+      const descriptionHtml = zone.description.trim().length > 0
+        ? `<div style="margin-top:10px; padding-top:8px; border-top: 1px solid #e2e8f0;">
+             <div style="color:#94a3b8; margin-bottom:4px;">Description</div>
+             <div style="color:#334155; white-space:pre-wrap;">${escapeHtml(zone.description)}</div>
+           </div>`
+        : '';
 
       return `
         <div style="font-size: 12px; width: 240px; line-height: 1.4; font-family: system-ui, -apple-system, sans-serif;">
@@ -483,6 +496,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
             <div style="display:flex; justify-content:space-between;"><span style="color:#94a3b8">People</span> <strong style="color:${zoneColor}">${Number(zone.people_count ?? 0)}</strong></div>
             ${coverageLabel}
           </div>
+          ${descriptionHtml}
         </div>`;
     };
 
@@ -637,6 +651,7 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
       pendingMonitoringRef.current.clear();
 
       monitoringGroupRef.current.clearLayers();
+      onMonitoringZoneSelectedRef.current?.(null);
     };
 
     const setMonitoringZonesVisible = (visible: boolean) => {
@@ -677,6 +692,9 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
               });
 
         (layer as any)._monitoringZoneId = z.id;
+        layer.on('click', () => {
+          onMonitoringZoneSelectedRef.current?.(z);
+        });
         layer.bindPopup(buildMonitoringZonePopup(z, zoneColor));
 
         monitoringGroupRef.current.addLayer(layer);
@@ -692,6 +710,9 @@ export const LeafletMap = React.forwardRef<MapMethods, LeafletMapProps>(
 
       pendingMonitoringRef.current.delete(tempLayerId);
       (layer as any)._monitoringZoneId = zone.id;
+      layer.on('click', () => {
+        onMonitoringZoneSelectedRef.current?.(zone);
+      });
 
       const zoneColor = getMonitoringZoneColor(Number(zone.people_count ?? 0));
       layer.setStyle({

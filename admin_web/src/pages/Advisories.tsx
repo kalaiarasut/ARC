@@ -20,6 +20,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Skeleton,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -1094,11 +1095,22 @@ export function Advisories() {
               </TableHead>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
-                      <CircularProgress size={24} />
-                    </TableCell>
-                  </TableRow>
+                  [...Array(4)].map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={80} /></TableCell>
+                      <TableCell><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 12 }} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={200} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                      <TableCell><Skeleton variant="text" width={140} /></TableCell>
+                      <TableCell align="right">
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <Skeleton variant="circular" width={28} height={28} />
+                          <Skeleton variant="circular" width={28} height={28} />
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>

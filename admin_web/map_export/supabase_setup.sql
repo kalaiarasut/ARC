@@ -1,6 +1,8 @@
 -- Create the table for storing geofence zones
 CREATE TABLE IF NOT EXISTS public.monitoring_zones (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL DEFAULT 'Monitoring Zone',
+    description TEXT NOT NULL DEFAULT '',
     center_lat DOUBLE PRECISION NOT NULL,
     center_lng DOUBLE PRECISION NOT NULL,
     radius_meters DOUBLE PRECISION NOT NULL,
