@@ -11,6 +11,7 @@ class MonitoringZoneCoordinate {
 class MonitoringZone {
   final String id;
   final String name;
+  final String description;
   final String shape; // circle | polygon
   final double centerLat;
   final double centerLng;
@@ -22,6 +23,7 @@ class MonitoringZone {
   const MonitoringZone({
     required this.id,
     required this.name,
+    required this.description,
     required this.shape,
     required this.centerLat,
     required this.centerLng,
@@ -54,6 +56,7 @@ class MonitoringZone {
       name: (json['name'] as String?)?.trim().isNotEmpty == true
           ? json['name'] as String
           : ((json['shape']?.toString() == 'polygon') ? 'Polygon Zone' : 'Monitoring Zone'),
+      description: (json['description'] as String?)?.trim() ?? '',
       shape: json['shape']?.toString() == 'polygon' ? 'polygon' : 'circle',
       centerLat: (json['center_lat'] as num?)?.toDouble() ?? 0,
       centerLng: (json['center_lng'] as num?)?.toDouble() ?? 0,

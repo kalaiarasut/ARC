@@ -17,6 +17,7 @@ import 'services/realtime_notification_service.dart';
 import 'services/report_sync_manager.dart';
 import 'services/storage_service.dart';
 import 'services/tile_caching_service.dart';
+import 'services/zone_monitoring_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'widgets/upload_progress_overlay.dart';
@@ -69,6 +70,10 @@ void main() async {
 
   // Start offline report sync (best-effort, no UI required)
   ReportSyncManager.instance.start();
+
+  if (Platform.isAndroid) {
+    await ZoneMonitoringService.instance.start();
+  }
 
   runApp(
     // Wrap with ProviderScope for Riverpod

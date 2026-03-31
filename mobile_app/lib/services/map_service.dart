@@ -211,7 +211,7 @@ class MapService {
     try {
       final response = await _supabase
           .from('monitoring_zones')
-          .select('id,name,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at')
+          .select('id,name,description,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at')
           .order('created_at', ascending: false);
 
       return (response as List)

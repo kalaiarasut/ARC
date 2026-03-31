@@ -10,6 +10,7 @@ import '../services/fcm_push_service.dart';
 import '../services/notification_settings_service.dart';
 import '../services/notification_service.dart';
 import '../services/realtime_notification_service.dart';
+import '../services/zone_monitoring_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import 'about_transparency_screen.dart';
@@ -32,17 +33,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final NotificationSettingsService _notificationSettings =
       NotificationSettingsService();
   bool? _notificationsEnabled;
+  bool? _zoneMonitoringEnabled;
+  ZoneMonitoringMode? _zoneMonitoringMode;
 
   @override
   void initState() {
     super.initState();
     _loadNotificationsSetting();
+    _loadZoneMonitoringSetting();
   }
 
   Future<void> _loadNotificationsSetting() async {
     final enabled = await _notificationSettings.isEnabled();
     if (!mounted) return;
     setState(() => _notificationsEnabled = enabled);
+  }
+
+  Future<void> _loadZoneMonitoringSetting() async {
+    final status = await ZoneMonitoringService.instance.getStatus();
+    if (!mounted) return;
+    setState(() {
+      _zoneMonitoringEnabled = status.enabled;
+      _zoneMonitoringMode = status.mode;
+    });
+  }
+
+  String _zoneMonitoringSubtitle() {
+    switch (_zoneMonitoringMode) {
+      case ZoneMonitoringMode.backgroundActive:
+        return 'Entry and exit alerts work in the foreground and periodic background checks.';
+      case ZoneMonitoringMode.foregroundOnly:
+        return 'Foreground only. Allow background location to keep zone alerts working after the app closes.';
+      case ZoneMonitoringMode.locationServicesOff:
+        return 'Location services are off. Turn on GPS to evaluate zone entry and exit.';
+      case ZoneMonitoringMode.locationDenied:
+        return 'Location permission is missing. The app cannot detect zone entry or exit yet.';
+      case ZoneMonitoringMode.signedOut:
+        return 'Sign in again to resume monitoring on this device.';
+      case ZoneMonitoringMode.unsupported:
+        return 'This feature is currently Android only.';
+      case ZoneMonitoringMode.disabled:
+      case null:
+        return 'Uses current location to warn when this device enters or exits monitoring zones.';
+    }
   }
 
   @override
@@ -199,6 +232,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           } else {
                             FcmPushService.instance.disable();
                             await RealtimeNotificationService.instance.stop();
+                          }
+                        },
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  value: _zoneMonitoringEnabled ?? false,
+                  secondary: Icon(Icons.shield_outlined, color: accent),
+                  title: const Text('Safety Zone Monitoring'),
+                  subtitle: Text(_zoneMonitoringSubtitle()),
+                  onChanged: _zoneMonitoringEnabled == null
+                      ? null
+                      : (v) async {
+                          setState(() => _zoneMonitoringEnabled = v);
+                          if (v) {
+                            final status = await ZoneMonitoringService.instance.enable();
+                            if (!mounted) return;
+                            setState(() {
+                              _notificationsEnabled = true;
+                              _zoneMonitoringEnabled = status.enabled;
+                              _zoneMonitoringMode = status.mode;
+                            });
+                          } else {
+                            await ZoneMonitoringService.instance.disable();
+                            await _loadZoneMonitoringSetting();
                           }
                         },
                 ),

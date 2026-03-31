@@ -31,6 +31,10 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserver {
   final MapController _mapController = MapController();
+  final LayerHitNotifier<MonitoringZone> _monitoringZonePolygonHitNotifier =
+      ValueNotifier(null);
+  final LayerHitNotifier<MonitoringZone> _monitoringZoneCircleHitNotifier =
+      ValueNotifier(null);
   LatLng? _userLocation;
   double? _userAccuracyMeters;
   bool _isLoadingLocation = true;
@@ -41,6 +45,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   StreamSubscription<ServiceStatus>? _serviceStatusSub;
   Timer? _debounceTimer;
   ProviderSubscription<String>? _languageSub;
+  MonitoringZone? _selectedMonitoringZone;
 
   double _markerScale = 1.0;
   double _lastZoom = -1;
@@ -143,6 +148,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     _serviceStatusSub?.cancel();
     _debounceTimer?.cancel();
     _languageSub?.close();
+    _monitoringZonePolygonHitNotifier.dispose();
+    _monitoringZoneCircleHitNotifier.dispose();
     super.dispose();
   }
 
@@ -154,12 +161,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     }
   }
 
+  void _scheduleMapRefresh({bool recenter = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (recenter) {
+        recenterMap();
+      }
+      updateMapData();
+    });
+  }
+
   void _setFallbackLocation() {
     if (!mounted) return;
     setState(() {
       _userLocation ??= LatLng(12.9716, 77.5946); // Bangalore fallback
       _isLoadingLocation = false;
     });
+    _scheduleMapRefresh(recenter: true);
   }
 
 
@@ -303,6 +321,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           ref.read(userLocationProvider.notifier).update(_userLocation);
           _isLoadingLocation = false;
         });
+        _scheduleMapRefresh(recenter: true);
       }
 
       // Get a more precise fix: sample stream briefly and pick best accuracy.
@@ -324,11 +343,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       }
 
       // Recenter & initial data fetch once the map is laid out
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        recenterMap();
-        updateMapData();
-      });
+      _scheduleMapRefresh(recenter: true);
     } catch (e) {
       _setFallbackLocation();
       if (mounted) {
@@ -366,6 +381,33 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         filters: filters,
       );
     });
+  }
+
+  void _clearOverlaySelections() {
+    ref.read(mapProvider.notifier).clearSelections();
+    if (_selectedMonitoringZone != null && mounted) {
+      setState(() => _selectedMonitoringZone = null);
+    }
+  }
+
+  void _selectMonitoringZoneFromHitNotifiers() {
+    final circleHit = _monitoringZoneCircleHitNotifier.value;
+    final polygonHit = _monitoringZonePolygonHitNotifier.value;
+    final zone = (circleHit != null && circleHit.hitValues.isNotEmpty)
+        ? circleHit.hitValues.first
+        : (polygonHit != null && polygonHit.hitValues.isNotEmpty)
+            ? polygonHit.hitValues.first
+            : null;
+
+    if (zone == null) {
+      _clearOverlaySelections();
+      return;
+    }
+
+    ref.read(mapProvider.notifier).clearSelections();
+    if (mounted) {
+      setState(() => _selectedMonitoringZone = zone);
+    }
   }
 
   void onMapEvent(MapEvent event) {
@@ -431,7 +473,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               maxZoom: 18,
               onMapEvent: onMapEvent,
               onTap: (tapPosition, point) {
-                ref.read(mapProvider.notifier).clearSelections();
+                _clearOverlaySelections();
               },
             ),
             children: [
@@ -467,14 +509,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   ),
                 ),
 
-              if (mapState.monitoringZones.any((zone) => zone.isPolygon))
-                PolygonLayer(
-                  polygons: _buildMonitoringZonePolygons(mapState.monitoringZones),
-                ),
-
-              if (mapState.monitoringZones.any((zone) => zone.isCircle))
-                CircleLayer(
-                  circles: _buildMonitoringZoneCircles(mapState.monitoringZones),
+              if (mapState.monitoringZones.isNotEmpty)
+                GestureDetector(
+                  onTap: _selectMonitoringZoneFromHitNotifiers,
+                  child: Stack(
+                    children: [
+                      if (mapState.monitoringZones.any((zone) => zone.isPolygon))
+                        PolygonLayer(
+                          hitNotifier: _monitoringZonePolygonHitNotifier,
+                          polygons: _buildMonitoringZonePolygons(mapState.monitoringZones),
+                        ),
+                      if (mapState.monitoringZones.any((zone) => zone.isCircle))
+                        CircleLayer(
+                          hitNotifier: _monitoringZoneCircleHitNotifier,
+                          circles: _buildMonitoringZoneCircles(mapState.monitoringZones),
+                        ),
+                    ],
+                  ),
                 ),
 
               // Risk zones (if enabled)
@@ -502,11 +553,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       point: markerData.location,
                       width: 40 * _markerScale,
                       height: 50 * _markerScale,
-                      child: GestureDetector(
-                        onTap: () {
-                          ref.read(mapProvider.notifier).selectMarker(markerData);
-                        },
-                        child: Transform.scale(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_selectedMonitoringZone != null) {
+                              setState(() => _selectedMonitoringZone = null);
+                            }
+                            ref.read(mapProvider.notifier).selectMarker(markerData);
+                          },
+                          child: Transform.scale(
                           scale: _markerScale,
                           alignment: Alignment.bottomCenter,
                           child: buildMarkerWidget(markerData),
@@ -558,6 +612,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         height: 50 * _markerScale,
                         child: GestureDetector(
                           onTap: () {
+                            if (_selectedMonitoringZone != null) {
+                              setState(() => _selectedMonitoringZone = null);
+                            }
                             ref.read(mapProvider.notifier).selectAdvisory(advisory);
                           },
                           child: Transform.scale(
@@ -856,7 +913,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
           // Recenter FAB
           Positioned(
-            bottom: (mapState.selectedMarker != null || mapState.selectedAdvisory != null) ? 280 : 100,
+            bottom: (mapState.selectedMarker != null ||
+                    mapState.selectedAdvisory != null ||
+                    _selectedMonitoringZone != null)
+                ? 280
+                : 100,
             right: 16,
             child: FloatingActionButton(
               onPressed: _isFetchingLocation ? null : _refreshUserLocationAndCenter,
@@ -916,6 +977,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
           if (mapState.selectedAdvisory != null)
             buildAdvisoryDetailsSheet(mapState.selectedAdvisory!),
+
+          if (_selectedMonitoringZone != null)
+            _buildMonitoringZoneDetailsSheet(_selectedMonitoringZone!),
         ],
       ),
     );
@@ -1005,7 +1069,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     return const Color(0xFF4CAF50);
   }
 
-  List<Polygon> _buildMonitoringZonePolygons(List<MonitoringZone> zones) {
+  List<Polygon<MonitoringZone>> _buildMonitoringZonePolygons(List<MonitoringZone> zones) {
     return zones
         .where((zone) => zone.isPolygon)
         .map((zone) {
@@ -1017,12 +1081,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
             color: color.withOpacity(0.14),
             borderColor: color.withOpacity(0.9),
             borderStrokeWidth: 2,
+            hitValue: zone,
           );
         })
         .toList();
   }
 
-  List<CircleMarker> _buildMonitoringZoneCircles(List<MonitoringZone> zones) {
+  List<CircleMarker<MonitoringZone>> _buildMonitoringZoneCircles(List<MonitoringZone> zones) {
     return zones
         .where((zone) => zone.isCircle)
         .map((zone) {
@@ -1034,9 +1099,221 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
             color: color.withOpacity(0.14),
             borderColor: color.withOpacity(0.9),
             borderStrokeWidth: 2,
+            hitValue: zone,
           );
         })
         .toList();
+  }
+
+  String _monitoringZoneTypeLabel(MonitoringZone zone) {
+    return zone.isPolygon ? 'Polygon monitoring zone' : 'Circular monitoring zone';
+  }
+
+  String _monitoringZoneSummary(MonitoringZone zone) {
+    if (zone.isPolygon) {
+      return '${zone.polygonPoints.length} boundary points. ${zone.peopleCount} people currently inside.';
+    }
+    final radius = zone.radiusMeters >= 1000
+        ? '${(zone.radiusMeters / 1000).toStringAsFixed(zone.radiusMeters % 1000 == 0 ? 0 : 1)} km radius'
+        : '${zone.radiusMeters.round()} m radius';
+    return '$radius. ${zone.peopleCount} people currently inside.';
+  }
+
+  Widget _buildMonitoringZoneDetailsSheet(MonitoringZone zone) {
+    final color = _monitoringZoneColor(zone.peopleCount);
+    final detailRows = <Widget>[
+      _buildMonitoringZoneDetailRow(Icons.category_outlined, 'Type', _monitoringZoneTypeLabel(zone)),
+      _buildMonitoringZoneDetailRow(Icons.people_alt_outlined, 'People in zone', '${zone.peopleCount}'),
+      if (zone.isCircle)
+        _buildMonitoringZoneDetailRow(
+          Icons.radio_button_checked,
+          'Radius',
+          zone.radiusMeters >= 1000
+              ? '${(zone.radiusMeters / 1000).toStringAsFixed(zone.radiusMeters % 1000 == 0 ? 0 : 1)} km'
+              : '${zone.radiusMeters.round()} m',
+        ),
+      if (zone.isPolygon)
+        _buildMonitoringZoneDetailRow(
+          Icons.polyline,
+          'Boundary points',
+          '${zone.polygonPoints.length}',
+        ),
+      _buildMonitoringZoneDetailRow(
+        Icons.schedule,
+        'Created',
+        '${zone.createdAt.day.toString().padLeft(2, '0')}/${zone.createdAt.month.toString().padLeft(2, '0')}/${zone.createdAt.year}',
+      ),
+    ];
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.16),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        zone.isPolygon ? Icons.polyline : Icons.radio_button_checked,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            zone.name,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _monitoringZoneTypeLabel(zone),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _monitoringZoneSummary(zone),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                if (zone.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    zone.description.trim(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                ...detailRows,
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      if (mounted) {
+                        setState(() => _selectedMonitoringZone = null);
+                      }
+                    },
+                    icon: const Icon(Icons.close, size: 18),
+                    label: Text(context.l10n.close),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side: const BorderSide(color: AppColors.greyOutline),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonitoringZoneDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                ),
+                children: [
+                  TextSpan(
+                    text: '$label: ',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  TextSpan(text: value),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Color getAdvisoryColor(String category) {

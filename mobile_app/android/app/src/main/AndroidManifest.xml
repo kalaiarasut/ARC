@@ -4,6 +4,7 @@
     <!-- Location permissions required by geolocator/current location features -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <!-- Media capture/selection (permission_handler + image_picker + file_picker) -->
     <uses-permission android:name="android.permission.CAMERA" />
