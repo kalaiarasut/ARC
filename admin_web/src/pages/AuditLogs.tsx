@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, TextField, InputAdornment,
-  CircularProgress, IconButton, Chip, useTheme, alpha, Tooltip, Stack,
+  IconButton, Chip, useTheme, alpha, Tooltip, Stack, Skeleton,
 } from '@mui/material';
 import {
   Search as SearchIcon, Close as CloseIcon, Refresh as RefreshIcon,
@@ -220,14 +220,14 @@ export function AuditLogs() {
             </TableHead>
             <TableBody>
               {loading && logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 6, border: 'none' }}>
-                    <CircularProgress size={28} thickness={3} />
-                    <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: alpha(theme.palette.text.secondary, 0.5) }}>
-                      Loading audit logs...
-                    </Typography>
-                  </TableCell>
-                </TableRow>
+                [...Array(6)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton variant="text" width={100} sx={{ mb: 0.5 }} /><Skeleton variant="text" width={60} /></TableCell>
+                    <TableCell><Stack direction="row" spacing={1.5} alignItems="center"><Skeleton variant="circular" width={32} height={32} /><Skeleton variant="text" width={120} /></Stack></TableCell>
+                    <TableCell><Stack direction="row" spacing={1} alignItems="center"><Skeleton variant="text" width={24} /><Skeleton variant="text" width={80} /><Skeleton variant="circular" width={24} height={24} /></Stack></TableCell>
+                    <TableCell><Stack direction="row" spacing={1.5} alignItems="center"><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 12 }} /><Skeleton variant="circular" width={20} height={20} /><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 12 }} /></Stack></TableCell>
+                  </TableRow>
+                ))
               ) : logs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align="center" sx={{ py: 6, border: 'none' }}>

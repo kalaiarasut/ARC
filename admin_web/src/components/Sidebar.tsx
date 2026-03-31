@@ -8,6 +8,9 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import ApiOutlinedIcon from '@mui/icons-material/ApiOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import DomainOutlinedIcon from '@mui/icons-material/DomainOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
@@ -91,6 +94,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
     const navItems = [
         { icon: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Dashboard', path: '/dashboard' },
+        { icon: <PeopleOutlinedIcon sx={{ fontSize: 20 }} />, label: 'User Management', path: '/users' },
+        { icon: <DomainOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Organizations', path: '/organizations' },
+        { icon: <VerifiedUserOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Verifications', path: '/verifications' },
         { icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Hazard Reports', path: '/reports' },
         { icon: <CampaignOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Official Updates', path: '/advisories' },
         { icon: <HubOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Generated Zones', path: '/generated-zones' },
@@ -100,6 +106,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     ];
 
     const isActive = (path: string) => {
+        if (path === '/users') return location.pathname.startsWith('/users');
+        if (path === '/organizations') return location.pathname.startsWith('/organizations');
+        if (path === '/verifications') return location.pathname.startsWith('/verifications');
         if (path === '/reports') return location.pathname.startsWith('/reports');
         if (path === '/advisories') return location.pathname.startsWith('/advisories');
         if (path === '/generated-zones') return location.pathname.startsWith('/generated-zones');
