@@ -18,7 +18,17 @@ interface AuthContextType {
     loading: boolean;
 }
 
+type SessionUser = {
+    id: string;
+    email?: string | null;
+    user_metadata?: any;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const roleCache = new Map<string, 'admin' | null>();
+const roleRequestCache = new Map<string, Promise<'admin' | null>>();
+let bootstrapPromise: Promise<User | null> | null = null;
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -37,6 +47,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const getUserRole = async (userId: string): Promise<'admin' | null> => {
+        const cachedRole = roleCache.get(userId);
+        if (cachedRole !== undefined) {
+            return cachedRole;
+        }
+
+        const inFlight = roleRequestCache.get(userId);
+        if (inFlight) {
+            return inFlight;
+        }
+
+        const request = (async () => {
         try {
             const { data } = await supabase
                 .from('app_roles')
@@ -44,55 +65,81 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .eq('user_id', userId)
                 .maybeSingle();
 
-            return (data?.role as 'admin' | undefined) ?? null;
+            const role = (data?.role as 'admin' | undefined) ?? null;
+            roleCache.set(userId, role);
+            return role;
         } catch {
+            roleCache.set(userId, null);
             return null;
+        } finally {
+            roleRequestCache.delete(userId);
         }
+        })();
+
+        roleRequestCache.set(userId, request);
+        return request;
     };
 
-    const hydrateUserFromSession = async (sessionUser: { id: string; email?: string | null; user_metadata?: any }) => {
+    const hydrateUserFromSession = async (sessionUser: SessionUser): Promise<User | null> => {
         const email = sessionUser.email || '';
 
         const role = await getUserRole(sessionUser.id);
 
         // Strict admin-only web access.
         if (role !== 'admin') {
-            await supabase.auth.signOut();
-            setUser(null);
-            return;
+            roleCache.set(sessionUser.id, null);
+            void supabase.auth.signOut();
+            return null;
         }
 
-        setUser({
+        return {
             id: sessionUser.id,
             email,
             name: sessionUser.user_metadata?.name || email.split('@')[0] || 'User',
             role,
-        });
+        };
     };
 
     useEffect(() => {
-        // Check active session
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                await hydrateUserFromSession(session.user);
-            }
-            setLoading(false);
-        };
+        let mounted = true;
 
-        getSession();
+        if (!bootstrapPromise) {
+            bootstrapPromise = (async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.user) {
+                    return null;
+                }
+                return hydrateUserFromSession(session.user);
+            })();
+        }
+
+        void bootstrapPromise.finally(() => {
+            bootstrapPromise = null;
+        }).then((bootstrappedUser) => {
+            if (!mounted) return;
+            setUser(bootstrappedUser);
+            setLoading(false);
+        });
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                void hydrateUserFromSession(session.user).finally(() => setLoading(false));
+                void hydrateUserFromSession(session.user).then((resolvedUser) => {
+                    if (!mounted) return;
+                    setUser(resolvedUser);
+                    setLoading(false);
+                });
                 return;
             }
+            bootstrapPromise = null;
             setUser(null);
             setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const login = async (email: string, password: string) => {
@@ -112,7 +159,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         const role = await getUserRole(signedInUser.id);
         if (role !== 'admin') {
-            await supabase.auth.signOut();
+            roleCache.set(signedInUser.id, null);
+            void supabase.auth.signOut();
             setUser(null);
             return { error: { message: 'Access denied. Admin account required.' } };
         }

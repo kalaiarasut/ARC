@@ -87,7 +87,6 @@
 |---|---------|--------|-------------|-----------------|
 | 1 | Geofencing / Monitoring Zones | Partial | Admins can draw, persist, edit, and delete circle and polygon monitoring zones | No automated entry/exit alerts, no zone-triggered citizen notifications, no rules engine |
 | 2 | Notification Preferences | Partial | There is basic notification support and token management | No fine-grained preference controls by type, severity, or quiet hours |
-| 3 | Historical Report Translation Backfill | Partial | New reports are translated automatically through the queue/worker pipeline | Older legacy rows are intentionally ignored for now and are not batch-backfilled |
 | 4 | Advisory Delivery Relevance | Partial | Location-aware ranking exists and advisory targeting is supported | There is no explicit user-facing relevance label such as Nearby / Global / Outside Area |
 
 ---

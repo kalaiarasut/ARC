@@ -1,220 +1,146 @@
-# Integrated Platform for Crowdsourced Ocean Hazard Reporting and Analytics
+# Civil Alert System Vision
 
-## 1. Problem Statement
+This document is a product and system vision note. It is not the canonical setup guide and it should not be used as the source of truth for implementation status. For repository structure, local setup, backend bootstrap, and known gaps, use `README.md`.
 
-India’s extensive coastline is increasingly exposed to ocean-related hazards such as high waves, storm surges, abnormal tides, coastal flooding, and tsunami-induced impacts. While institutional early-warning systems rely on satellite observations, sensors, and numerical models, there remains a **critical gap in real-time, ground-level situational awareness** during such events.
+## Purpose
 
-Authorities and disaster management agencies often lack timely, structured, and geospatially precise inputs from affected coastal communities regarding actual on-ground conditions, localized damage, and evolving risk levels. Existing emergency communication systems are largely binary (emergency vs non-emergency), offering limited capability to capture graduated risk, contextual evidence, or early distress signals before situations escalate.
+Civil Alert System is intended to close the gap between institutional early-warning systems and on-the-ground reality during coastal and climate-related hazard events.
 
-At the same time, valuable public digital signals—such as citizen observations, media uploads, and reports disseminated through online platforms and news outlets—remain fragmented and underutilized for operational decision-making. This fragmentation hinders effective prioritization, validation of hazard severity, and rapid situational assessment during ocean hazard events.
+The platform is built around a simple operating model:
 
-There is therefore a need for a **unified, production-grade platform** that enables:
+- citizens contribute structured, geotagged field intelligence
+- authorities validate, monitor, and act on incoming signals
+- the backend turns those signals into operationally useful map, advisory, and workflow data
 
-- Structured, geotagged reporting of ocean hazard observations by citizens  
-- Risk-aware signaling of high-urgency situations without assuming emergency response responsibilities  
-- Aggregation and analysis of verified digital information streams  
-- Clear, explainable insights for authorities to support informed, timely decision-making  
+The core idea is not "social reporting" in the generic sense. It is operational situational awareness with enough structure, evidence, and geospatial precision to support real decision-making.
 
-This problem calls for an integrated, scalable system that bridges the gap between early-warning models and ground realities, enhancing coastal hazard awareness, prioritization, and response coordination.
+## Problem Statement
 
----
+Coastal and urban hazard response often suffers from the same failure pattern:
 
-## 2. Objective
+- official warning systems can detect broad conditions
+- affected communities see local impacts first
+- agencies still lack reliable, structured, ground-level information during the most time-sensitive phase
 
-Build a **production-grade, scalable, and secure platform** that enables:
+In practice, important signals are often delayed, fragmented, or buried in unstructured channels. Free-text messages, scattered media uploads, and informal reports do not easily translate into field-ready intelligence.
 
-- Citizens to report ocean-related hazards in real time via a mobile application  
-- Authorities and analysts to monitor, validate, and respond through a web-based dashboard  
-- Automated ingestion and analysis of digital media signals (citizen reports, YouTube, news)  
-- Continuous learning through machine learning models for hazard detection, urgency estimation, and spatial analysis  
+The platform exists to improve that handoff.
 
-The system is designed for **national-scale deployment**, interoperability with government early-warning systems, and long-term maintainability.
+## Vision
 
----
+The long-term vision is a single operational platform where:
 
-## 3. Core Design Principles
+- citizens can report hazards quickly, even with poor connectivity
+- analysts can validate and prioritize evidence without switching systems
+- authorities can publish timely, localized advisories
+- map-based risk views evolve continuously as real reports arrive
+- location, notification, and monitoring features remain privacy-aware and role-controlled
 
-- **Citizen-first & ground-truth driven**: Direct reports are the primary signal  
-- **Offline-first**: Works in low-connectivity coastal regions  
-- **Explainable AI**: ML outputs must be interpretable for authorities  
-- **Modular & extensible**: New data sources and models can be added without redesign  
-- **Security & compliance**: Data protection, auditability, and role-based access  
-- **India-context aware**: Multilingual, regional adaptability  
+The system should support both immediate response and longer-term pattern awareness.
 
----
+## Product Principles
 
-## 4. System Overview
+### 1. Ground Truth First
 
-The platform consists of two primary user-facing components:
+Citizen reports are valuable because they capture what institutional models may miss at street, shoreline, or neighborhood level. The product should preserve that advantage through fast capture, simple flows, and geospatial precision.
 
-1. **Citizen Mobile Application**  
-2. **Authority & Analyst Web Platform**
+### 2. Operational Simplicity
 
-Each component is purpose-built for its user group, with clearly defined responsibilities and boundaries.
+During an active event, both citizens and operators need clarity more than feature density. High-friction flows, ambiguous controls, and overloaded screens work against the mission.
 
----
+### 3. Offline Resilience
 
-## 7. Data Ingestion Pipelines
+Connectivity is not guaranteed during hazard events. Report capture, queueing, retry, and map access should degrade gracefully instead of failing hard.
 
-### 7.1 Citizen Reports
-- Direct ingestion via mobile app  
-- Auto-labelled by user-selected hazard type  
-- GPS coordinates treated as ground truth  
+### 4. Evidence Over Noise
 
-### 7.2 YouTube Monitoring
-- Periodic ingestion of:
-  - Video titles  
-  - Descriptions  
-  - Public comments  
-- Filters based on:
-  - Coastal keywords  
-  - Geographic relevance  
-- Stored as unverified external signals  
+The platform should reward structured reports, attached evidence, verification workflows, and auditability. It should reduce rumor amplification rather than become another rumor surface.
 
-### 7.3 News Media Ingestion
-- RSS feed ingestion from:
-  - National news outlets  
-  - Regional and language-specific portals  
-- Extract:
-  - Headline  
-  - Summary  
-  - Publish time  
-  - Location mentions  
+### 5. Local Relevance
 
----
+Language, geography, and relevance matter. Advisories and map surfaces should be understandable, region-aware, and useful to the user standing in a real place with real constraints.
 
-## 8. Unified Data Schema
+### 6. Controlled Access
 
-All text-based inputs are normalized into a common schema:
+Not every user should see everything. Citizen, analyst, and admin access must remain intentionally scoped, especially for exact locations, verification actions, and operational tools.
 
-- Text content  
-- Language  
-- Source (citizen, YouTube, news)  
-- Timestamp  
-- Location (GPS or extracted)  
-- Hazard label (predicted / verified)  
-- Urgency score  
-- Confidence score  
+## Intended System Shape
 
-This enables **source-agnostic ML training and analytics**.
+The platform is organized around three layers.
 
----
+### Citizen Layer
 
-## 9. Machine Learning Architecture
+The citizen app should make it easy to:
 
-### 9.1 ML Objectives
-- Hazard type classification  
-- Urgency / severity estimation  
-- Location extraction (for non-GPS sources)  
-- Spatial hotspot detection  
+- sign in with low friction
+- submit hazard observations with location and media
+- understand official advisories
+- view nearby verified conditions on a map
+- continue operating when temporarily offline
 
-### 9.2 Model Components
+The citizen experience should stay focused on contribution, awareness, and trust.
 
-#### A. Hazard Classification Model
-- Input: Text  
-- Output: Hazard category + confidence  
-- Model type: Transformer-based text classifier  
-- Multilingual support (Indian languages)  
+### Operational Layer
 
-#### B. Urgency Estimation Model
-- Input: Text + hazard type  
-- Output: Urgency score (low / medium / high)  
-- Hybrid approach:
-  - ML model  
-  - Rule-based overrides for critical keywords  
+The admin dashboard should give agencies and analysts a single place to:
 
-#### C. Location Extraction
-- Named Entity Recognition + gazetteer matching  
-- Converts place mentions into approximate coordinates  
+- review incoming reports
+- verify or reject evidence
+- monitor risk zones and monitoring zones
+- publish official advisories
+- inspect map-based activity and live operational signals
+- manage users, organizations, and verification workflows
 
-### 9.3 Training Strategy
-- Initial training:
-  - Historical citizen reports  
-  - Curated YouTube and news datasets  
-- Continuous learning:
-  - Verified reports used as new training samples  
-  - Periodic retraining cycles  
-- Human-in-the-loop validation for quality control  
+This layer is where raw citizen input becomes operational action.
 
----
+### Shared Intelligence Layer
 
-## 10. Spatial Analytics & Hotspot Generation
+The backend should provide:
 
-### Inputs
-- Geo-coordinates  
-- Report density  
-- Urgency scores  
-- Temporal proximity  
+- role-aware data access
+- geospatial query and clustering capability
+- storage for media and translations
+- notification delivery paths
+- auditability
+- room for localization and future decision-support features
 
-### Techniques
-- Density-based clustering (DBSCAN)  
-- Grid-based aggregation  
-- Time-decay weighting  
+This layer should stay implementation-flexible, but the outcome must be reliability and consistency across both clients.
 
-### Outputs
-- Dynamic hazard hotspots  
-- Risk intensity levels  
-- Temporal evolution of events  
+## Non-Goals
 
----
+The platform is not intended to be:
 
-## 11. Security, Privacy & Governance
+- an unmoderated public social feed
+- a generic messaging app
+- a replacement for formal emergency command systems
+- a product that exposes sensitive location data without role controls
 
-- Minimal personal data collection  
-- End-to-end encrypted communication (HTTPS)  
-- Role-based access control  
-- Audit logs for all actions  
-- Data anonymization for analytics  
-- Compliance-ready data retention policies  
+It should complement institutional systems, not impersonate them.
 
----
+## Success Criteria
 
-## 12. Scalability & Deployment
+At a product level, the platform is succeeding when it consistently improves these outcomes:
 
-### Infrastructure
-- Containerized services (Docker)  
-- Orchestration (Kubernetes)  
+- faster reporting from affected communities
+- more actionable evidence for analysts
+- clearer prioritization of real hazards
+- faster publication and delivery of official advisories
+- better shared situational awareness across map, reports, and notifications
 
-### Scaling
-- Horizontal scaling of:
-  - API services  
-  - ML inference services  
+## Strategic Direction
 
-### Fault Tolerance
-- Offline-first clients  
-- Queued ingestion  
-- Graceful degradation during outages  
+If the platform continues to evolve, the strongest directions are:
 
----
+- stronger advisory relevance and delivery diagnostics
+- better monitoring-zone intelligence and alert rules
+- stronger multilingual operations
+- improved evidence review ergonomics for analysts
+- better archival quality and export surfaces for institutional use
 
-## 13. Integration Readiness
+Those extensions only matter if the system remains trustworthy, understandable, and operationally useful under pressure.
 
-The platform is designed to integrate with:
+## Relationship To The README
 
-- Early warning systems  
-- Government GIS platforms  
-- Emergency communication channels  
+`Guide.md` explains why the platform exists and what it is trying to become.
 
-APIs are standardized for future interoperability.
-
----
-
-## 14. Collaboration & Ecosystem Expansion
-
-- Multi-agency data contribution  
-- Volunteer-based verification networks  
-- Academic and research collaboration  
-- Model sharing across regions  
-
----
-
-## 15. Long-Term Vision
-
-- Predictive risk modeling  
-- Community alert dissemination  
-- Feedback loops between citizens and authorities  
-- National-level coastal hazard intelligence system  
-
----
-
-**This document defines a production-ready blueprint for a scalable, ethical, and India-centric ocean hazard reporting and analytics platform.**
+`README.md` explains what is actually in the repository today, how to run it, and where the current implementation still has gaps.

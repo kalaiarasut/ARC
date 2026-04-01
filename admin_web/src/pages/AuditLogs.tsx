@@ -1,348 +1,311 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, TablePagination, TextField, InputAdornment,
-  IconButton, Chip, useTheme, alpha, Tooltip, Stack, Skeleton,
+  Box, Typography, Stack, TextField, InputAdornment,
+  IconButton, Chip, useTheme, alpha, Select, MenuItem, Avatar, Paper,
+  Divider
 } from '@mui/material';
 import {
-  Search as SearchIcon, Close as CloseIcon, Refresh as RefreshIcon,
-  AdminPanelSettings as AdminIcon, CheckCircle as VerifiedIcon,
-  Cancel as RejectedIcon, TaskAlt as ResolvedIcon, Schedule as PendingIcon,
-  NavigateNext as ArrowIcon, ContentCopy as CopyIcon,
+  Search as SearchIcon, Refresh as RefreshIcon,
+  CompareArrows as DiffIcon, FilterList as FilterIcon,
 } from '@mui/icons-material';
-import { hazardService } from '../services/hazardService';
+import { DataGrid, GridToolbarContainer } from '@mui/x-data-grid';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { format } from 'date-fns';
-import type { ReportAuditLog, ReportStatus } from '../types/hazard';
+import { HistoryDrawer } from '../components/audit/HistoryDrawer';
 
-// Stat Card Component
-const StatCard = ({ value, label, color, icon, total }: { value: number; label: string; color: string; icon: React.ReactNode; total: number }) => {
-  const theme = useTheme();
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-  return (
-    <Box sx={{
-      flex: 1,
-      minWidth: 140,
-      p: 2,
-      borderRadius: '14px',
-      border: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-      bgcolor: alpha(color, 0.03),
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <Stack spacing={0.75}>
-        <Box sx={{ width: 32, height: 32, borderRadius: '10px', bgcolor: alpha(color, 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
-          {icon}
-        </Box>
-        <Typography variant="h5" fontWeight={800} sx={{ color: alpha(theme.palette.text.primary, 0.85), lineHeight: 1 }}>
-          {value.toLocaleString()}
-        </Typography>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            {label}
-          </Typography>
-          {total > 0 && value > 0 && (
-            <Typography variant="caption" sx={{ color: alpha(color, 0.8), fontWeight: 700, fontSize: '0.65rem' }}>
-              {pct}%
-            </Typography>
-          )}
-        </Stack>
-        {/* Progress bar */}
-        <Box sx={{ height: 3, borderRadius: 2, bgcolor: alpha(color, 0.08), overflow: 'hidden' }}>
-          <Box sx={{ height: '100%', width: `${pct}%`, borderRadius: 2, bgcolor: alpha(color, 0.5), transition: 'width 0.6s ease' }} />
-        </Box>
-      </Stack>
-    </Box>
-  );
-};
+// Simulated API Service function for audit
+const mockAuditData = [
+  { id: 'ev_1', action: 'update', entity_type: 'advisory', entity_id: 'adv_901', admin_email: 'ops@hq.local', changed_at: new Date(Date.now() - 3600000).toISOString(), old_data: { severity: 'moderate' }, new_data: { severity: 'severe' }, reason: 'Escalation requested by field op' },
+  { id: 'ev_2', action: 'create', entity_type: 'user', entity_id: 'usr_44', admin_email: 'admin@hq.local', changed_at: new Date(Date.now() - 86400000).toISOString(), new_data: { role: 'operator', status: 'active' } },
+  { id: 'ev_3', action: 'transition', entity_type: 'monitoring_zone', entity_id: 'mz_09', admin_email: 'system@auto', changed_at: new Date(Date.now() - 172800000).toISOString(), old_data: { state: 'inactive' }, new_data: { state: 'active' } },
+];
 
 export function AuditLogs() {
   const theme = useTheme();
-  const [logs, setLogs] = useState<ReportAuditLog[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState({ total: 0, toVerified: 0, toRejected: 0, toResolved: 0, toPending: 0 });
+  const [entityFilter, setEntityFilter] = useState('all');
+  const [actionFilter, setActionFilter] = useState('all');
+  
+  // Drawer State
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; type: string; name: string } | null>(null);
+  const [entityHistory, setEntityHistory] = useState<any[]>([]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const statsData = await hazardService.getAuditStats();
-      setStats(statsData);
-      const logsData = await hazardService.getAuditLogs(page, rowsPerPage, { email: searchQuery || undefined });
-      setLogs(logsData.data);
-      setTotalCount(logsData.total);
+      setTimeout(() => {
+        setLogs(mockAuditData);
+        setLoading(false);
+      }, 500);
     } catch (err) {
-      console.error(err);
-      setLogs([]);
-    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, [page, rowsPerPage]);
-  useEffect(() => {
-    const timer = setTimeout(() => { setPage(0); loadData(); }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  useEffect(() => { loadData(); }, []);
 
-  const getStatusColor = (status: ReportStatus) => {
-    switch (status) {
-      case 'verified': return theme.palette.info.main;
-      case 'rejected': return theme.palette.error.main;
-      case 'resolved': return theme.palette.success.main;
-      case 'pending': default: return theme.palette.grey[500];
-    }
+  const handleRowClick = (params: any) => {
+    const row = params.row;
+    setSelectedEntity({
+      id: row.entity_id,
+      type: row.entity_type,
+      name: `${row.entity_type.toUpperCase()} #${row.entity_id.split('_')[1] || row.entity_id}`,
+    });
+    setEntityHistory(logs.filter(l => l.entity_id === row.entity_id));
+    setDrawerOpen(true);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'verified': return <VerifiedIcon sx={{ fontSize: '0.75rem' }} />;
-      case 'rejected': return <RejectedIcon sx={{ fontSize: '0.75rem' }} />;
-      case 'resolved': return <ResolvedIcon sx={{ fontSize: '0.75rem' }} />;
-      default: return <PendingIcon sx={{ fontSize: '0.75rem' }} />;
-    }
-  };
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const matchSearch = log.admin_email.toLowerCase().includes(searchQuery.toLowerCase()) || log.entity_id.includes(searchQuery);
+      const matchEntity = entityFilter === 'all' || log.entity_type === entityFilter;
+      const matchAction = actionFilter === 'all' || log.action === actionFilter;
+      return matchSearch && matchEntity && matchAction;
+    });
+  }, [logs, searchQuery, entityFilter, actionFilter]);
 
-  const getStatusLabel = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
+  const columns: GridColDef[] = [
+    {
+      field: 'changed_at',
+      headerName: 'TIMESTAMP',
+      width: 150,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack spacing={0.5} justifyContent="center" height="100%">
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1 }}>
+            {format(new Date(params.value), 'MMM dd, yyyy')}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1 }}>
+            {format(new Date(params.value), 'HH:mm:ss')}
+          </Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'action',
+      headerName: 'ACTION',
+      width: 130,
+      renderCell: (params: GridRenderCellParams) => {
+        let color = theme.palette.info;
+        if (params.value === 'create') color = theme.palette.success;
+        if (params.value === 'delete') color = theme.palette.error;
+        if (params.value === 'transition') color = theme.palette.warning;
+
+        return (
+          <Chip 
+            label={params.value.toUpperCase()} 
+            size="small" 
+            sx={{ 
+              bgcolor: alpha(color.main, 0.1), 
+              color: color.dark, 
+              fontWeight: 700, 
+              fontSize: '0.65rem', 
+              letterSpacing: '0.05em',
+              borderRadius: '6px',
+              border: `1px solid ${alpha(color.main, 0.3)}`
+            }} 
+          />
+        );
+      }
+    },
+    {
+      field: 'entity_type',
+      headerName: 'ENTITY TYPE',
+      width: 150,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textTransform: 'capitalize' }}>
+          {params.value.replace('_', ' ')}
+        </Typography>
+      )
+    },
+    {
+      field: 'entity_id',
+      headerName: 'REFERENCE ID',
+      width: 160,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="caption" sx={{ 
+          fontFamily: 'monospace', 
+          fontWeight: 600,
+          color: theme.palette.primary.dark,
+          bgcolor: alpha(theme.palette.primary.main, 0.08), 
+          px: 1.2, 
+          py: 0.6, 
+          borderRadius: '6px',
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`
+        }}>
+          {params.value}
+        </Typography>
+      )
+    },
+    {
+      field: 'admin_email',
+      headerName: 'ACTOR',
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack direction="row" spacing={1.5} alignItems="center" height="100%">
+          <Avatar sx={{ 
+            width: 28, height: 28, 
+            fontSize: '0.75rem', 
+            bgcolor: theme.palette.grey[900], 
+            color: '#fff', 
+            fontWeight: 700 
+          }}>
+            {params.value.charAt(0).toUpperCase()}
+          </Avatar>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>{params.value}</Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'diff',
+      headerName: '',
+      width: 60,
+      sortable: false,
+      renderCell: () => (
+        <IconButton size="small" sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.1) } }}>
+          <DiffIcon fontSize="small" />
+        </IconButton>
+      )
+    }
+  ];
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', px: { xs: 1.5, sm: 2.5 }, py: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', px: { xs: 2, sm: 4 }, py: 4, bgcolor: '#f8fafc' }}>
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 4 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary", letterSpacing: '-0.02em', mb: 0.5 }}>
             Audit Trail
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            Track all status changes made by administrators
+          <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 500 }}>
+            Unified cross-project tracking for operations, changes, and incidents.
           </Typography>
         </Box>
         <IconButton
           onClick={loadData}
           disabled={loading}
-          size="small"
           sx={{
-            bgcolor: theme.palette.primary.main,
-            color: 'white',
-            width: 34, height: 34,
-            borderRadius: '10px',
-            '&:hover': { bgcolor: theme.palette.primary.dark },
-            '&.Mui-disabled': { bgcolor: alpha(theme.palette.primary.main, 0.4), color: 'white' },
+            bgcolor: 'white',
+            border: `1px solid ${theme.palette.divider}`,
+            color: 'text.primary',
+            width: 40, height: 40, borderRadius: '10px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            '&:hover': { bgcolor: theme.palette.action.hover },
           }}
         >
-          <RefreshIcon sx={{ fontSize: '1.1rem' }} />
+          <RefreshIcon />
         </IconButton>
       </Stack>
 
-      {/* Stat Cards */}
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
-        <StatCard value={stats.total} label="Total Changes" color={theme.palette.primary.main} icon={<AdminIcon sx={{ fontSize: '1rem' }} />} total={stats.total || 1} />
-        <StatCard value={stats.toVerified} label="Verified" color={theme.palette.info.main} icon={<VerifiedIcon sx={{ fontSize: '1rem' }} />} total={stats.total} />
-        <StatCard value={stats.toRejected} label="Rejected" color={theme.palette.error.main} icon={<RejectedIcon sx={{ fontSize: '1rem' }} />} total={stats.total} />
-        <StatCard value={stats.toResolved} label="Resolved" color={theme.palette.success.main} icon={<ResolvedIcon sx={{ fontSize: '1rem' }} />} total={stats.total} />
-        <StatCard value={stats.toPending} label="Pending" color={theme.palette.grey[500]} icon={<PendingIcon sx={{ fontSize: '1rem' }} />} total={stats.total} />
-      </Stack>
-
-      {/* Search Bar */}
-      <Box sx={{
-        p: 1.25,
-        mb: 1.5,
-        borderRadius: '14px',
-        bgcolor: 'background.paper',
-        border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-        boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.04)}`,
+      {/* Unified Toolbar Filter */}
+      <Paper elevation={0} sx={{
+        display: 'flex', alignItems: 'center', mb: 3, 
+        borderRadius: '12px', border: `1px solid ${theme.palette.divider}`,
+        overflow: 'hidden', p: 0.5, bgcolor: 'white',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
       }}>
         <TextField
-          fullWidth
-          placeholder="Search by admin email..."
+          placeholder="Search actor or reference ID..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '10px',
-              bgcolor: alpha(theme.palette.text.primary, 0.04),
-              fontSize: '0.875rem',
-              '& fieldset': { borderColor: alpha(theme.palette.divider, 0.12) },
-              '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08), '& fieldset': { borderColor: alpha(theme.palette.divider, 0.25) } },
-              '&.Mui-focused': { bgcolor: 'background.paper', '& fieldset': { borderColor: theme.palette.primary.main, borderWidth: '1.5px' } },
-            },
-          }}
+          variant="standard"
+          sx={{ minWidth: 260, flex: 1, px: 2, '& .MuiInput-underline:before': { borderBottom: 'none' }, '& .MuiInput-underline:after': { borderBottom: 'none' }, '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottom: 'none' } }}
           InputProps={{
-            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: alpha(theme.palette.text.secondary, 0.5), fontSize: '1.2rem' }} /></InputAdornment>,
-            endAdornment: searchQuery && (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setSearchQuery('')} size="small" sx={{ color: 'text.secondary' }}>
-                  <CloseIcon sx={{ fontSize: '1rem' }} />
-                </IconButton>
-              </InputAdornment>
-            ),
+            disableUnderline: true,
+            startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'text.disabled' }} /></InputAdornment>,
           }}
         />
-      </Box>
+        
+        <Divider orientation="vertical" flexItem sx={{ borderRightWidth: 2, my: 1 }} />
+        
+        <Stack direction="row" alignItems="center" sx={{ px: 2, gap: 1 }}>
+          <FilterIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+          <Select 
+            value={entityFilter} 
+            onChange={(e) => setEntityFilter(e.target.value)}
+            variant="standard"
+            disableUnderline
+            sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', minWidth: 130 }}
+          >
+            <MenuItem value="all">All Entities</MenuItem>
+            <MenuItem value="advisory">Advisories</MenuItem>
+            <MenuItem value="report">Reports</MenuItem>
+            <MenuItem value="user">Users</MenuItem>
+            <MenuItem value="monitoring_zone">Zones</MenuItem>
+          </Select>
+        </Stack>
 
-      {/* Table */}
-      <Box sx={{
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-        bgcolor: 'background.paper',
-        boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.04)}, 0 4px 20px ${alpha(theme.palette.common.black, 0.02)}`,
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <TableContainer sx={{ flex: 1, minHeight: 0, overflowX: 'hidden' }}>
-          <Table stickyHeader size="small" sx={{
-            tableLayout: 'fixed',
-            '& .MuiTableCell-root': {
-              py: 1.125, px: 1.5, lineHeight: 1.4,
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-            },
-            '& .MuiTableCell-head': {
-              py: 1.25, fontSize: '0.6875rem', fontWeight: 700,
-              textTransform: 'uppercase', letterSpacing: '0.06em',
-              color: alpha(theme.palette.text.secondary, 0.7),
-              bgcolor: alpha(theme.palette.text.primary, 0.02),
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            },
-          }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ width: 140 }}>Date & Time</TableCell>
-                <TableCell>Admin</TableCell>
-                <TableCell>Report ID</TableCell>
-                <TableCell>Status Change</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading && logs.length === 0 ? (
-                [...Array(6)].map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton variant="text" width={100} sx={{ mb: 0.5 }} /><Skeleton variant="text" width={60} /></TableCell>
-                    <TableCell><Stack direction="row" spacing={1.5} alignItems="center"><Skeleton variant="circular" width={32} height={32} /><Skeleton variant="text" width={120} /></Stack></TableCell>
-                    <TableCell><Stack direction="row" spacing={1} alignItems="center"><Skeleton variant="text" width={24} /><Skeleton variant="text" width={80} /><Skeleton variant="circular" width={24} height={24} /></Stack></TableCell>
-                    <TableCell><Stack direction="row" spacing={1.5} alignItems="center"><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 12 }} /><Skeleton variant="circular" width={20} height={20} /><Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 12 }} /></Stack></TableCell>
-                  </TableRow>
-                ))
-              ) : logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 6, border: 'none' }}>
-                    <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>
-                      No audit logs found
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log, index) => (
-                  <TableRow key={log.id} sx={{
-                    bgcolor: index % 2 === 0 ? 'transparent' : alpha(theme.palette.text.primary, 0.01),
-                    transition: 'background-color 0.15s ease',
-                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
-                  }}>
-                    <TableCell>
-                      <Stack spacing={0}>
-                        <Typography variant="caption" sx={{ fontSize: '0.6875rem', fontWeight: 500, color: alpha(theme.palette.text.primary, 0.75) }}>
-                          {format(new Date(log.changed_at), 'MMM dd, yyyy')}
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', color: alpha(theme.palette.text.secondary, 0.5) }}>
-                          {format(new Date(log.changed_at), 'HH:mm:ss')}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={0.75}>
-                        <Box sx={{
-                          width: 26, height: 26, borderRadius: '8px',
-                          bgcolor: alpha(theme.palette.primary.main, 0.08),
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <AdminIcon sx={{ fontSize: '0.85rem', color: alpha(theme.palette.primary.main, 0.6) }} />
-                        </Box>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 500, color: alpha(theme.palette.text.primary, 0.85) }}>
-                          {log.admin_email}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Click to copy" arrow>
-                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ cursor: 'pointer' }}
-                          onClick={() => navigator.clipboard.writeText(log.report_id)}
-                        >
-                          <Typography variant="caption" sx={{
-                            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                            fontSize: '0.65rem', fontWeight: 500,
-                            bgcolor: alpha(theme.palette.text.primary, 0.12),
-                            color: alpha(theme.palette.text.secondary, 0.7),
-                            px: 0.75, py: 0.25, borderRadius: '6px',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            maxWidth: 180, display: 'inline-block',
-                          }}>
-                            {log.report_id.length > 18 ? `${log.report_id.slice(0, 8)}...${log.report_id.slice(-4)}` : log.report_id}
-                          </Typography>
-                          <CopyIcon sx={{ fontSize: '0.7rem', color: alpha(theme.palette.text.secondary, 0.3) }} />
-                        </Stack>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Chip
-                          icon={getStatusIcon(log.old_status)}
-                          label={getStatusLabel(log.old_status)}
-                          size="small"
-                          sx={{
-                            height: 22, fontSize: '0.625rem', fontWeight: 600,
-                            bgcolor: alpha(getStatusColor(log.old_status as ReportStatus), 0.06),
-                            color: alpha(getStatusColor(log.old_status as ReportStatus), 0.7),
-                            border: 'none',
-                            '& .MuiChip-icon': { color: 'inherit' },
-                          }}
-                        />
-                        <ArrowIcon sx={{ fontSize: '0.85rem', color: alpha(theme.palette.text.secondary, 0.3) }} />
-                        <Chip
-                          icon={getStatusIcon(log.new_status)}
-                          label={getStatusLabel(log.new_status)}
-                          size="small"
-                          sx={{
-                            height: 22, fontSize: '0.625rem', fontWeight: 700,
-                            bgcolor: alpha(getStatusColor(log.new_status as ReportStatus), 0.1),
-                            color: getStatusColor(log.new_status as ReportStatus),
-                            border: 'none',
-                            '& .MuiChip-icon': { color: 'inherit' },
-                          }}
-                        />
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <Box sx={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          px: 2, py: 0.75,
-          borderTop: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-          bgcolor: alpha(theme.palette.text.primary, 0.03),
-        }}>
-          <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), fontSize: '0.75rem' }}>
-            {totalCount.toLocaleString()} entries
-          </Typography>
-          <TablePagination
-            component="div"
-            count={totalCount}
-            page={page}
-            onPageChange={(_, p) => setPage(p)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-            rowsPerPageOptions={[10, 25, 50, 100]}
-            sx={{ border: 'none', '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', color: alpha(theme.palette.text.secondary, 0.7) } }}
-          />
+        <Divider orientation="vertical" flexItem sx={{ borderRightWidth: 2, my: 1 }} />
+
+        <Box sx={{ px: 2 }}>
+          <Select 
+            value={actionFilter} 
+            onChange={(e) => setActionFilter(e.target.value)}
+            variant="standard"
+            disableUnderline
+            sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', minWidth: 120 }}
+          >
+            <MenuItem value="all">All Actions</MenuItem>
+            <MenuItem value="create">Created</MenuItem>
+            <MenuItem value="update">Updated</MenuItem>
+            <MenuItem value="delete">Deleted</MenuItem>
+            <MenuItem value="transition">Transitioned</MenuItem>
+          </Select>
         </Box>
-      </Box>
+      </Paper>
+
+      {/* Data Grid */}
+      <Paper elevation={0} sx={{
+        flex: 1, minHeight: 0,
+        borderRadius: '16px', overflow: 'hidden',
+        border: `1px solid ${theme.palette.divider}`,
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
+        bgcolor: 'white',
+        '& .MuiDataGrid-root': { border: 'none' },
+        '& .MuiDataGrid-columnHeaders': { 
+          bgcolor: '#f1f5f9', 
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          color: theme.palette.text.secondary,
+        },
+        '& .MuiDataGrid-columnHeaderTitle': {
+          fontWeight: 700,
+          fontSize: '0.7rem',
+          letterSpacing: '0.08em',
+        },
+        '& .MuiDataGrid-cell': { 
+          borderBottom: `1px solid ${theme.palette.divider}`, 
+          display: 'flex', alignItems: 'center' 
+        },
+        '& .MuiDataGrid-row': {
+          transition: 'all 0.2s',
+          '&:hover': { bgcolor: '#f8fafc', cursor: 'pointer', transform: 'translateY(-1px)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' },
+        },
+      }}>
+        <DataGrid
+          rows={filteredLogs}
+          columns={columns}
+          loading={loading}
+          onRowClick={handleRowClick}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 25 } },
+            sorting: { sortModel: [{ field: 'changed_at', sort: 'desc' }] }
+          }}
+          pageSizeOptions={[15, 25, 50, 100]}
+          disableRowSelectionOnClick
+          rowHeight={64}
+          columnHeaderHeight={48}
+        />
+      </Paper>
+
+      <HistoryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        entityName={selectedEntity?.name || ''}
+        events={entityHistory}
+      />
     </Box>
   );
 }

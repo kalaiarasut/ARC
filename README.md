@@ -1,127 +1,416 @@
-# Civil Alert System - Integrated Platform
+# Civil Alert System (ARC)
 
-**A Crowdsourced, AI-Enhanced Platform for Real-Time Coastal and Urban Flood Intelligence**
+Citizen hazard reporting, official advisory publishing, spatial risk analysis, and admin operations on a shared Supabase backend.
 
-The Civil Alert System is a comprehensive, production-grade platform designed to bridge the gap between institutional early-warning models and ground-level realities during ocean and climate hazards (flooding, high waves, storm surges). 
+This repository contains three main parts:
 
-This repository contains the complete full-stack solution, comprising a citizen-facing mobile application, an authority-facing web dashboard, and the unified serverless backend that powers both.
+- `mobile_app/`: a Flutter citizen app branded as `ARC` for onboarding, phone OTP sign-in, geotagged hazard reporting, advisories, maps, offline queueing, and gamification.
+- `admin_web/`: a React + Vite admin console for report review, advisories, zones, map operations, user and organization management, and verification workflows.
+- `combined_supabase_migrations.sql` plus `mobile_app/supabase/functions/`: the database schema, RLS policies, RPCs, triggers, and Supabase Edge Functions that power both clients.
 
----
+This README describes the checked-in code as it exists in this repository. Where the repo has gaps, mismatches, or manual steps, they are called out explicitly.
 
-## 🏗️ Platform Architecture
+## Repository Overview
 
-The system is designed with three primary pillars:
+| Path | Purpose |
+| --- | --- |
+| `mobile_app/` | Flutter citizen application |
+| `admin_web/` | React 19 + TypeScript + Vite admin dashboard |
+| `combined_supabase_migrations.sql` | Canonical all-in-one database bootstrap script |
+| `030_admin_live_presence.sql` | Standalone copy of the live-presence migration already embedded in `combined_supabase_migrations.sql` |
+| `mobile_app/supabase/functions/` | Supabase Edge Functions used for push delivery, translation, zone heartbeats, advisory publishing, and seed data |
+| `Guide.md` | Product vision document |
+| `Feature_Status_Assessment.md` | Internal feature/status planning note |
 
-### 1. Citizen Mobile Application (`/mobile_app`)
-An offline-first, highly accessible mobile app built to capture ground-truth hazard reports from communities.
-*   **Technologies:** Flutter (Dart), Riverpod (State Management), Hive (Offline queueing), Flutter Map.
-*   **Key Features:**
-    *   **Phone OTP Authentication:** Secure, frictionless login via Supabase Phone Auth.
-    *   **Interactive Onboarding:** Guides new users through the app's purpose and usage.
-    *   **Multi-Media Hazard Reporting:** Citizens submit GPS-tagged reports (High Waves, Tsunami, Storm, Flood) with up to 5 attachments — photos, videos, and audio recordings. Reports include urgency levels (Low/Medium/High) and a high-risk flag with estimated people at risk.
-    *   **Two-Phase Upload with Progress Timeline:** Report data is submitted first, then media is uploaded separately for graceful partial-failure recovery. A live upload timeline overlay shows each step (report insert, media upload 1/N, finalization) with timestamps and percentage.
-    *   **Offline-First Architecture:** Uses Hive to queue reports when offline. Auto-syncs when connectivity returns, with a visible pending-upload indicator and manual "Sync Now" button on the Profile screen.
-    *   **Android Background Sync (WorkManager):** A periodic background task (every 15 min) auto-syncs any queued offline reports even when the app is closed or killed, with exponential backoff on failure.
-    *   **Push Notifications (FCM):** Firebase Cloud Messaging delivers real-time push notifications to the phone for new advisories and report status changes — even when the app is in the background or terminated.
-    *   **In-App Realtime Notifications:** Supabase Realtime subscriptions trigger local notifications when a new advisory is published or the user's own report status changes (e.g., "Your Flood report is now VERIFIED").
-    *   **Report Feed (Community & Personal):** Citizens can view their own submitted reports and community reports from others nearby, filterable by time window (Now / This Week / This Month).
-    *   **Official Advisories Feed:** Receive and view broadcast advisories pushed by authorities, color-coded by severity (Info / Watch / Warning), with region, date, and contact details.
-    *   **Live Situational Map:** Interactive map displaying nearby hazard markers and advisory markers with marker clustering. Tapping a marker reveals a detail sheet with full description, media preview, location info, and a "Get Directions" link.
-    *   **Profile & Sync Dashboard:** View personal submission history, sync status (online/offline), pending upload count, and trigger manual sync.
-    *   **Multilingual Support (i18n):** English and Tamil.
-    *   **Privacy Controls:** Options to reduce location precision on public maps.
-    *   **Gamification System:** Citizens earn points for submitting reports (+10), attaching media (+5), getting verified (+25), and flagging high-risk situations (+40). 10 badge types awarded automatically via server-side triggers. Includes an Achievements screen (earned/locked badges, points history), a Leaderboard screen (podium for top 3, ranked list), and a profile stats card.
-    *   **Notifications Screen:** Combined feed of advisory broadcasts and report status changes (verified/rejected), accessible from the home header notification icon. Pull-to-refresh, sorted by recency.
-    *   **Offline Map Tiles:** Automatic caching of viewed map tiles for offline use via FMTC. Dedicated Offline Maps screen (Settings → Offline Maps) to bulk-download regions by radius (5/10/25 km) with progress tracking, manage and delete cached regions.
+## What Is Implemented
 
-### 2. Authority & Analyst Dashboard (`/admin_web`)
-A robust web-based command center designed for disaster management agencies and first responders to analyze incoming intelligence and coordinate responses.
-*   **Technologies:** React (TypeScript), Vite, Material UI (MUI), Leaflet.js.
-*   **Key Features:**
-    *   **Secure Admin Authentication:** Email/password login via Supabase Auth with strict admin-only role enforcement — non-admin users are rejected at login. Protected routes block unauthenticated access.
-    *   **Analytics Dashboard:** KPI cards showing Total Reports, Pending Review, High-Risk Alerts, Reports Today, Weekly Trend (%), Hotspot Clusters, False-Positive Rate, and Avg Verification Time. Breakdown charts by Hazard Type, Status, and Urgency Level.
-    *   **Report Management:** Paginated, searchable, filterable table of all incoming reports. Filters include hazard type, urgency, status, date range (day/week picker), high-risk flag, has-media flag, and landmark proximity. Supports real-time auto-refresh via Supabase subscriptions.
-    *   **Verification Workflow:** Detailed report dialog showing full description, all attached media (photo viewer, video player, audio player), GPS coordinates, user info (phone masked for privacy), and timestamp. Analysts set status: Pending → Verified → Rejected → Resolved.
-    *   **Suspicious Report Flagging:** Automated flags for rapid submissions (3+ in 5 min), high hourly volume (8+/hour), repeated identical descriptions, and high-risk reports without media evidence.
-    *   **AI-Generated Risk Zones:** Dedicated page for PostGIS DBSCAN-clustered hotspots. Each zone shows risk score, report count, verified count, radius, and last-seen timestamp. Analysts set zone status: Candidate → Verified → Suppressed → Locked (6-hour hold). One-click "Recompute Zones".
-    *   **Live Map:** Leaflet-based map with hazard markers, advisory markers, risk zone overlays (color-coded by level), and user-drawn monitoring zones. Multiple basemap layers (street, satellite). Layer toggles for risk zones, candidate zones, suppressed zones, and monitoring zones.
-    *   **Monitoring Zone Drawing:** Draw circle-based monitoring zones on the map with name, radius, and people count tracking. Zones are color-coded by population density (green → yellow → red → orange). Edit, resize, and delete zones with Supabase persistence.
-    *   **Landmark Management:** Create and manage critical infrastructure landmarks (hospitals, shelters) with a radius. Filter all reports by proximity to a landmark.
-    *   **Advisory Broadcasting:** Create and publish advisories with title, body, category (Food, Shelter, Medical, Rescue, Transport, Utilities, Evacuation), severity (Info/Watch/Warning), region, GPS, start/expiry dates, and emergency contact numbers. Pushed in real-time to the Citizen App.
-    *   **CSV Export:** Export filtered report data as CSV for institutional reporting.
+### Citizen Mobile App
 
-### 3. Unified Serverless Backend (`/supabase`)
-A single, highly scalable backend that serves both frontends, ensuring data consistency, real-time updates, and stringent security.
-*   **Technologies:** Supabase (PostgreSQL), PostGIS, Supabase Auth, Storage, Edge Functions.
-*   **Key Features:**
-    *   **Geospatial Mastery:** Heavily utilizes **PostGIS** for bounding-box queries, distance calculations, and DBSCAN clustering to generate risk zones directly in the database.
-    *   **Intelligent Caching:** Cached risk zone tables with automated refresh to prevent expensive recalculations on every map pan/zoom.
-    *   **Row Level Security (RLS):** Strict privacy controls ensure citizens can only access their own data, while analysts have restricted, role-based access for verifications.
-    *   **Real-time Subscriptions:** Websocket channels push new reports, advisory changes, and zone updates to both frontends instantly.
-    *   **Spam & Abuse Protection:** Database-level rate limiting (30-second minimum interval, hourly caps) and duplicate report deduplication logic.
-    *   **Gamification Engine:** `badge_definitions`, `citizen_points`, and `citizen_badges` tables with server-side triggers that auto-award points on report insert/verify/reject and check badge eligibility. RPCs for citizen stats, leaderboard, and badge queries.
+The Flutter app in `mobile_app/` is the citizen-facing client. The runtime entrypoint is `mobile_app/lib/main.dart`, and the first-run flow is:
 
----
+`Splash -> Onboarding -> Login -> OTP -> User details -> Home`
 
-## 🚀 Getting Started
+Implemented user-facing areas include:
 
-To get the platform running locally, you need to set up the shared Supabase backend first, then launch the respective frontends.
+- Phone OTP sign-in through Supabase Auth, with India-specific `+91` number handling.
+- A bottom-navigation home shell with Home, Map, Updates, and Profile, plus a center FAB for hazard reporting.
+- Hazard reporting with hazard type, description, GPS capture, urgency, high-risk flag, people-at-risk count, and up to 5 media attachments.
+- Media compression before upload, plus a 10 MB post-compression upload limit.
+- Offline report queueing with local persistence, retry/backoff, manual sync, foreground auto-sync, and Android WorkManager periodic sync.
+- Situational map views for verified reports, risk zones, monitoring zones, and localized advisories.
+- Advisory feed and detail views with filtering and localization.
+- Profile/settings screens for queued reports, sync controls, achievements, leaderboard, privacy controls, language, theme, offline maps, notification settings, and zone monitoring.
+- Gamification backed by points, badges, leaderboard, and achievement screens.
+- Offline map tile caching using `flutter_map_tile_caching`.
 
-### Step 1: Backend Setup (Supabase)
-Both applications rely on a standardized Supabase database schema.
-1. Create a [Supabase](https://supabase.com/) project.
-2. Navigate to the SQL Editor in your Supabase dashboard.
-3. Copy the contents of `combined_supabase_migrations.sql` found in the root of this repository.
-4. Execute the SQL script. This will generate all necessary tables (reports, geofences, users, advisories), functions (PostGIS clustering), and security policies.
-5. Note your **Project URL** and **Anon Key** from the project settings.
+Supported Flutter targets exist for Android, iOS, web, Windows, Linux, and macOS, but the codebase is practically mobile-first and especially Android-first. Shared app code imports `dart:io` directly, and Android-only logic gates WorkManager, FCM startup, and zone monitoring, so web and desktop should currently be treated as incomplete.
 
-### Step 2: Citizen App Setup (Flutter)
-1. Navigate to the mobile app directory:
-   ```bash
-   cd mobile_app
-   ```
-2. Install dependencies:
-   ```bash
-   flutter pub get
-   ```
-3. Configure environment variables (create a `.env` file):
-   ```env
-   SUPABASE_URL=your_project_url
-   SUPABASE_ANON_KEY=your_anon_key
-   ```
-4. Run the app:
-   ```bash
-   flutter run
-   ```
-   *(For detailed app-specific documentation, see `mobile_app/README.md`)*
+Localization coverage is broader than the previous README claimed. The app declares 10 supported locales:
 
-### Step 3: Admin Web Setup (React)
-1. Navigate to the web app directory:
-   ```bash
-   cd admin_web
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Configure environment variables (create a `.env.local` file):
-   ```env
-   VITE_SUPABASE_URL=your_project_url
-   VITE_SUPABASE_ANON_KEY=your_anon_key
-   VITE_GOOGLE_MAPS_API_KEY=your_optional_maps_key
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   *(For detailed web-specific documentation, see `admin_web/README.md`)*
+- `bn`
+- `en`
+- `gu`
+- `hi`
+- `kn`
+- `ml`
+- `mr`
+- `or`
+- `ta`
+- `te`
 
----
+### Admin Dashboard
 
-## 🤝 Contributing
+The admin dashboard in `admin_web/` is a React 19 + TypeScript + Vite + MUI SPA backed by Supabase.
 
-This platform is crucial for community safety during environmental events. Contributions to improve offline capabilities, enhance ML filtering, or optimize spatial queries are highly encouraged.
+Routes currently wired in `admin_web/src/App.tsx`:
 
-## 📄 License
+- `/` and `/login`: admin sign-in
+- `/dashboard`: KPI dashboard, recent reports, top citizens, quick verification
+- `/reports`: report queue, filtering, media review, status updates, audit history, CSV export, translation actions
+- `/map`: live Leaflet map, monitoring-zone CRUD, generated zone overlays, curated seed actions, live presence layers, map export
+- `/advisories`: create, edit, delete, translate, and publish official advisories
+- `/generated-zones`: recompute and moderate generated risk zones, plus monitoring-zone entry/exit activity
+- `/users`, `/users/create`, `/users/:id`, `/users/:id/edit`: user management
+- `/organizations`: organization management
+- `/verifications`, `/verifications/:caseId`: verification queue and case review
+- `/audit-logs`: audit workspace UI
+- `/api-reference`: hand-authored API/reference page
 
-[Insert License Details Here]
+Access is strictly admin-only. The dashboard uses Supabase email/password auth, but login succeeds only when the authenticated user also has `app_roles.role = 'admin'`.
+
+### Supabase Backend
+
+The backend is centered on Supabase Postgres with `postgis`, `pgcrypto`, and `uuid-ossp` enabled. The checked-in schema in `combined_supabase_migrations.sql` includes:
+
+- `app_roles` for admin role gating
+- `hazard_reports` for citizen reports
+- `official_advisories` and `official_advisory_translations`
+- `risk_zones`, `risk_zones_cached`, and `zone_settings`
+- `monitoring_zones`, `device_zone_presence`, and `zone_transition_events`
+- `push_tokens` and `notification_outbox`
+- `citizen_points`, `citizen_badges`, and `badge_definitions`
+- `report_status_audit`
+- live presence and exact-location access tables such as `device_location_heartbeats`, `live_location_sessions`, and `live_location_audit_logs`
+
+Backend behavior implemented in SQL includes:
+
+- RLS policies for citizen/admin access separation
+- `SECURITY DEFINER` helper functions such as `is_admin()` and permission checks
+- report creation with duplicate suppression and rate limiting through `create_hazard_report(...)`
+- viewport and detail RPCs such as `get_verified_reports_in_bounds`, `get_cached_risk_zones`, `get_user_reports_on_map`, and `get_verified_report_details`
+- database-side risk-zone generation and moderation support
+- push notification enqueueing on report status changes
+- report status audit logging
+- gamification triggers for points and badges
+- monitoring-zone occupancy and transition processing
+- anonymized and exact live-presence admin workflows
+
+The SQL bootstrap also attempts to create the `hazard-media` storage bucket and related storage policies.
+
+## Technology Stack
+
+### Mobile
+
+- Flutter / Dart (`sdk: ^3.10.4`)
+- Riverpod
+- Supabase Flutter
+- Hive
+- `flutter_map`
+- `flutter_map_tile_caching`
+- WorkManager
+- Firebase Messaging
+
+### Admin Web
+
+- React 19
+- TypeScript
+- Vite
+- Material UI
+- Leaflet
+- Supabase JS
+
+### Backend
+
+- Supabase Postgres
+- PostGIS
+- Supabase Auth
+- Supabase Storage
+- Supabase Realtime
+- Supabase Edge Functions
+
+## Repository Structure
+
+```text
+.
+|-- admin_web/
+|   |-- src/
+|   |-- map_export/
+|   |-- package.json
+|   `-- vercel.json
+|-- mobile_app/
+|   |-- lib/
+|   |-- supabase/functions/
+|   |-- android/
+|   |-- ios/
+|   |-- web/
+|   |-- windows/
+|   |-- linux/
+|   |-- macos/
+|   `-- pubspec.yaml
+|-- combined_supabase_migrations.sql
+|-- 030_admin_live_presence.sql
+|-- Export_API_Documentation.md
+|-- Feature_Status_Assessment.md
+|-- Guide.md
+|-- Requirements.md
+`-- Technology Stack.md
+```
+
+## Prerequisites
+
+You need the following before the full system can run locally:
+
+- A Supabase project with PostGIS available
+- Flutter SDK compatible with `mobile_app/pubspec.yaml`
+- `npm` for the admin dashboard
+- Firebase project files if you want Android FCM push notifications
+- A deployment workflow for Supabase Edge Functions
+
+Important repository note:
+
+- The repo does not include a checked-in `supabase/config.toml`, so if you want to deploy the functions with the Supabase CLI, initialize or link your local Supabase project first.
+
+## 1. Bootstrap Supabase
+
+### 1.1 Create the Supabase project
+
+Create a Supabase project and make sure the project supports PostGIS extensions.
+
+### 1.2 Run the schema bootstrap
+
+Use the SQL editor in Supabase and run the full contents of:
+
+- `combined_supabase_migrations.sql`
+
+Do not run `030_admin_live_presence.sql` afterward unless you intentionally want to reapply that migration manually. Its contents are already embedded in `combined_supabase_migrations.sql`.
+
+### 1.3 Create at least one admin user
+
+The admin dashboard rejects all non-admin users. After creating an auth user in Supabase Auth, insert a matching row into `public.app_roles`:
+
+```sql
+insert into public.app_roles (user_id, role)
+values ('<AUTH_USER_UUID>', 'admin')
+on conflict (user_id) do update set role = excluded.role;
+```
+
+Without this step, the admin dashboard login and admin-only Edge Functions will not work.
+
+### 1.4 Deploy the Edge Functions
+
+The repository contains these Supabase Edge Functions under `mobile_app/supabase/functions/`:
+
+- `process_zone_heartbeat`
+- `push_sender`
+- `translate_report_for_admin`
+- `process_pending_report_translations`
+- `translate_advisory_preview`
+- `publish_advisory_with_translations`
+- `admin_seed_curated_reports`
+- `admin_clear_curated_seed`
+
+Shared helper files in the same directory support admin-authenticated service-role access and translation logic.
+
+### 1.5 Configure required secrets
+
+At minimum, the checked-in functions expect some combination of:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FCM_SERVER_KEY`
+- `SARVAM_API_KEY` or `SARVAM_API_KEYS`
+- `SARVAM_BASE_URL` (optional)
+- `REPORT_TRANSLATION_WORKER_SECRET`
+
+Optional translation worker tuning variables referenced in the repo:
+
+- `REPORT_TRANSLATION_BATCH_SIZE`
+- `REPORT_TRANSLATION_MAX_BATCH_SIZE`
+- `REPORT_TRANSLATION_CONCURRENCY`
+- `REPORT_TRANSLATION_MAX_CONCURRENCY`
+
+Operational notes:
+
+- `push_sender` is intended to run on a recurring cadence and still uses the legacy FCM HTTP API.
+- translation workers use Sarvam-based translation helpers.
+
+## 2. Configure and Run the Citizen App
+
+### 2.1 Install dependencies
+
+```bash
+cd mobile_app
+flutter pub get
+```
+
+### 2.2 Configure Supabase
+
+The Flutter app is not currently `.env`-driven. Update the hardcoded values in:
+
+- `mobile_app/lib/core/supabase_config.dart`
+
+Replace the checked-in URL and anon key with your own Supabase project values.
+
+### 2.3 Optional but usually required Android push setup
+
+If you want Android FCM push notifications:
+
+- add `mobile_app/android/app/google-services.json`
+- add the corresponding iOS Firebase files if you plan to support iOS
+- make sure your Firebase project matches the app you are building
+
+This repository does not include `google-services.json`, `GoogleService-Info.plist`, or `firebase_options.dart`.
+
+### 2.4 Run the app
+
+```bash
+flutter run
+```
+
+### Mobile-specific notes
+
+- OTP login is hardcoded around India-format phone numbers and prepends `+91`.
+- Android background sync, FCM bootstrap, and zone monitoring are guarded by `Platform.isAndroid`.
+- Web and desktop targets exist in the Flutter scaffold, but the shared codebase currently imports `dart:io`, so those targets are not documented here as production-ready.
+- The checked-in Android package identifier is still `com.example.civil_alert_system`.
+
+## 3. Configure and Run the Admin Dashboard
+
+### 3.1 Install dependencies
+
+```bash
+cd admin_web
+npm install
+```
+
+### 3.2 Create the local env file
+
+Create `admin_web/.env.local` with at least:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+Accepted fallback names are also present in the codebase, but `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are the primary documented variables.
+
+Optional:
+
+```env
+VITE_GOOGLE_MAPS_API_KEY=your-google-maps-key
+```
+
+Note that `VITE_GOOGLE_MAPS_API_KEY` is only consumed by `GoogleMapDashboard`, which is not currently routed from `admin_web/src/App.tsx`.
+
+### 3.3 Start the dev server
+
+```bash
+npm run dev
+```
+
+Other useful scripts:
+
+```bash
+npm run build
+npm run lint
+npm run preview
+```
+
+### Admin-specific notes
+
+- Login uses Supabase email/password auth.
+- A valid auth account is not enough on its own; the user must also exist in `public.app_roles` with `role = 'admin'`.
+- The Vercel config in `admin_web/vercel.json` is set up for SPA route rewrites.
+
+## Edge Function Responsibilities
+
+| Function | Purpose |
+| --- | --- |
+| `process_zone_heartbeat` | Accepts device heartbeats, processes monitoring-zone presence, and queues localized zone notifications |
+| `push_sender` | Drains `notification_outbox` and sends FCM messages |
+| `translate_report_for_admin` | Translates a single report description for admin review |
+| `process_pending_report_translations` | Batch worker for queued report translations |
+| `translate_advisory_preview` | Generates multilingual advisory preview translations for admins |
+| `publish_advisory_with_translations` | Publishes or updates advisories with reviewed translations |
+| `admin_seed_curated_reports` | Creates demo seed users, media, and curated reports |
+| `admin_clear_curated_seed` | Removes curated seed data |
+
+## Key Database and RPC Surface
+
+Important checked-in backend entry points include:
+
+- `create_hazard_report(...)`
+- `get_verified_reports_in_bounds(...)`
+- `get_cached_risk_zones(...)`
+- `calculate_risk_zones_on_demand(...)`
+- `get_user_reports_on_map(...)`
+- `get_verified_report_details(...)`
+- `admin_get_monitoring_zones()`
+- `admin_get_zone_transition_events(...)`
+- `process_zone_heartbeat_state(...)`
+- `admin_get_live_presence_anonymized(...)`
+- `admin_start_live_location_session(...)`
+- `admin_stop_live_location_session(...)`
+- `admin_get_live_exact_pins(...)`
+
+The admin dashboard and mobile app also call additional RPCs for advisory localization and publishing workflows. See the caveats section below for current repository mismatches.
+
+## Related Documents
+
+- `Guide.md`
+- `Feature_Status_Assessment.md`
+- `admin_web/map_export/README.md`
+
+## Known Gaps, Caveats, and Repository Mismatches
+
+These are important if you are trying to run or extend the project.
+
+### Configuration and platform caveats
+
+- The Flutter app does not read Supabase credentials from environment variables; it uses hardcoded constants in `mobile_app/lib/core/supabase_config.dart`.
+- Firebase project files are not included in the repo.
+- Android package metadata is still placeholder-level: `com.example.civil_alert_system`.
+- Offline maps currently use a hardcoded Bangalore fallback center in the checked-in implementation.
+- There is no `mobile_app/README.md` even though the previous root README referenced one.
+
+### SQL and RPC mismatch caveats
+
+- The mobile app calls `get_official_advisories_localized`, `get_official_advisory_localized`, and `get_reports_near_location`, but those function definitions are not present in the checked-in SQL files in this repository.
+- `publish_advisory_with_translations` calls `admin_publish_official_advisory_with_translations`, but that RPC is also not present in the checked-in SQL files.
+- In other words: the mobile app and advisory publish flow currently assume backend objects that are not fully represented by the repository's checked-in SQL bootstrap alone.
+
+### UI and testing caveats
+
+- `admin_web/src/pages/AuditLogs.tsx` currently uses mock data rather than a live backend integration.
+- The admin login screen includes demo autofill credentials in the UI, but real login still depends on a real Supabase admin account.
+- Meaningful automated test coverage is largely absent:
+  - the Flutter app only includes the default counter smoke test in `mobile_app/test/widget_test.dart`
+  - no admin web test/spec files are checked in
+
+### Licensing
+
+- No root `LICENSE` file is present in the repository.
+
+## Current Recommendation
+
+If you are onboarding this project locally, follow this order:
+
+1. Bootstrap Supabase with `combined_supabase_migrations.sql`.
+2. Create an auth user and grant `app_roles.role = 'admin'`.
+3. Decide whether you need the missing advisory/localization RPCs and add them before relying on the full mobile advisory flow.
+4. Deploy the Edge Functions and configure secrets.
+5. Replace the hardcoded Flutter Supabase credentials.
+6. Add Firebase config files if you need Android push notifications.
+7. Run `mobile_app` and `admin_web` separately.
+
+That order matches the actual dependencies in the checked-in code and avoids the biggest setup dead ends.
