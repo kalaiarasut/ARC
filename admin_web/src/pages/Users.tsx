@@ -77,6 +77,12 @@ export const Users: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
   const [orgFilter, setOrgFilter] = useState('all');
+  const [stats, setStats] = useState({
+    total: 0,
+    pendingVerification: 0,
+    active: 0,
+    restricted: 0,
+  });
 
   const [snack, setSnack] = useState<{ open: boolean; text: string; severity: 'success' | 'error' }>({
     open: false,
@@ -124,6 +130,15 @@ export const Users: React.FC = () => {
     }
   }, [orgFilter, page, roleFilter, search, statusFilter, tierFilter]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const result = await userManagementService.getStats();
+      setStats(result);
+    } catch {
+      setStats({ total: 0, pendingVerification: 0, active: 0, restricted: 0 });
+    }
+  }, []);
+
   useEffect(() => {
     void loadOrganizations();
   }, [loadOrganizations]);
@@ -131,6 +146,10 @@ export const Users: React.FC = () => {
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
 
   const openStatusDialog = (user: AdminUserProfile, targetStatus: UserStatus) => {
     setStatusDialog({
@@ -167,7 +186,7 @@ export const Users: React.FC = () => {
         severity: 'success',
       });
       closeStatusDialog();
-      await loadUsers();
+      await Promise.all([loadUsers(), loadStats()]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update user status';
       setSnack({ open: true, text: message, severity: 'error' });
@@ -208,16 +227,26 @@ export const Users: React.FC = () => {
     () => [
       { name: 'status', label: 'Status', options: statusOptions, defaultValue: 'all' },
       { name: 'role', label: 'Role', options: roleOptions, defaultValue: 'all' },
-      { name: 'tier', label: 'Tier', options: tierOptions, defaultValue: 'all' },
+      { name: 'tier', label: 'Tier', options: tierOptions, defaultValue: 'all', isSecondary: true },
       {
         name: 'organization',
         label: 'Organization',
         options: organizations.map((org) => ({ value: org.id, label: org.short_name })),
         defaultValue: 'all',
+        isSecondary: true,
       },
     ],
     [organizations]
   );
+
+  const clearFilters = () => {
+    setSearch('');
+    setPage(0);
+    setStatusFilter('all');
+    setRoleFilter('all');
+    setTierFilter('all');
+    setOrgFilter('all');
+  };
 
   const columns: TableColumn<AdminUserProfile>[] = useMemo(
     () => [
@@ -365,7 +394,21 @@ export const Users: React.FC = () => {
         </Box>
       </Box>
 
-      <FilterBar
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2, mb: 1 }}>
+          {[
+            { label: 'Total Users', count: stats.total.toString(), color: '#3b82f6' },
+            { label: 'Pending Verification', count: stats.pendingVerification.toString(), color: '#eab308' },
+            { label: 'Active Users', count: stats.active.toString(), color: '#22c55e' },
+            { label: 'Suspended / Restricted', count: stats.restricted.toString(), color: '#ef4444' }
+          ].map(stat => (
+            <Box key={stat.label} sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1e293b' : '#fff' }}>
+              <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
+              <Typography variant="h5" fontWeight="700" sx={{ color: stat.color, mt: 1 }}>{stat.count}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        <FilterBar
         searchPlaceholder="Search by name, email, phone, state, or designation..."
         searchValue={search}
         onSearchChange={(value) => {
@@ -386,6 +429,7 @@ export const Users: React.FC = () => {
           if (name === 'tier') setTierFilter(value);
           if (name === 'organization') setOrgFilter(value);
         }}
+        onClearFilters={clearFilters}
       />
 
       <EntityTable<AdminUserProfile>

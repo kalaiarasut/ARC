@@ -21,6 +21,7 @@ import 'profile_module_screen.dart';
 import 'privacy_controls_screen.dart';
 import 'achievements_screen.dart';
 import 'offline_maps_screen.dart';
+import 'donation_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -286,6 +287,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _tile(Icons.privacy_tip_outlined,
                     context.l10n.privacyControls, accent,
                     () => _push(const PrivacyControlsScreen())),
+                const Divider(height: 1),
+                _tile(Icons.favorite_outline,
+                    'Support Us / Donate', accent,
+                    () => _push(const DonationAmountScreen())),
               ],
             ),
           ),

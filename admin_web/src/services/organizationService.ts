@@ -67,6 +67,18 @@ export const organizationService = {
       dbQuery = dbQuery.ilike('state', `%${query.state.trim()}%`);
     }
 
+    if (query.district && query.district.trim()) {
+      dbQuery = dbQuery.ilike('district', `%${query.district.trim()}%`);
+    }
+
+    if (query.registrationCode && query.registrationCode.trim()) {
+      dbQuery = dbQuery.ilike('registration_code', `%${query.registrationCode.trim()}%`);
+    }
+
+    if (query.domain && query.domain.trim()) {
+      dbQuery = dbQuery.ilike('domain', `%${query.domain.trim().toLowerCase()}%`);
+    }
+
     if (query.search && query.search.trim()) {
       const term = query.search.trim();
       dbQuery = dbQuery.or(

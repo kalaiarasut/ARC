@@ -61,6 +61,10 @@ export const Organizations: React.FC = () => {
   const [search, setSearch] = useState('');
   const [tabValue, setTabValue] = useState<OrganizationStatus>('approved');
   const [orgTypeFilter, setOrgTypeFilter] = useState('all');
+  const [stateFilter, setStateFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
+  const [registrationCodeFilter, setRegistrationCodeFilter] = useState('');
+  const [domainFilter, setDomainFilter] = useState('');
   const [stats, setStats] = useState({ total: 0, pendingApproval: 0, activeNgo: 0 });
 
   const [snack, setSnack] = useState<{ open: boolean; text: string; severity: 'success' | 'error' }>({
@@ -103,6 +107,10 @@ export const Organizations: React.FC = () => {
         pageSize: PAGE_SIZE,
         status: tabValue,
         orgType: orgTypeFilter === 'all' ? 'all' : (orgTypeFilter as 'government' | 'ngo'),
+        state: stateFilter || undefined,
+        district: districtFilter || undefined,
+        registrationCode: registrationCodeFilter || undefined,
+        domain: domainFilter || undefined,
         search,
       });
       setOrganizations(result.data);
@@ -113,7 +121,17 @@ export const Organizations: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [orgTypeFilter, page, search, tabValue]);
+  }, [districtFilter, domainFilter, orgTypeFilter, page, registrationCodeFilter, search, stateFilter, tabValue]);
+
+  const clearFilters = () => {
+    setPage(0);
+    setSearch('');
+    setOrgTypeFilter('all');
+    setStateFilter('');
+    setDistrictFilter('');
+    setRegistrationCodeFilter('');
+    setDomainFilter('');
+  };
 
   useEffect(() => {
     void loadStats();
@@ -358,20 +376,48 @@ export const Organizations: React.FC = () => {
           {
             name: 'orgType',
             label: 'Type',
+            type: 'select',
             options: [
               { value: 'government', label: 'Government' },
               { value: 'ngo', label: 'NGO' },
             ],
             defaultValue: 'all',
           },
+          { name: 'state', label: 'State', type: 'text', isSecondary: true },
+          { name: 'district', label: 'District', type: 'text', isSecondary: true },
+          { name: 'registration_code', label: 'Registration Code', type: 'text', isSecondary: true },
+          { name: 'domain', label: 'Domain', type: 'text', isSecondary: true },
         ]}
-        filterValues={{ orgType: orgTypeFilter }}
+        filterValues={{
+          orgType: orgTypeFilter,
+          state: stateFilter,
+          district: districtFilter,
+          registration_code: registrationCodeFilter,
+          domain: domainFilter,
+        }}
         onFilterChange={(name, value) => {
           if (name === 'orgType') {
             setOrgTypeFilter(value);
             setPage(0);
           }
+          if (name === 'state') {
+            setStateFilter(value);
+            setPage(0);
+          }
+          if (name === 'district') {
+            setDistrictFilter(value);
+            setPage(0);
+          }
+          if (name === 'registration_code') {
+            setRegistrationCodeFilter(value);
+            setPage(0);
+          }
+          if (name === 'domain') {
+            setDomainFilter(value);
+            setPage(0);
+          }
         }}
+        onClearFilters={clearFilters}
       />
 
       <EntityTable<Organization>

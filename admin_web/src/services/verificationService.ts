@@ -1,8 +1,10 @@
 import { supabase } from '../config/supabase';
 import { isSupabaseConfigured } from '../core/supabase_config';
 import type {
+  AuditEvent,
   PaginatedResponse,
   VerificationCase,
+  VerificationCaseDetail,
   VerificationDocument,
   VerificationListQuery,
   VerificationStatusUpdateInput,
@@ -66,7 +68,18 @@ export const verificationService = {
     }
 
     if (query.assignedAdminId && query.assignedAdminId !== 'all') {
-      dbQuery = dbQuery.eq('assigned_admin_id', query.assignedAdminId);
+      if (query.assignedAdminId === 'unassigned') {
+        dbQuery = dbQuery.is('assigned_admin_id', null);
+      } else {
+        dbQuery = dbQuery.eq('assigned_admin_id', query.assignedAdminId);
+      }
+    }
+
+    if (query.dateRange && query.dateRange !== 'all') {
+      const now = new Date();
+      const days = query.dateRange === 'last_7_days' ? 7 : 30;
+      const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+      dbQuery = dbQuery.gte('submitted_at', cutoff);
     }
 
     if (query.search && query.search.trim()) {
@@ -115,6 +128,70 @@ export const verificationService = {
       .select('*')
       .eq('case_id', caseId)
       .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  },
+
+  async getVerificationCaseById(caseId: string): Promise<VerificationCaseDetail | null> {
+    if (!isSupabaseConfigured() || !caseId) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('verification_cases')
+      .select(
+        `
+          *,
+          user:admin_user_profiles!verification_cases_user_id_fkey(
+            user_id,
+            full_name,
+            email,
+            avatar_url,
+            status,
+            verification_tier,
+            user_type,
+            state,
+            district,
+            organization:organizations(
+              id,
+              name,
+              short_name,
+              org_type,
+              status
+            )
+          ),
+          assigned_admin:admin_user_profiles!verification_cases_assigned_admin_id_fkey(
+            user_id,
+            full_name,
+            email
+          )
+        `
+      )
+      .eq('id', caseId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
+  async getVerificationAudit(caseId: string): Promise<AuditEvent[]> {
+    if (!isSupabaseConfigured() || !caseId) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('verification_audit')
+      .select('*')
+      .eq('verification_case_id', caseId)
+      .order('changed_at', { ascending: false })
+      .limit(50);
 
     if (error) {
       throw error;

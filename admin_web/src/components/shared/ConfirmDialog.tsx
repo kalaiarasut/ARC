@@ -21,6 +21,11 @@ export interface ConfirmDialogProps {
   reasonPlaceholder?: string;
   reasonValue?: string;
   onReasonChange?: (value: string) => void;
+  requireInternalNotes?: boolean;
+  internalNotesLabel?: string;
+  internalNotesPlaceholder?: string;
+  internalNotesValue?: string;
+  onInternalNotesChange?: (value: string) => void;
   expectedMatch?: string;
   matchLabel?: string;
   submitting?: boolean;
@@ -40,6 +45,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   reasonPlaceholder = 'Enter reason',
   reasonValue = '',
   onReasonChange,
+  requireInternalNotes = false,
+  internalNotesLabel = 'Internal Notes',
+  internalNotesPlaceholder = 'Optional internal notes',
+  internalNotesValue = '',
+  onInternalNotesChange,
   expectedMatch,
   matchLabel = 'Type to confirm',
   submitting = false,
@@ -87,8 +97,20 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             value={reasonValue}
             onChange={(e) => onReasonChange?.(e.target.value)}
             multiline
-            minRows={2}
+            minRows={2}            sx={{ mb: requireInternalNotes ? 2 : 0 }}
           />
+        )}
+
+        {requireInternalNotes && (
+          <TextField
+            fullWidth
+            size="small"
+            label={internalNotesLabel}
+            placeholder={internalNotesPlaceholder}
+            value={internalNotesValue}
+            onChange={(e) => onInternalNotesChange?.(e.target.value)}
+            multiline
+            minRows={2}          />
         )}
       </DialogContent>
       <DialogActions>

@@ -5,9 +5,12 @@ import {
   Alert,
   Typography,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useThemeContext } from '../contexts/ThemeContext';
+import { userManagementService } from '../services/userManagementService';
 import { verificationService } from '../services/verificationService';
 import type {
+  AdminUserProfile,
   VerificationCase,
   VerificationCheckType,
   VerificationStatus,
@@ -37,15 +40,26 @@ interface DecisionDialogState {
 export const Verifications: React.FC = () => {
   const { mode } = useThemeContext();
   const isDark = mode === 'dark';
+  const navigate = useNavigate();
 
   const [cases, setCases] = useState<VerificationCase[]>([]);
+  const [admins, setAdmins] = useState<AdminUserProfile[]>([]);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    newSubmission: 0,
+    awaitingRework: 0,
+    escalated: 0,
+    approved: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [checkTypeTab, setCheckTypeTab] = useState<VerificationCheckType>('identity');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dateRangeFilter, setDateRangeFilter] = useState('all');
 
   const [snack, setSnack] = useState<{ open: boolean; text: string; severity: 'success' | 'error' }>({
     open: false,
@@ -72,6 +86,8 @@ export const Verifications: React.FC = () => {
         search,
         checkType: checkTypeTab,
         status: statusFilter === 'all' ? 'all' : (statusFilter as VerificationStatus),
+        assignedAdminId: assigneeFilter,
+        dateRange: dateRangeFilter as 'all' | 'last_7_days' | 'last_30_days',
       });
       setCases(result.data);
       setTotal(result.total);
@@ -81,11 +97,43 @@ export const Verifications: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [checkTypeTab, page, search, statusFilter]);
+  }, [assigneeFilter, checkTypeTab, dateRangeFilter, page, search, statusFilter]);
+
+  const loadMeta = useCallback(async () => {
+    try {
+      const [statsResult, adminResult] = await Promise.all([
+        verificationService.getStats(),
+        userManagementService.getUsers({ page: 0, pageSize: 200, userType: 'system_admin' }),
+      ]);
+      setStats(statsResult);
+      setAdmins(adminResult.data);
+    } catch {
+      setStats({
+        total: 0,
+        newSubmission: 0,
+        awaitingRework: 0,
+        escalated: 0,
+        approved: 0,
+      });
+      setAdmins([]);
+    }
+  }, []);
 
   useEffect(() => {
     void loadCases();
   }, [loadCases]);
+
+  useEffect(() => {
+    void loadMeta();
+  }, [loadMeta]);
+
+  const clearFilters = () => {
+    setPage(0);
+    setSearch('');
+    setStatusFilter('all');
+    setAssigneeFilter('all');
+    setDateRangeFilter('all');
+  };
 
   const openDecisionDialog = (targetCase: VerificationCase, targetStatus: VerificationStatus) => {
     setDecisionDialog({
@@ -125,7 +173,7 @@ export const Verifications: React.FC = () => {
         severity: 'success',
       });
       closeDecisionDialog();
-      await loadCases();
+      await Promise.all([loadCases(), loadMeta()]);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update verification decision';
       setSnack({ open: true, text: message, severity: 'error' });
@@ -192,10 +240,14 @@ export const Verifications: React.FC = () => {
         renderCell: (item) => {
           const menuItems = [
             {
+              label: 'Open Review',
+              onClick: () => navigate(`/verifications/${item.id}`),
+            },
+            {
               label: 'Move to In Review',
               color: 'info' as const,
               onClick: () => openDecisionDialog(item, 'in_review'),
-              disabled: item.status === 'in_review',
+              disabled: item.status === 'in_review' || item.status === 'approved' || item.status === 'rejected',
             },
             {
               label: 'Approve Application',
@@ -207,23 +259,26 @@ export const Verifications: React.FC = () => {
               label: 'Request Rework',
               color: 'warning' as const,
               onClick: () => openDecisionDialog(item, 'awaiting_rework'),
+              disabled: item.status === 'awaiting_rework',
             },
             {
               label: 'Reject Application',
               color: 'error' as const,
               onClick: () => openDecisionDialog(item, 'rejected'),
+              disabled: item.status === 'rejected',
             },
             {
               label: 'Escalate Case',
               color: 'error' as const,
               onClick: () => openDecisionDialog(item, 'escalated'),
+              disabled: item.status === 'escalated',
             },
           ];
           return <ActionMenu id={item.id} items={menuItems} />;
         },
       },
     ],
-    [isDark]
+    [isDark, navigate]
   );
 
   return (
@@ -237,6 +292,20 @@ export const Verifications: React.FC = () => {
             Review, approve, rework, reject, and escalate identity and compliance checks.
           </Typography>
         </Box>
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+        {[
+          { label: 'Total Cases', count: stats.total.toString(), color: '#3b82f6' },
+          { label: 'New Submission', count: stats.newSubmission.toString(), color: '#eab308' },
+          { label: 'Awaiting Rework', count: stats.awaitingRework.toString(), color: '#f97316' },
+          { label: 'Escalated', count: stats.escalated.toString(), color: '#ef4444' }
+        ].map(stat => (
+          <Box key={stat.label} sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1e293b' : '#fff' }}>
+            <Typography variant="caption" sx={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600 }}>{stat.label}</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: stat.color, mt: 0.5, fontSize: '1.35rem' }}>{stat.count}</Typography>
+          </Box>
+        ))}
       </Box>
 
       <FilterBar
@@ -271,14 +340,47 @@ export const Verifications: React.FC = () => {
             ],
             defaultValue: 'all',
           },
+          {
+            name: 'assignee',
+            label: 'Assignee',
+            type: 'select',
+            options: [
+              { value: 'all', label: 'Any Assignee' },
+              { value: 'unassigned', label: 'Unassigned' },
+              ...admins.map((admin) => ({ value: admin.user_id, label: admin.full_name })),
+            ],
+            defaultValue: 'all',
+            isSecondary: true,
+          },
+          {
+            name: 'dateRange',
+            label: 'Date Range',
+            type: 'select',
+            options: [
+              { value: 'all', label: 'All Time' },
+              { value: 'last_7_days', label: 'Last 7 Days' },
+              { value: 'last_30_days', label: 'Last 30 Days' },
+            ],
+            defaultValue: 'all',
+            isSecondary: true,
+          },
         ]}
-        filterValues={{ status: statusFilter }}
+        filterValues={{ status: statusFilter, assignee: assigneeFilter, dateRange: dateRangeFilter }}
         onFilterChange={(name, value) => {
           if (name === 'status') {
             setStatusFilter(value);
             setPage(0);
           }
+          if (name === 'assignee') {
+            setAssigneeFilter(value);
+            setPage(0);
+          }
+          if (name === 'dateRange') {
+            setDateRangeFilter(value);
+            setPage(0);
+          }
         }}
+        onClearFilters={clearFilters}
       />
 
       <EntityTable<VerificationCase>

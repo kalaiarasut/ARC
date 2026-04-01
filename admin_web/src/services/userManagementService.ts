@@ -26,6 +26,13 @@ const normalizeMaybeString = (value?: string | null): string | null => {
   return trimmed.length ? trimmed : null;
 };
 
+export interface UserStats {
+  total: number;
+  pendingVerification: number;
+  active: number;
+  restricted: number;
+}
+
 export const userManagementService = {
   async getUsers(query: UserListQuery = {}): Promise<PaginatedResponse<AdminUserProfile>> {
     if (!isSupabaseConfigured()) {
@@ -225,5 +232,42 @@ export const userManagementService = {
     }
 
     return data ?? [];
+  },
+
+  async getStats(): Promise<UserStats> {
+    if (!isSupabaseConfigured()) {
+      return { total: 0, pendingVerification: 0, active: 0, restricted: 0 };
+    }
+
+    const countByStatus = async (status: string) => {
+      const { count, error } = await supabase
+        .from('admin_user_profiles')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('status', status);
+
+      if (error) throw error;
+      return count ?? 0;
+    };
+
+    const [{ count: totalCount, error: totalErr }, pendingVerification, active, suspended, deactivated, terminated] =
+      await Promise.all([
+        supabase.from('admin_user_profiles').select('user_id', { count: 'exact', head: true }),
+        countByStatus('pending_verification'),
+        countByStatus('active'),
+        countByStatus('suspended'),
+        countByStatus('deactivated'),
+        countByStatus('terminated'),
+      ]);
+
+    if (totalErr) {
+      throw totalErr;
+    }
+
+    return {
+      total: totalCount ?? 0,
+      pendingVerification,
+      active,
+      restricted: suspended + deactivated + terminated,
+    };
   },
 };

@@ -13,6 +13,7 @@ import { UserDetails } from './pages/UserDetails';
 import { UserForm } from './pages/UserForm';
 import { Organizations } from './pages/Organizations';
 import { Verifications } from './pages/Verifications';
+import VerificationCaseReview from './pages/VerificationCaseReview';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CustomThemeProvider } from './contexts/ThemeContext';
@@ -81,6 +82,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><Verifications /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/verifications/:caseId"
+            element={
+              <ProtectedRoute>
+                <Layout><VerificationCaseReview /></Layout>
               </ProtectedRoute>
             }
           />

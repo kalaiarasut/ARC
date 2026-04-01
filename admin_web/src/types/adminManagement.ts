@@ -68,6 +68,23 @@ export interface VerificationCase {
   assigned_admin?: Pick<AdminUserProfile, 'user_id' | 'full_name' | 'email'> | null;
 }
 
+export interface VerificationCaseDetail extends VerificationCase {
+  user?: (Pick<
+    AdminUserProfile,
+    | 'user_id'
+    | 'full_name'
+    | 'email'
+    | 'avatar_url'
+    | 'status'
+    | 'verification_tier'
+    | 'user_type'
+    | 'state'
+    | 'district'
+  > & {
+    organization?: Pick<Organization, 'id' | 'name' | 'short_name' | 'org_type' | 'status'> | null;
+  }) | null;
+}
+
 export interface VerificationDocument {
   id: string;
   case_id: string;
@@ -108,12 +125,16 @@ export interface UserListQuery extends ListQuery {
 export interface OrganizationListQuery extends ListQuery {
   status?: OrganizationStatus | 'all';
   orgType?: OrganizationType | 'all';
+  district?: string;
+  registrationCode?: string;
+  domain?: string;
 }
 
 export interface VerificationListQuery extends ListQuery {
   status?: VerificationStatus | 'all';
   checkType?: VerificationCheckType | 'all';
   assignedAdminId?: string | 'all';
+  dateRange?: 'all' | 'last_7_days' | 'last_30_days';
 }
 
 export interface UpsertUserInput {
