@@ -1,6 +1,7 @@
 /// <reference path="../types.d.ts" />
 
 import {
+  createServiceRoleSupabaseClient,
   handleCors,
   jsonResponse,
   requireAuthenticatedUser,
@@ -217,6 +218,7 @@ Deno.serve(async (request: Request) => {
 
   const auth = await requireAuthenticatedUser(request);
   if (auth instanceof Response) return auth;
+  const serviceSupabase = createServiceRoleSupabaseClient();
 
   const payload = parsePayload(await request.json().catch(() => null));
   const deviceId = String(payload?.device_id ?? "").trim();
@@ -234,7 +236,7 @@ Deno.serve(async (request: Request) => {
     return jsonResponse({ error: "latitude and longitude are required" }, 400);
   }
 
-  const { data: zones, error: zonesError } = await auth.supabase
+  const { data: zones, error: zonesError } = await serviceSupabase
     .from("monitoring_zones")
     .select("id,name,shape,center_lat,center_lng,radius_meters,polygon_points");
 
@@ -268,7 +270,7 @@ Deno.serve(async (request: Request) => {
 
   const heartbeatTimestamp = observedAt || new Date().toISOString();
 
-  await auth.supabase
+  await serviceSupabase
     .from("push_tokens")
     .update({
       zone_monitoring_opt_in: zoneMonitoringOptIn,
@@ -279,7 +281,7 @@ Deno.serve(async (request: Request) => {
     .eq("device_id", deviceId);
 
   if (zoneMonitoringOptIn) {
-    const { error: heartbeatError } = await auth.supabase
+    const { error: heartbeatError } = await serviceSupabase
       .from("device_location_heartbeats")
       .insert({
         device_id: deviceId,
@@ -304,7 +306,7 @@ Deno.serve(async (request: Request) => {
     });
   }
 
-  const { data: pushToken, error: pushTokenError } = await auth.supabase
+  const { data: pushToken, error: pushTokenError } = await serviceSupabase
     .from("push_tokens")
     .select("id,language_code")
     .eq("user_id", auth.user.id)
@@ -320,7 +322,7 @@ Deno.serve(async (request: Request) => {
 
   for (const transition of transitionRows) {
     if (!activePushToken) {
-      await auth.supabase
+      await serviceSupabase
         .from("zone_transition_events")
         .update({ delivery_status: "skipped" })
         .eq("id", transition.event_id);
@@ -330,7 +332,7 @@ Deno.serve(async (request: Request) => {
     const languageCode = normalizeLanguageCode(activePushToken.language_code);
     const localized = transitionCopy[languageCode][transition.event_type] ?? transitionCopy.en[transition.event_type];
 
-    const { data: outboxRows, error: outboxError } = await auth.supabase
+    const { data: outboxRows, error: outboxError } = await serviceSupabase
       .from("notification_outbox")
       .insert({
         push_token_id: activePushToken.id,
@@ -352,7 +354,7 @@ Deno.serve(async (request: Request) => {
       .select("id");
 
     if (outboxError) {
-      await auth.supabase
+      await serviceSupabase
         .from("zone_transition_events")
         .update({ delivery_status: "failed" })
         .eq("id", transition.event_id);
@@ -363,7 +365,7 @@ Deno.serve(async (request: Request) => {
       ? String(outboxRows[0].id)
       : null;
 
-    await auth.supabase
+    await serviceSupabase
       .from("zone_transition_events")
       .update({
         delivery_status: outboxId ? "queued" : "failed",

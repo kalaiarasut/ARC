@@ -36,15 +36,17 @@ class _OtpScreenState extends State<OtpScreen> {
     final defaultPinTheme = PinTheme(
       width: 50,
       height: 50,
-      textStyle: const TextStyle(
+      textStyle: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1E1E1E),
+        color:
+            Theme.of(context).textTheme.bodyLarge?.color ??
+            const Color(0xFF1E1E1E),
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(50), // Circular inputs
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -56,11 +58,16 @@ class _OtpScreenState extends State<OtpScreen> {
     );
 
     final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      border: Border.all(color: AppColors.primaryBlue, width: 2), // Sea Blue focus
+      border: Border.all(
+        color: AppColors.primaryBlue,
+        width: 2,
+      ), // Sea Blue focus
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E), // Dark background to simulate overlay
+      backgroundColor: Colors.black.withOpacity(
+        0.8,
+      ), // Dark background to simulate overlay
       body: Stack(
         children: [
           // Back Button at top
@@ -70,12 +77,16 @@ class _OtpScreenState extends State<OtpScreen> {
             child: CircleAvatar(
               backgroundColor: Theme.of(context).cardColor.withOpacity(0.2),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
-          
+
           // Bottom Drawer Content
           Align(
             alignment: Alignment.bottomCenter,
@@ -96,7 +107,9 @@ class _OtpScreenState extends State<OtpScreen> {
                     // Icon
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.secondaryCyan.withOpacity(0.1), // Light Cyan bg
+                        color: AppColors.secondaryCyan.withOpacity(
+                          0.1,
+                        ), // Light Cyan bg
                         borderRadius: BorderRadius.circular(16),
                       ),
                       padding: const EdgeInsets.all(16),
@@ -107,26 +120,32 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     Text(
                       context.l10n.enterOtp,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E1E1E),
+                        color:
+                            Theme.of(context).textTheme.bodyLarge?.color ??
+                            const Color(0xFF1E1E1E),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       context.l10n.sentToNumber(widget.mobileNumber),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF8E8E93),
+                        color:
+                            Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+                            const Color(0xFF8E8E93),
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     Pinput(
                       length: 6,
                       controller: _otpController,
@@ -138,9 +157,9 @@ class _OtpScreenState extends State<OtpScreen> {
                         // Optional: Auto submit
                       },
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     SizedBox(
                       width: double.infinity,
                       child: PrimaryButton(
@@ -149,10 +168,14 @@ class _OtpScreenState extends State<OtpScreen> {
                         onPressed: () async {
                           if (_isSubmitting) return;
                           final otp = _otpController.text.trim();
-                          
+
                           if (otp.length != 6) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(context.l10n.pleaseEnter6DigitOtp)),
+                              SnackBar(
+                                content: Text(
+                                  context.l10n.pleaseEnter6DigitOtp,
+                                ),
+                              ),
                             );
                             return;
                           }
@@ -165,18 +188,26 @@ class _OtpScreenState extends State<OtpScreen> {
                               otp: otp,
                             );
 
-                            if (response.session == null || response.user == null) {
-                              throw const AuthException('OTP verified but no session was created.');
+                            if (response.session == null ||
+                                response.user == null) {
+                              throw const AuthException(
+                                'OTP verified but no session was created.',
+                              );
                             }
 
                             // Persist phone locally for features like hazard reporting.
                             final prefs = await SharedPreferences.getInstance();
-                            await prefs.setString('user_phone', widget.mobileNumber);
+                            await prefs.setString(
+                              'user_phone',
+                              widget.mobileNumber,
+                            );
 
                             if (!context.mounted) return;
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (_) => const SuccessScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const SuccessScreen(),
+                              ),
                             );
                           } catch (e) {
                             if (!context.mounted) return;
@@ -195,18 +226,23 @@ class _OtpScreenState extends State<OtpScreen> {
                             }
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(context.l10n.signInFailedWithError(e.toString()))),
+                              SnackBar(
+                                content: Text(
+                                  context.l10n.signInFailedWithError(
+                                    e.toString(),
+                                  ),
+                                ),
+                              ),
                             );
                           } finally {
                             if (mounted) setState(() => _isSubmitting = false);
                           }
-                          
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -214,7 +250,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           context.l10n.didntReceiveOtp,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF8E8E93)
+                            color: Color(0xFF8E8E93),
                           ),
                         ),
                         GestureDetector(
@@ -223,26 +259,42 @@ class _OtpScreenState extends State<OtpScreen> {
                               : () async {
                                   setState(() => _isResending = true);
                                   try {
-                                    await _authService.sendOTP(widget.mobileNumber);
+                                    await _authService.sendOTP(
+                                      widget.mobileNumber,
+                                    );
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(context.l10n.otpResentSuccessfully)),
+                                      SnackBar(
+                                        content: Text(
+                                          context.l10n.otpResentSuccessfully,
+                                        ),
+                                      ),
                                     );
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(context.l10n.failedToResendOtpWithError(e.toString()))),
+                                      SnackBar(
+                                        content: Text(
+                                          context.l10n
+                                              .failedToResendOtpWithError(
+                                                e.toString(),
+                                              ),
+                                        ),
+                                      ),
                                     );
                                   } finally {
-                                    if (mounted) setState(() => _isResending = false);
+                                    if (mounted)
+                                      setState(() => _isResending = false);
                                   }
                                 },
                           child: Text(
-                            context.l10n.resendWithTimer, // Added hypothetical timer for visual match
+                            context
+                                .l10n
+                                .resendWithTimer, // Added hypothetical timer for visual match
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.secondaryCyan, // Cyan
-                              fontWeight: FontWeight.bold
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),

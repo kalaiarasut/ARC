@@ -54,7 +54,7 @@ class AuthService {
 
   // Get current user
   User? getCurrentUser() {
-    return _supabase.auth.currentUser;
+    return _supabase.auth.currentSession?.user ?? _supabase.auth.currentUser;
   }
 
   // Sign out

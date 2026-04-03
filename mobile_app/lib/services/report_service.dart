@@ -112,6 +112,8 @@ class ReportService {
           'p_is_high_risk': report.isHighRisk,
           'p_people_at_risk': report.peopleAtRisk,
           'p_urgency_level': report.urgencyLevel,
+          'p_immediate_danger_status': report.immediateDangerStatus,
+          'p_affected_people_band': report.affectedPeopleBand,
           'p_event_time': report.eventTime.toIso8601String(),
           'p_device_id': deviceId,
         },

@@ -57,7 +57,7 @@ class RealtimeNotificationService {
     final enabled = await _settings.isEnabled();
     if (!enabled) return;
 
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
 
     // Advisories: notify on new advisory inserts.
     _advisoriesChannel = _supabase.channel('realtime:official_advisories');

@@ -19,12 +19,16 @@ import 'queued_reports_screen.dart';
 
 enum _TimeWindow { now, week, month }
 
-final advisoryServiceProvider = Provider<AdvisoryService>((ref) => AdvisoryService());
+final advisoryServiceProvider = Provider<AdvisoryService>(
+  (ref) => AdvisoryService(),
+);
 final advisoriesProvider = FutureProvider<List<OfficialAdvisory>>((ref) async {
   final userLocation = ref.watch(userLocationProvider);
   final languageCode = ref.watch(languageCodeProvider);
 
-  return ref.read(advisoryServiceProvider).getLatest(
+  return ref
+      .read(advisoryServiceProvider)
+      .getLatest(
         userLocation: userLocation,
         languageCode: languageCode,
         limit: 100,
@@ -45,7 +49,7 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
   bool _showInlineCalendar = false;
 
   Color _severityColor(String severity) {
-    switch (severity) {
+    switch (severity.trim().toLowerCase()) {
       case 'warning':
         return AppColors.error;
       case 'watch':
@@ -57,8 +61,8 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
 
   bool _hasContacts(OfficialAdvisory a) {
     return (a.contactPhone != null && a.contactPhone!.isNotEmpty) ||
-           (a.contactWhatsapp != null && a.contactWhatsapp!.isNotEmpty) ||
-           (a.contactHotline != null && a.contactHotline!.isNotEmpty);
+        (a.contactWhatsapp != null && a.contactWhatsapp!.isNotEmpty) ||
+        (a.contactHotline != null && a.contactHotline!.isNotEmpty);
   }
 
   String _timeAgo(DateTime dateTime) {
@@ -107,8 +111,18 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
 
   String _formatFilterDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -121,8 +135,18 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
 
   String _fullMonthLabel(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }
@@ -141,12 +165,20 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
 
   Widget _buildWeekSelectorCard() {
     final weekStart = _startOfWeek(_selectedFilterDate);
-    final days = List.generate(7, (index) => weekStart.add(Duration(days: index)));
+    final days = List.generate(
+      7,
+      (index) => weekStart.add(Duration(days: index)),
+    );
     const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     final today = DateTime.now();
-    final canGoNextWeek = _startOfWeek(_selectedFilterDate.add(const Duration(days: 7))).isBefore(
-      DateTime(today.year, today.month, today.day).add(const Duration(days: 1)),
-    );
+    final canGoNextWeek =
+        _startOfWeek(_selectedFilterDate.add(const Duration(days: 7))).isBefore(
+          DateTime(
+            today.year,
+            today.month,
+            today.day,
+          ).add(const Duration(days: 1)),
+        );
 
     return Container(
       width: double.infinity,
@@ -160,10 +192,17 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
+            onTap: () =>
+                setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
             child: Row(
               children: [
-                Icon(Icons.view_week_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
+                Icon(
+                  Icons.view_week_outlined,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -171,13 +210,19 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 Icon(
-                  _showWeekDaysDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  _showWeekDaysDropdown
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ],
             ),
@@ -189,9 +234,18 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: Icon(Icons.chevron_left, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   onPressed: () {
-                    setState(() => _selectedFilterDate = _selectedFilterDate.subtract(const Duration(days: 7)));
+                    setState(
+                      () => _selectedFilterDate = _selectedFilterDate.subtract(
+                        const Duration(days: 7),
+                      ),
+                    );
                   },
                 ),
                 Expanded(
@@ -200,14 +254,22 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 19),
+                  icon: Icon(
+                    Icons.calendar_today_outlined,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    size: 19,
+                  ),
                   onPressed: _pickWeekDate,
                 ),
                 IconButton(
@@ -215,13 +277,26 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                   splashRadius: 18,
                   icon: Icon(
                     Icons.chevron_right,
-                    color: canGoNextWeek ? AppColors.textPrimary : AppColors.textSecondary.withOpacity(0.5),
+                    color: canGoNextWeek
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary.withOpacity(0.5),
                   ),
                   onPressed: canGoNextWeek
                       ? () {
-                          final nextDate = _selectedFilterDate.add(const Duration(days: 7));
-                          final normalizedToday = DateTime(today.year, today.month, today.day);
-                          setState(() => _selectedFilterDate = nextDate.isAfter(normalizedToday) ? normalizedToday : nextDate);
+                          final nextDate = _selectedFilterDate.add(
+                            const Duration(days: 7),
+                          );
+                          final normalizedToday = DateTime(
+                            today.year,
+                            today.month,
+                            today.day,
+                          );
+                          setState(
+                            () => _selectedFilterDate =
+                                nextDate.isAfter(normalizedToday)
+                                ? normalizedToday
+                                : nextDate,
+                          );
                         }
                       : null,
                 ),
@@ -231,7 +306,8 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             Row(
               children: List.generate(7, (index) {
                 final day = days[index];
-                final selected = day.year == _selectedFilterDate.year &&
+                final selected =
+                    day.year == _selectedFilterDate.year &&
                     day.month == _selectedFilterDate.month &&
                     day.day == _selectedFilterDate.day;
                 final isCurrentMonth = day.month == _selectedFilterDate.month;
@@ -243,15 +319,24 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                       setState(() => _selectedFilterDate = day);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 2,
+                        vertical: 4,
+                      ),
                       child: Container(
                         height: 62,
                         decoration: BoxDecoration(
-                          color: selected ? AppColors.primaryBlue : Colors.transparent,
+                          color: selected
+                              ? AppColors.primaryBlue
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           border: selected
                               ? null
-                              : Border.all(color: AppColors.greyOutline.withOpacity(0.35)),
+                              : Border.all(
+                                  color: AppColors.greyOutline.withOpacity(
+                                    0.35,
+                                  ),
+                                ),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +348,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                                 color: selected
                                     ? Colors.white
                                     : AppColors.textSecondary,
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 5),
@@ -271,12 +358,16 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                               '${day.day}',
                               style: TextStyle(
                                 fontSize: 18,
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
                                 color: selected
                                     ? Colors.white
                                     : (isCurrentMonth
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary.withOpacity(0.65)),
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary.withOpacity(
+                                              0.65,
+                                            )),
                               ),
                             ),
                           ],
@@ -306,7 +397,13 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         onTap: () => setState(() => _showInlineCalendar = !_showInlineCalendar),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
+            Icon(
+              Icons.calendar_today_outlined,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -314,13 +411,19 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
             Icon(
-              _showInlineCalendar ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              _showInlineCalendar
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
             ),
           ],
         ),
@@ -359,7 +462,11 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
     // Time window filter
     final since = _sinceForWindow(_window);
     final end = _endForWindow(_window);
-    filtered = filtered.where((a) => a.publishedAt.isAfter(since) && a.publishedAt.isBefore(end)).toList();
+    filtered = filtered
+        .where(
+          (a) => a.publishedAt.isAfter(since) && a.publishedAt.isBefore(end),
+        )
+        .toList();
 
     // Expired filter (by default, only show active)
     if (!filterState.showExpired) {
@@ -372,7 +479,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
 
     // Severity filter
     if (filterState.severity != null) {
-      filtered = filtered.where((a) => a.severity == filterState.severity).toList();
+      filtered = filtered
+          .where((a) => a.severity == filterState.severity)
+          .toList();
     }
 
     // Category filter
@@ -417,7 +526,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         final region = (a.region ?? '').toLowerCase();
         final title = a.title.toLowerCase();
         final body = a.body.toLowerCase();
-        return region.contains(query) || title.contains(query) || body.contains(query);
+        return region.contains(query) ||
+            title.contains(query) ||
+            body.contains(query);
       }).toList();
     }
 
@@ -449,8 +560,16 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             final bLng = b.longitude;
             if (aLat == null || aLng == null) return 1;
             if (bLat == null || bLng == null) return -1;
-            final dA = distance.as(LengthUnit.Meter, userLocation, LatLng(aLat, aLng));
-            final dB = distance.as(LengthUnit.Meter, userLocation, LatLng(bLat, bLng));
+            final dA = distance.as(
+              LengthUnit.Meter,
+              userLocation,
+              LatLng(aLat, aLng),
+            );
+            final dB = distance.as(
+              LengthUnit.Meter,
+              userLocation,
+              LatLng(bLat, bLng),
+            );
             return dA.compareTo(dB);
           });
         }
@@ -467,7 +586,10 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 return 1;
             }
           }
-          final sevCompare = severityWeight(b.severity).compareTo(severityWeight(a.severity));
+
+          final sevCompare = severityWeight(
+            b.severity,
+          ).compareTo(severityWeight(a.severity));
           if (sevCompare != 0) return sevCompare;
           return b.publishedAt.compareTo(a.publishedAt);
         });
@@ -502,7 +624,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 fontSize: 13,
                 color: selected
                     ? Colors.white
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary),
                 fontWeight: selected ? FontWeight.bold : FontWeight.w600,
               ),
             ),
@@ -526,16 +650,24 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.updates,
-          style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           ValueListenableBuilder(
-            valueListenable: Hive.box(OfflineReportQueueService.boxName).listenable(),
+            valueListenable: Hive.box(
+              OfflineReportQueueService.boxName,
+            ).listenable(),
             builder: (context, box, _) {
               final count = box.length;
               if (count == 0) return const SizedBox.shrink();
@@ -547,26 +679,36 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const QueuedReportsScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const QueuedReportsScreen(),
+                        ),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.warning.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+                        border: Border.all(
+                          color: AppColors.warning.withOpacity(0.35),
+                        ),
                       ),
                       child: Text(
                         context.l10n.pendingCount(count),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ),
               );
             },
-          )
+          ),
         ],
       ),
       body: Padding(
@@ -576,34 +718,52 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             // Time window filters (Now, Last week, Last month)
             Row(
               children: [
-                Expanded(child: _timeChip(context.l10n.filterNow, _window == _TimeWindow.now, () {
-                  if (_window != _TimeWindow.now) {
-                    setState(() {
-                      _window = _TimeWindow.now;
-                      _showWeekDaysDropdown = false;
-                      _showInlineCalendar = false;
-                    });
-                  }
-                })),
+                Expanded(
+                  child: _timeChip(
+                    context.l10n.filterNow,
+                    _window == _TimeWindow.now,
+                    () {
+                      if (_window != _TimeWindow.now) {
+                        setState(() {
+                          _window = _TimeWindow.now;
+                          _showWeekDaysDropdown = false;
+                          _showInlineCalendar = false;
+                        });
+                      }
+                    },
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _timeChip(context.l10n.filterLastWeek, _window == _TimeWindow.week, () {
-                  if (_window != _TimeWindow.week) {
-                    setState(() {
-                      _window = _TimeWindow.week;
-                      _showWeekDaysDropdown = false;
-                      _showInlineCalendar = false;
-                    });
-                  }
-                })),
+                Expanded(
+                  child: _timeChip(
+                    context.l10n.filterLastWeek,
+                    _window == _TimeWindow.week,
+                    () {
+                      if (_window != _TimeWindow.week) {
+                        setState(() {
+                          _window = _TimeWindow.week;
+                          _showWeekDaysDropdown = false;
+                          _showInlineCalendar = false;
+                        });
+                      }
+                    },
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _timeChip(context.l10n.filterLastMonth, _window == _TimeWindow.month, () {
-                  if (_window != _TimeWindow.month) {
-                    setState(() {
-                      _window = _TimeWindow.month;
-                      _showWeekDaysDropdown = false;
-                    });
-                  }
-                })),
+                Expanded(
+                  child: _timeChip(
+                    context.l10n.filterLastMonth,
+                    _window == _TimeWindow.month,
+                    () {
+                      if (_window != _TimeWindow.month) {
+                        setState(() {
+                          _window = _TimeWindow.month;
+                          _showWeekDaysDropdown = false;
+                        });
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
             if (_window == _TimeWindow.week) ...[
@@ -631,7 +791,12 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
             Expanded(
               child: advisories.when(
                 data: (items) {
-                  final filteredItems = _applyFilters(items, filterState, userLocation, languageCode);
+                  final filteredItems = _applyFilters(
+                    items,
+                    filterState,
+                    userLocation,
+                    languageCode,
+                  );
 
                   if (filteredItems.isEmpty) {
                     return Center(
@@ -639,19 +804,29 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            filterState.hasActiveFilters ? Icons.filter_alt_off : Icons.inbox_outlined,
+                            filterState.hasActiveFilters
+                                ? Icons.filter_alt_off
+                                : Icons.inbox_outlined,
                             size: 48,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             context.l10n.noUpdatesYet,
-                            style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                            ),
                           ),
                           if (filterState.hasActiveFilters) ...[
                             const SizedBox(height: 12),
                             TextButton(
-                              onPressed: () => ref.read(advisoryFilterProvider.notifier).clearAll(),
+                              onPressed: () => ref
+                                  .read(advisoryFilterProvider.notifier)
+                                  .clearAll(),
                               child: Text(context.l10n.filterClearAll),
                             ),
                           ],
@@ -671,7 +846,12 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final a = filteredItems[index];
-                        return _buildCompactAdvisoryCard(context, a, languageCode, userLocation);
+                        return _buildCompactAdvisoryCard(
+                          context,
+                          a,
+                          languageCode,
+                          userLocation,
+                        );
                       },
                     ),
                   );
@@ -680,7 +860,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                   child: AppStateView(
                     icon: Icons.wifi_off,
                     title: context.l10n.failedToLoadUpdates,
-                    message: e.toString().toLowerCase().contains('socket') || e.toString().toLowerCase().contains('failed host')
+                    message:
+                        e.toString().toLowerCase().contains('socket') ||
+                            e.toString().toLowerCase().contains('failed host')
                         ? context.l10n.youreOffline
                         : e.toString(),
                     actionLabel: context.l10n.retry,
@@ -690,7 +872,11 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     },
                   ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
               ),
             ),
           ],
@@ -712,7 +898,11 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
     String? distanceText;
     if (userLocation != null && a.latitude != null && a.longitude != null) {
       const distance = Distance();
-      final meters = distance.as(LengthUnit.Meter, userLocation, LatLng(a.latitude!, a.longitude!));
+      final meters = distance.as(
+        LengthUnit.Meter,
+        userLocation,
+        LatLng(a.latitude!, a.longitude!),
+      );
       distanceText = meters >= 1000
           ? '${(meters / 1000).toStringAsFixed(1)} km'
           : '${meters.toStringAsFixed(0)} m';
@@ -722,7 +912,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => AdvisoryDetailsScreen(advisoryId: a.id)),
+          MaterialPageRoute(
+            builder: (_) => AdvisoryDetailsScreen(advisoryId: a.id),
+          ),
         );
       },
       borderRadius: BorderRadius.circular(14),
@@ -735,18 +927,24 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: Severity badge + Category + Time
+            // Top row: Severity badge + Time
             Row(
               children: [
                 // Severity badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: sevColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    advisorySeverityLabelForLanguage(a.severity, languageCode).toUpperCase(),
+                    advisorySeverityLabelForLanguage(
+                      a.severity,
+                      languageCode,
+                    ).toUpperCase(),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -754,37 +952,15 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     ),
                   ),
                 ),
-                // Category badge
-                if (a.category.isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.darkOutline.withOpacity(0.3)
-                          : AppColors.greyOutline.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      advisoryCategoryLabelForLanguage(
-                        advisoryCategoryFromString(a.category),
-                        languageCode,
-                      ),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
                 const Spacer(),
                 // Time ago
                 Text(
                   _timeAgo(a.publishedAt),
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -812,7 +988,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                   height: 1.3,
                 ),
               ),
@@ -830,7 +1008,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                         Icon(
                           Icons.location_on_outlined,
                           size: 12,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 3),
                         Flexible(
@@ -840,7 +1020,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -858,7 +1040,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -869,7 +1053,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                   Icon(
                     Icons.phone_outlined,
                     size: 13,
-                    color: isDark ? AppColors.darkSecondaryCyan : AppColors.secondaryCyan,
+                    color: isDark
+                        ? AppColors.darkSecondaryCyan
+                        : AppColors.secondaryCyan,
                   ),
                 ],
 
@@ -879,7 +1065,9 @@ class _UpdatesScreenState extends ConsumerState<UpdatesScreen> {
                   Icon(
                     Icons.translate,
                     size: 13,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                   ),
                 ],
               ],

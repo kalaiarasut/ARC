@@ -41,7 +41,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   Future<void> _saveName() async {
     final name = _nameController.text.trim();
-    
+
     if (name.isEmpty || name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.pleaseEnterValidName)),
@@ -59,7 +59,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     setState(() => _isLoading = false);
 
     if (widget.isOnboarding) {
-      await prefs.setBool('onboarding_complete', true); // Mark onboarding as done
+      await prefs.setBool(
+        'onboarding_complete',
+        true,
+      ); // Mark onboarding as done
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -81,12 +84,22 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             context.l10n.whatsYourName,
-            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         body: Padding(
@@ -96,7 +109,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             children: [
               Text(
                 context.l10n.personalizeExperience,
-                style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -104,7 +122,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   hintText: context.l10n.enterYourName,
-                  prefixIcon: Icon(Icons.person, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                  prefixIcon: Icon(
+                    Icons.person,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                   border: OutlineInputBorder(
@@ -117,7 +140,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.primaryBlue,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -125,7 +151,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: PrimaryButton(
-                  text: _isLoading ? context.l10n.savingLabel : context.l10n.save,
+                  text: _isLoading
+                      ? context.l10n.savingLabel
+                      : context.l10n.save,
                   backgroundColor: AppColors.primaryBlue,
                   onPressed: _isLoading ? () {} : _saveName,
                 ),
@@ -137,7 +165,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E), // Dark background
+      backgroundColor: Colors.black.withOpacity(0.8), // Dark background
       body: Stack(
         children: [
           // Back Button
@@ -147,12 +175,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             child: CircleAvatar(
               backgroundColor: Theme.of(context).cardColor.withOpacity(0.2),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
-          
+
           // Bottom Card
           Align(
             alignment: Alignment.bottomCenter,
@@ -184,13 +216,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     Text(
                       context.l10n.whatsYourName,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -199,18 +233,25 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Name Input Field
                     TextField(
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
                         hintText: context.l10n.enterYourName,
-                        prefixIcon: Icon(Icons.person, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        prefixIcon: Icon(
+                          Icons.person,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                        ),
                         filled: true,
                         fillColor: Theme.of(context).scaffoldBackgroundColor,
                         border: OutlineInputBorder(
@@ -223,13 +264,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryBlue,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Continue Button
                     SizedBox(
                       width: double.infinity,
@@ -241,7 +285,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         onPressed: _isLoading ? () {} : _saveName,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
                   ],
                 ),

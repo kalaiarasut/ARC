@@ -13,7 +13,7 @@ class LeaderboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final leaderboardAsync = ref.watch(leaderboardProvider);
-    final currentUserId = SupabaseConfig.client.auth.currentUser?.id;
+    final currentUserId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -21,7 +21,9 @@ class LeaderboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(context.l10n.leaderboardTitle),
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+        foregroundColor: isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary,
         elevation: 0,
       ),
       body: leaderboardAsync.when(
@@ -33,7 +35,11 @@ class LeaderboardScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.leaderboard_outlined, size: 56, color: Colors.grey),
+                  const Icon(
+                    Icons.leaderboard_outlined,
+                    size: 56,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     context.l10n.noLeaderboardData,
@@ -55,7 +61,11 @@ class LeaderboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 if (entries.length >= 3) ...[
-                  _buildPodium(context, entries.take(3).toList(), currentUserId),
+                  _buildPodium(
+                    context,
+                    entries.take(3).toList(),
+                    currentUserId,
+                  ),
                   const SizedBox(height: 20),
                 ],
                 _buildRankList(context, entries, currentUserId),
@@ -67,18 +77,46 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPodium(BuildContext context, List<LeaderboardEntry> top3, String? currentUserId) {
+  Widget _buildPodium(
+    BuildContext context,
+    List<LeaderboardEntry> top3,
+    String? currentUserId,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // 2nd place
-        Expanded(child: _buildPodiumItem(context, top3[1], 2, currentUserId, height: 100)),
+        Expanded(
+          child: _buildPodiumItem(
+            context,
+            top3[1],
+            2,
+            currentUserId,
+            height: 100,
+          ),
+        ),
         const SizedBox(width: 8),
         // 1st place
-        Expanded(child: _buildPodiumItem(context, top3[0], 1, currentUserId, height: 130)),
+        Expanded(
+          child: _buildPodiumItem(
+            context,
+            top3[0],
+            1,
+            currentUserId,
+            height: 130,
+          ),
+        ),
         const SizedBox(width: 8),
         // 3rd place
-        Expanded(child: _buildPodiumItem(context, top3[2], 3, currentUserId, height: 80)),
+        Expanded(
+          child: _buildPodiumItem(
+            context,
+            top3[2],
+            3,
+            currentUserId,
+            height: 80,
+          ),
+        ),
       ],
     );
   }
@@ -107,7 +145,9 @@ class LeaderboardScreen extends ConsumerWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
-        border: isMe ? Border.all(color: AppColors.primaryBlue, width: 2.5) : null,
+        border: isMe
+            ? Border.all(color: AppColors.primaryBlue, width: 2.5)
+            : null,
         boxShadow: [
           BoxShadow(
             color: (colors[position]![0]).withOpacity(0.3),
@@ -119,10 +159,7 @@ class LeaderboardScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            medalIcons[position]!,
-            style: const TextStyle(fontSize: 28),
-          ),
+          Text(medalIcons[position]!, style: const TextStyle(fontSize: 28)),
           const SizedBox(height: 4),
           Text(
             _truncateName(entry.userName),
@@ -161,7 +198,11 @@ class LeaderboardScreen extends ConsumerWidget {
               ),
               child: Text(
                 context.l10n.you,
-                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
         ],
@@ -169,7 +210,11 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRankList(BuildContext context, List<LeaderboardEntry> entries, String? currentUserId) {
+  Widget _buildRankList(
+    BuildContext context,
+    List<LeaderboardEntry> entries,
+    String? currentUserId,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
@@ -214,13 +259,20 @@ class LeaderboardScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: isMe ? FontWeight.bold : FontWeight.w500,
-                        color: isMe ? AppColors.primaryBlue : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                        color: isMe
+                            ? AppColors.primaryBlue
+                            : (isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary),
                       ),
                     ),
                   ),
                   if (isMe)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -245,7 +297,11 @@ class LeaderboardScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isMe ? AppColors.primaryBlue : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                  color: isMe
+                      ? AppColors.primaryBlue
+                      : (isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary),
                 ),
               ),
             ),

@@ -15,6 +15,7 @@ import 'media_viewer_screen.dart';
 import 'report_details_screen.dart';
 
 enum _ReportWindow { now, week, month }
+
 enum _ReportsMode { community, mine }
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -124,12 +125,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
   Widget _buildWeekSelectorCard() {
     final weekStart = _startOfWeek(_selectedFilterDate);
-    final days = List.generate(7, (index) => weekStart.add(Duration(days: index)));
+    final days = List.generate(
+      7,
+      (index) => weekStart.add(Duration(days: index)),
+    );
     const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     final today = DateTime.now();
-    final canGoNextWeek = _startOfWeek(_selectedFilterDate.add(const Duration(days: 7))).isBefore(
-      DateTime(today.year, today.month, today.day).add(const Duration(days: 1)),
-    );
+    final canGoNextWeek =
+        _startOfWeek(_selectedFilterDate.add(const Duration(days: 7))).isBefore(
+          DateTime(
+            today.year,
+            today.month,
+            today.day,
+          ).add(const Duration(days: 1)),
+        );
 
     return Container(
       width: double.infinity,
@@ -143,10 +152,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
+            onTap: () =>
+                setState(() => _showWeekDaysDropdown = !_showWeekDaysDropdown),
             child: Row(
               children: [
-                Icon(Icons.view_week_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
+                Icon(
+                  Icons.view_week_outlined,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -154,13 +170,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 Icon(
-                  _showWeekDaysDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  _showWeekDaysDropdown
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ],
             ),
@@ -172,9 +194,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: Icon(Icons.chevron_left, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                  icon: Icon(
+                    Icons.chevron_left,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
+                  ),
                   onPressed: () {
-                    setState(() => _selectedFilterDate = _selectedFilterDate.subtract(const Duration(days: 7)));
+                    setState(
+                      () => _selectedFilterDate = _selectedFilterDate.subtract(
+                        const Duration(days: 7),
+                      ),
+                    );
                     _load();
                   },
                 ),
@@ -184,14 +215,22 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   splashRadius: 18,
-                  icon: Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 19),
+                  icon: Icon(
+                    Icons.calendar_today_outlined,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    size: 19,
+                  ),
                   onPressed: _pickWeekDate,
                 ),
                 IconButton(
@@ -199,13 +238,26 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   splashRadius: 18,
                   icon: Icon(
                     Icons.chevron_right,
-                    color: canGoNextWeek ? AppColors.textPrimary : AppColors.textSecondary.withOpacity(0.5),
+                    color: canGoNextWeek
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary.withOpacity(0.5),
                   ),
                   onPressed: canGoNextWeek
                       ? () {
-                          final nextDate = _selectedFilterDate.add(const Duration(days: 7));
-                          final normalizedToday = DateTime(today.year, today.month, today.day);
-                          setState(() => _selectedFilterDate = nextDate.isAfter(normalizedToday) ? normalizedToday : nextDate);
+                          final nextDate = _selectedFilterDate.add(
+                            const Duration(days: 7),
+                          );
+                          final normalizedToday = DateTime(
+                            today.year,
+                            today.month,
+                            today.day,
+                          );
+                          setState(
+                            () => _selectedFilterDate =
+                                nextDate.isAfter(normalizedToday)
+                                ? normalizedToday
+                                : nextDate,
+                          );
                           _load();
                         }
                       : null,
@@ -216,7 +268,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             Row(
               children: List.generate(7, (index) {
                 final day = days[index];
-                final selected = day.year == _selectedFilterDate.year &&
+                final selected =
+                    day.year == _selectedFilterDate.year &&
                     day.month == _selectedFilterDate.month &&
                     day.day == _selectedFilterDate.day;
                 final isCurrentMonth = day.month == _selectedFilterDate.month;
@@ -229,15 +282,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       _load();
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 2,
+                        vertical: 4,
+                      ),
                       child: Container(
                         height: 62,
                         decoration: BoxDecoration(
-                          color: selected ? AppColors.primaryBlue : Colors.transparent,
+                          color: selected
+                              ? AppColors.primaryBlue
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           border: selected
                               ? null
-                              : Border.all(color: AppColors.greyOutline.withOpacity(0.35)),
+                              : Border.all(
+                                  color: AppColors.greyOutline.withOpacity(
+                                    0.35,
+                                  ),
+                                ),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -249,7 +311,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 color: selected
                                     ? Colors.white
                                     : AppColors.textSecondary,
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 5),
@@ -257,12 +321,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               '${day.day}',
                               style: TextStyle(
                                 fontSize: 18,
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
                                 color: selected
                                     ? Colors.white
                                     : (isCurrentMonth
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary.withOpacity(0.65)),
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary.withOpacity(
+                                              0.65,
+                                            )),
                               ),
                             ),
                           ],
@@ -292,7 +360,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         onTap: () => setState(() => _showInlineCalendar = !_showInlineCalendar),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_outlined, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 18),
+            Icon(
+              Icons.calendar_today_outlined,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -300,13 +374,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
             Icon(
-              _showInlineCalendar ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              _showInlineCalendar
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
             ),
           ],
         ),
@@ -353,7 +433,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       });
 
       if (_mode == _ReportsMode.mine) {
-        final userId = SupabaseConfig.client.auth.currentUser?.id;
+        final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
         if (userId == null) {
           if (!mounted) return;
           setState(() {
@@ -362,7 +442,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           return;
         }
 
-        final items = await _reportService.getMyReports(userId: userId, limit: 200);
+        final items = await _reportService.getMyReports(
+          userId: userId,
+          limit: 200,
+        );
         final since = _sinceForWindow(_window);
         final filtered = items.where((r) => r.createdAt.isAfter(since)).toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -444,8 +527,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   String _shortDescription(String description) {
     final src = description.trim();
     if (src.isEmpty) return '';
-    if (src.length <= 90) return src;
-    return '${src.substring(0, 90)}.......';
+    if (src.length <= 140) return src;
+    return '${src.substring(0, 140).trimRight()}.....';
   }
 
   Widget _buildReportMediaPreview(
@@ -483,7 +566,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: AppColors.greyOutline.withOpacity(0.22),
-              child: Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              child: Icon(
+                Icons.broken_image,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
@@ -498,7 +586,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         color: AppColors.greyOutline.withOpacity(0.22),
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary.withOpacity(0.7),
           size: 36,
         ),
       ),
@@ -513,16 +603,31 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.profileAndReports,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+            icon: Icon(
+              Icons.refresh,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -535,19 +640,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _filterChip(context.l10n.filterCommunity, _mode == _ReportsMode.community, () {
-                    if (_mode == _ReportsMode.community) return;
-                    setState(() => _mode = _ReportsMode.community);
-                    _load();
-                  }),
+                  child: _filterChip(
+                    context.l10n.filterCommunity,
+                    _mode == _ReportsMode.community,
+                    () {
+                      if (_mode == _ReportsMode.community) return;
+                      setState(() => _mode = _ReportsMode.community);
+                      _load();
+                    },
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _filterChip(context.l10n.filterMySubmitted, _mode == _ReportsMode.mine, () {
-                    if (_mode == _ReportsMode.mine) return;
-                    setState(() => _mode = _ReportsMode.mine);
-                    _load();
-                  }),
+                  child: _filterChip(
+                    context.l10n.filterMySubmitted,
+                    _mode == _ReportsMode.mine,
+                    () {
+                      if (_mode == _ReportsMode.mine) return;
+                      setState(() => _mode = _ReportsMode.mine);
+                      _load();
+                    },
+                  ),
                 ),
               ],
             ),
@@ -555,38 +668,50 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _filterChip(context.l10n.filterNow, _window == _ReportWindow.now, () {
-                    if (_window == _ReportWindow.now) return;
-                    setState(() {
-                      _window = _ReportWindow.now;
-                      _showWeekDaysDropdown = false;
-                      _showInlineCalendar = false;
-                    });
-                    _load();
-                  }),
+                  child: _filterChip(
+                    context.l10n.filterNow,
+                    _window == _ReportWindow.now,
+                    () {
+                      if (_window == _ReportWindow.now) return;
+                      setState(() {
+                        _window = _ReportWindow.now;
+                        _showWeekDaysDropdown = false;
+                        _showInlineCalendar = false;
+                      });
+                      _load();
+                    },
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _filterChip(context.l10n.filterLastWeek, _window == _ReportWindow.week, () {
-                    if (_window == _ReportWindow.week) return;
-                    setState(() {
-                      _window = _ReportWindow.week;
-                      _showWeekDaysDropdown = false;
-                      _showInlineCalendar = false;
-                    });
-                    _load();
-                  }),
+                  child: _filterChip(
+                    context.l10n.filterLastWeek,
+                    _window == _ReportWindow.week,
+                    () {
+                      if (_window == _ReportWindow.week) return;
+                      setState(() {
+                        _window = _ReportWindow.week;
+                        _showWeekDaysDropdown = false;
+                        _showInlineCalendar = false;
+                      });
+                      _load();
+                    },
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _filterChip(context.l10n.filterLastMonth, _window == _ReportWindow.month, () {
-                    if (_window == _ReportWindow.month) return;
-                    setState(() {
-                      _window = _ReportWindow.month;
-                      _showWeekDaysDropdown = false;
-                    });
-                    _load();
-                  }),
+                  child: _filterChip(
+                    context.l10n.filterLastMonth,
+                    _window == _ReportWindow.month,
+                    () {
+                      if (_window == _ReportWindow.month) return;
+                      setState(() {
+                        _window = _ReportWindow.month;
+                        _showWeekDaysDropdown = false;
+                      });
+                      _load();
+                    },
+                  ),
                 ),
               ],
             ),
@@ -604,7 +729,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             const SizedBox(height: 16),
             if (_loading)
               const Expanded(
-                child: Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
               )
             else if (_error != null)
               Expanded(
@@ -612,7 +741,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   child: Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               )
@@ -621,7 +754,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: Center(
                   child: Text(
                     context.l10n.noReportsYet,
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               )
@@ -630,7 +767,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: Center(
                   child: Text(
                     context.l10n.noSubmittedReportsYet,
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 ),
               )
@@ -641,33 +782,44 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   child: _mode == _ReportsMode.community
                       ? ListView.separated(
                           itemCount: _items.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final r = _items[index];
                             final loc = ref.read(userLocationProvider);
                             String distanceText = '';
                             if (loc != null) {
                               final d = Distance();
-                              final meters = d.as(LengthUnit.Meter, loc, r.location);
+                              final meters = d.as(
+                                LengthUnit.Meter,
+                                loc,
+                                r.location,
+                              );
                               distanceText = meters >= 1000
                                   ? '${(meters / 1000).toStringAsFixed(1)} km away'
                                   : '${meters.toStringAsFixed(0)} m away';
                             }
 
                             final urgency = r.urgencyLevel.trim();
-                            final urgencyColor = urgency.toLowerCase() == 'critical'
+                            final urgencyColor =
+                                urgency.toLowerCase() == 'critical'
                                 ? AppColors.error
                                 : urgency.toLowerCase() == 'high'
-                                    ? AppColors.warning
-                                    : AppColors.primaryBlue;
-                            final shortDescription = _shortDescription(r.description);
+                                ? AppColors.warning
+                                : AppColors.primaryBlue;
+                            final shortDescription = _shortDescription(
+                              r.description,
+                            );
 
                             return InkWell(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => ReportDetailsScreen(reportId: r.id, isOwnReport: false),
+                                    builder: (_) => ReportDetailsScreen(
+                                      reportId: r.id,
+                                      isOwnReport: false,
+                                    ),
                                   ),
                                 );
                               },
@@ -680,22 +832,42 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildReportMediaPreview(r, height: 210, borderRadius: 18),
+                                    _buildReportMediaPreview(
+                                      r,
+                                      height: 210,
+                                      borderRadius: 18,
+                                    ),
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        12,
+                                        16,
+                                        10,
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: urgencyColor.withOpacity(0.12),
-                                                  borderRadius: BorderRadius.circular(999),
+                                                  color: urgencyColor
+                                                      .withOpacity(0.12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        999,
+                                                      ),
                                                 ),
                                                 child: Text(
-                                                  urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
+                                                  urgency.isEmpty
+                                                      ? 'LOW'
+                                                      : urgency.toUpperCase(),
                                                   style: TextStyle(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w800,
@@ -708,8 +880,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                                 child: Text(
                                                   r.hazardType,
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -720,7 +896,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                               shortDescription,
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors.textSecondary,
+                                              ),
                                             ),
                                           ],
                                           const SizedBox(height: 8),
@@ -728,13 +913,34 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                             children: [
                                               Text(
                                                 r.timeAgo,
-                                                style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color:
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.dark
+                                                      ? AppColors
+                                                            .darkTextSecondary
+                                                      : AppColors.textSecondary,
+                                                ),
                                               ),
                                               const Spacer(),
                                               if (distanceText.isNotEmpty)
                                                 Text(
                                                   distanceText,
-                                                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.dark
+                                                        ? AppColors
+                                                              .darkTextSecondary
+                                                        : AppColors
+                                                              .textSecondary,
+                                                  ),
                                                 ),
                                             ],
                                           ),
@@ -749,26 +955,36 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         )
                       : ListView.separated(
                           itemCount: _myItems.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final report = _myItems[index];
                             final status = report.status.toLowerCase();
                             final statusColor = status == 'verified'
                                 ? AppColors.success
-                                : (status == 'resolved' ? AppColors.secondaryCyan : AppColors.warning);
+                                : (status == 'resolved'
+                                      ? AppColors.secondaryCyan
+                                      : AppColors.warning);
 
                             return InkWell(
                               onTap: () {
                                 if (report.id == null || report.id!.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(context.l10n.reportDetailsNotAvailable)),
+                                    SnackBar(
+                                      content: Text(
+                                        context.l10n.reportDetailsNotAvailable,
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => ReportDetailsScreen(reportId: report.id!, isOwnReport: true),
+                                    builder: (_) => ReportDetailsScreen(
+                                      reportId: report.id!,
+                                      isOwnReport: true,
+                                    ),
                                   ),
                                 );
                               },
@@ -787,14 +1003,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                         Expanded(
                                           child: Text(
                                             report.hazardType,
-                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.12),
-                                            borderRadius: BorderRadius.circular(999),
+                                            color: statusColor.withOpacity(
+                                              0.12,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
                                           ),
                                           child: Text(
                                             report.status,
@@ -812,12 +1038,27 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                       report.description,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
+                                      ),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      '${report.createdAt.toLocal()}'.split('.').first,
-                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      '${report.createdAt.toLocal()}'
+                                          .split('.')
+                                          .first,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -863,7 +1104,9 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
 
   Future<void> _init() async {
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+      );
       await controller.initialize();
       await controller.pause();
       await controller.setVolume(0);
@@ -906,7 +1149,8 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   child: VideoPlayer(_controller!),
                 ),
               )
-            else if (widget.fallbackImageUrl != null && widget.fallbackImageUrl!.trim().isNotEmpty)
+            else if (widget.fallbackImageUrl != null &&
+                widget.fallbackImageUrl!.trim().isNotEmpty)
               Image.network(
                 widget.fallbackImageUrl!,
                 fit: BoxFit.cover,
@@ -916,7 +1160,9 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                     child: Icon(
                       Icons.videocam,
                       size: 44,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary.withOpacity(0.8),
                     ),
                   ),
                 ),
@@ -928,7 +1174,9 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   child: Icon(
                     Icons.videocam,
                     size: 44,
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary.withOpacity(0.8),
                   ),
                 ),
               ),
@@ -941,7 +1189,11 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   color: Colors.black.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Icon(Icons.play_arrow, size: 20, color: Colors.white),
+                child: const Icon(
+                  Icons.play_arrow,
+                  size: 20,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],

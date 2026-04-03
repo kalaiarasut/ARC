@@ -11,7 +11,7 @@ final gamificationServiceProvider = Provider<GamificationService>((ref) {
 /// Provides the current user's gamification stats.
 /// Refresh by invalidating this provider.
 final citizenStatsProvider = FutureProvider<CitizenStats>((ref) async {
-  final userId = SupabaseConfig.client.auth.currentUser?.id;
+  final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
   if (userId == null) return CitizenStats.empty();
   final service = ref.read(gamificationServiceProvider);
   return service.getCitizenStats(userId);

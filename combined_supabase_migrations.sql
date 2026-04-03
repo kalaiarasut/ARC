@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS public.hazard_reports (
   is_high_risk BOOLEAN DEFAULT FALSE,
   people_at_risk INTEGER,
   urgency_level TEXT CHECK (urgency_level IN ('Low', 'Medium', 'High')),
+  immediate_danger_status TEXT NOT NULL DEFAULT 'no' CHECK (immediate_danger_status IN ('yes', 'no', 'not_sure')),
+  affected_people_band TEXT CHECK (affected_people_band IN ('unknown', '1_5', '6_20', '21_50', '50_plus')),
   media_urls TEXT[],
   upload_complete BOOLEAN DEFAULT FALSE,
   status TEXT CHECK (status IN ('pending', 'verified', 'rejected', 'resolved')) DEFAULT 'pending',
@@ -385,12 +387,13 @@ CREATE OR REPLACE FUNCTION public.get_verified_reports_in_bounds(
 )
 RETURNS TABLE (
   id UUID, hazard_type TEXT, urgency_level TEXT, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION,
-  is_high_risk BOOLEAN, media_urls TEXT[], event_time TIMESTAMPTZ, created_at TIMESTAMPTZ
+  is_high_risk BOOLEAN, description TEXT, media_urls TEXT[], event_time TIMESTAMPTZ, created_at TIMESTAMPTZ
 ) AS $$
 BEGIN
   RETURN QUERY SELECT r.id, r.hazard_type, COALESCE(r.urgency_level, 'Low') as urgency_level,
     ROUND(r.latitude::numeric, 3)::double precision as latitude, ROUND(r.longitude::numeric, 3)::double precision as longitude,
-    r.is_high_risk, CASE WHEN COALESCE(r.upload_complete, false) THEN COALESCE(r.media_urls, ARRAY[]::text[]) ELSE ARRAY[]::text[] END as media_urls,
+    r.is_high_risk, r.description,
+    CASE WHEN COALESCE(r.upload_complete, false) THEN COALESCE(r.media_urls, ARRAY[]::text[]) ELSE ARRAY[]::text[] END as media_urls,
     r.event_time, r.created_at
   FROM public.hazard_reports r
   WHERE r.status = 'verified' AND r.latitude BETWEEN min_lat AND max_lat AND r.longitude BETWEEN min_lon AND max_lon
@@ -483,7 +486,9 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.create_hazard_report(
   p_client_id uuid, p_user_phone text, p_user_name text, p_hazard_type text, p_description text,
   p_latitude double precision, p_longitude double precision, p_is_high_risk boolean DEFAULT false,
-  p_people_at_risk integer DEFAULT null, p_urgency_level text DEFAULT null, p_event_time timestamptz DEFAULT now(), p_device_id text DEFAULT null
+  p_people_at_risk integer DEFAULT null, p_urgency_level text DEFAULT null,
+  p_immediate_danger_status text DEFAULT 'no', p_affected_people_band text DEFAULT null,
+  p_event_time timestamptz DEFAULT now(), p_device_id text DEFAULT null
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE v_user_id uuid; v_existing_id uuid; v_recent_count integer; v_last_created timestamptz;
 BEGIN
@@ -496,8 +501,30 @@ BEGIN
   SELECT count(*)::int INTO v_recent_count FROM public.hazard_reports WHERE user_id = v_user_id AND created_at > now() - interval '1 hour';
   IF v_recent_count >= 20 THEN RAISE EXCEPTION 'rate_limited_hourly' USING ERRCODE = 'P0001'; END IF;
 
-  INSERT INTO public.hazard_reports(client_id, user_id, user_phone, user_name, hazard_type, description, location, latitude, longitude, is_high_risk, people_at_risk, urgency_level, status, event_time, device_id)
-  VALUES (p_client_id, v_user_id, p_user_phone, NULLIF(p_user_name, ''), p_hazard_type, p_description, ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography, p_latitude, p_longitude, COALESCE(p_is_high_risk, false), p_people_at_risk, p_urgency_level, 'pending', COALESCE(p_event_time, now()), p_device_id) RETURNING id INTO v_existing_id;
+  INSERT INTO public.hazard_reports(client_id, user_id, user_phone, user_name, hazard_type, description, location, latitude, longitude, is_high_risk, people_at_risk, urgency_level, immediate_danger_status, affected_people_band, status, event_time, device_id)
+  VALUES (
+    p_client_id,
+    v_user_id,
+    p_user_phone,
+    NULLIF(p_user_name, ''),
+    p_hazard_type,
+    p_description,
+    ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
+    p_latitude,
+    p_longitude,
+    COALESCE(p_is_high_risk, false),
+    p_people_at_risk,
+    p_urgency_level,
+    COALESCE(NULLIF(p_immediate_danger_status, ''), 'no'),
+    CASE
+      WHEN COALESCE(NULLIF(p_immediate_danger_status, ''), 'no') = 'yes'
+        THEN COALESCE(NULLIF(p_affected_people_band, ''), 'unknown')
+      ELSE NULL
+    END,
+    'pending',
+    COALESCE(p_event_time, now()),
+    p_device_id
+  ) RETURNING id INTO v_existing_id;
   RETURN v_existing_id;
 END;
 $$;
@@ -895,9 +922,9 @@ BEGIN
 
   p_inside_zone_ids := COALESCE(
     ARRAY(
-      SELECT DISTINCT zone_id
-      FROM unnest(COALESCE(p_inside_zone_ids, ARRAY[]::UUID[])) AS zone_id
-      WHERE zone_id IS NOT NULL
+      SELECT DISTINCT inside_zone_id
+      FROM unnest(COALESCE(p_inside_zone_ids, ARRAY[]::UUID[])) AS inside_zone_id
+      WHERE inside_zone_id IS NOT NULL
     ),
     ARRAY[]::UUID[]
   );
@@ -950,8 +977,8 @@ BEGIN
           last_latitude = p_latitude,
           last_longitude = p_longitude,
           source = p_source
-      WHERE device_id = p_device_id
-        AND zone_id = v_zone_id;
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_id;
     END IF;
 
     v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_id);
@@ -985,8 +1012,8 @@ BEGIN
 
       UPDATE public.device_zone_presence
       SET last_transition_at = v_now
-      WHERE device_id = p_device_id
-        AND zone_id = v_zone_id;
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_id;
 
       event_id := v_event_id;
       zone_id := v_zone_id;
@@ -1013,8 +1040,8 @@ BEGIN
         last_longitude = p_longitude,
         source = p_source,
         user_id = v_user_id
-    WHERE device_id = p_device_id
-      AND zone_id = v_zone_row.zone_id;
+    WHERE public.device_zone_presence.device_id = p_device_id
+      AND public.device_zone_presence.zone_id = v_zone_row.zone_id;
 
     v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_row.zone_id);
 
@@ -1047,8 +1074,8 @@ BEGIN
 
       UPDATE public.device_zone_presence
       SET last_transition_at = v_now
-      WHERE device_id = p_device_id
-        AND zone_id = v_zone_row.zone_id;
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_row.zone_id;
 
       event_id := v_event_id;
       zone_id := v_zone_row.zone_id;
@@ -1078,6 +1105,235 @@ GRANT EXECUTE ON FUNCTION public.admin_get_zone_transition_events(INTEGER, UUID,
 GRANT EXECUTE ON FUNCTION public.process_zone_heartbeat_state(TEXT, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, TIMESTAMPTZ, TEXT, UUID[]) TO authenticated;
 
 -- END MIGRATION: 028_monitoring_zone_entry_exit_detection.sql
+
+-- ============================================================================
+-- BEGIN MIGRATION: 031_fix_zone_heartbeat_state_ambiguous_zone_id.sql
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.process_zone_heartbeat_state(
+  p_device_id TEXT,
+  p_latitude DOUBLE PRECISION,
+  p_longitude DOUBLE PRECISION,
+  p_accuracy_meters DOUBLE PRECISION DEFAULT NULL,
+  p_observed_at TIMESTAMPTZ DEFAULT NOW(),
+  p_source TEXT DEFAULT 'foreground',
+  p_inside_zone_ids UUID[] DEFAULT ARRAY[]::UUID[]
+)
+RETURNS TABLE (
+  event_id UUID,
+  zone_id UUID,
+  zone_name TEXT,
+  event_type TEXT,
+  occurred_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_now TIMESTAMPTZ := COALESCE(p_observed_at, NOW());
+  v_zone_id UUID;
+  v_zone_name TEXT;
+  v_last_transition_at TIMESTAMPTZ;
+  v_was_inside BOOLEAN;
+  v_event_id UUID;
+  v_changed_zone_ids UUID[] := ARRAY[]::UUID[];
+  v_zone_row RECORD;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'auth_required' USING ERRCODE = '28000';
+  END IF;
+
+  IF p_device_id IS NULL OR btrim(p_device_id) = '' THEN
+    RAISE EXCEPTION 'device_id_required' USING ERRCODE = '22023';
+  END IF;
+
+  IF p_source NOT IN ('foreground', 'background') THEN
+    RAISE EXCEPTION 'invalid_source' USING ERRCODE = '22023';
+  END IF;
+
+  p_inside_zone_ids := COALESCE(
+    ARRAY(
+      SELECT DISTINCT inside_zone_id
+      FROM unnest(COALESCE(p_inside_zone_ids, ARRAY[]::UUID[])) AS inside_zone_id
+      WHERE inside_zone_id IS NOT NULL
+    ),
+    ARRAY[]::UUID[]
+  );
+
+  FOREACH v_zone_id IN ARRAY p_inside_zone_ids LOOP
+    SELECT mz.name INTO v_zone_name
+    FROM public.monitoring_zones AS mz
+    WHERE mz.id = v_zone_id;
+
+    IF v_zone_name IS NULL THEN
+      CONTINUE;
+    END IF;
+
+    SELECT dzp.is_inside, dzp.last_transition_at
+    INTO v_was_inside, v_last_transition_at
+    FROM public.device_zone_presence AS dzp
+    WHERE dzp.device_id = p_device_id
+      AND dzp.zone_id = v_zone_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+      v_was_inside := false;
+      v_last_transition_at := NULL;
+
+      INSERT INTO public.device_zone_presence (
+        device_id,
+        user_id,
+        zone_id,
+        is_inside,
+        last_seen_at,
+        last_latitude,
+        last_longitude,
+        source
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_id,
+        true,
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source
+      );
+    ELSE
+      UPDATE public.device_zone_presence
+      SET user_id = v_user_id,
+          is_inside = true,
+          last_seen_at = v_now,
+          last_latitude = p_latitude,
+          last_longitude = p_longitude,
+          source = p_source
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_id;
+    END IF;
+
+    v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_id);
+
+    IF v_was_inside IS DISTINCT FROM true
+      AND (v_last_transition_at IS NULL OR v_last_transition_at <= v_now - INTERVAL '5 minutes')
+    THEN
+      INSERT INTO public.zone_transition_events (
+        device_id,
+        user_id,
+        zone_id,
+        event_type,
+        occurred_at,
+        latitude,
+        longitude,
+        source,
+        delivery_status
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_id,
+        'entered',
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source,
+        'queued'
+      )
+      RETURNING id INTO v_event_id;
+
+      UPDATE public.device_zone_presence
+      SET last_transition_at = v_now
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_id;
+
+      event_id := v_event_id;
+      zone_id := v_zone_id;
+      zone_name := v_zone_name;
+      event_type := 'entered';
+      occurred_at := v_now;
+      RETURN NEXT;
+    END IF;
+  END LOOP;
+
+  FOR v_zone_row IN
+    SELECT dzp.zone_id, dzp.is_inside, dzp.last_transition_at, mz.name
+    FROM public.device_zone_presence AS dzp
+    JOIN public.monitoring_zones AS mz ON mz.id = dzp.zone_id
+    WHERE dzp.device_id = p_device_id
+      AND dzp.user_id = v_user_id
+      AND NOT (dzp.zone_id = ANY(p_inside_zone_ids))
+    FOR UPDATE OF dzp
+  LOOP
+    UPDATE public.device_zone_presence
+    SET is_inside = false,
+        last_seen_at = v_now,
+        last_latitude = p_latitude,
+        last_longitude = p_longitude,
+        source = p_source,
+        user_id = v_user_id
+    WHERE public.device_zone_presence.device_id = p_device_id
+      AND public.device_zone_presence.zone_id = v_zone_row.zone_id;
+
+    v_changed_zone_ids := array_append(v_changed_zone_ids, v_zone_row.zone_id);
+
+    IF v_zone_row.is_inside IS TRUE
+      AND (v_zone_row.last_transition_at IS NULL OR v_zone_row.last_transition_at <= v_now - INTERVAL '5 minutes')
+    THEN
+      INSERT INTO public.zone_transition_events (
+        device_id,
+        user_id,
+        zone_id,
+        event_type,
+        occurred_at,
+        latitude,
+        longitude,
+        source,
+        delivery_status
+      )
+      VALUES (
+        p_device_id,
+        v_user_id,
+        v_zone_row.zone_id,
+        'exited',
+        v_now,
+        p_latitude,
+        p_longitude,
+        p_source,
+        'queued'
+      )
+      RETURNING id INTO v_event_id;
+
+      UPDATE public.device_zone_presence
+      SET last_transition_at = v_now
+      WHERE public.device_zone_presence.device_id = p_device_id
+        AND public.device_zone_presence.zone_id = v_zone_row.zone_id;
+
+      event_id := v_event_id;
+      zone_id := v_zone_row.zone_id;
+      zone_name := v_zone_row.name;
+      event_type := 'exited';
+      occurred_at := v_now;
+      RETURN NEXT;
+    END IF;
+  END LOOP;
+
+  PERFORM public.refresh_monitoring_zone_people_counts(
+    COALESCE(
+      ARRAY(
+        SELECT DISTINCT changed_zone_id
+        FROM unnest(COALESCE(v_changed_zone_ids, ARRAY[]::UUID[])) AS changed_zone_id
+        WHERE changed_zone_id IS NOT NULL
+      ),
+      ARRAY[]::UUID[]
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.process_zone_heartbeat_state(TEXT, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, TIMESTAMPTZ, TEXT, UUID[]) TO authenticated;
+
+-- END MIGRATION: 031_fix_zone_heartbeat_state_ambiguous_zone_id.sql
 
 -- ============================================================================
 -- BEGIN MIGRATION: 030_admin_live_presence.sql
@@ -2128,3 +2384,117 @@ GRANT EXECUTE ON FUNCTION public.admin_list_audit_events(INTEGER, INTEGER, TEXT,
 GRANT EXECUTE ON FUNCTION public.admin_get_entity_audit_history(TEXT, TEXT, INTEGER) TO authenticated;
 
 -- END MIGRATION: 031_admin_audit_trail.sql
+
+-- ============================================================================
+-- BEGIN MIGRATION: 032_immediate_danger_report_metadata.sql
+-- ============================================================================
+
+ALTER TABLE public.hazard_reports
+  ADD COLUMN IF NOT EXISTS immediate_danger_status TEXT NOT NULL DEFAULT 'no',
+  ADD COLUMN IF NOT EXISTS affected_people_band TEXT;
+
+ALTER TABLE public.hazard_reports
+  DROP CONSTRAINT IF EXISTS hazard_reports_immediate_danger_status_check;
+
+ALTER TABLE public.hazard_reports
+  ADD CONSTRAINT hazard_reports_immediate_danger_status_check
+  CHECK (immediate_danger_status IN ('yes', 'no', 'not_sure'));
+
+ALTER TABLE public.hazard_reports
+  DROP CONSTRAINT IF EXISTS hazard_reports_affected_people_band_check;
+
+ALTER TABLE public.hazard_reports
+  ADD CONSTRAINT hazard_reports_affected_people_band_check
+  CHECK (
+    affected_people_band IS NULL
+    OR affected_people_band IN ('unknown', '1_5', '6_20', '21_50', '50_plus')
+  );
+
+DROP FUNCTION IF EXISTS public.create_hazard_report(
+  uuid, text, text, text, text, double precision, double precision, boolean, integer, text, timestamptz, text
+);
+
+DROP FUNCTION IF EXISTS public.create_hazard_report(
+  uuid, text, text, text, text, double precision, double precision, boolean, integer, text, text, text, timestamptz, text
+);
+
+CREATE FUNCTION public.create_hazard_report(
+  p_client_id uuid, p_user_phone text, p_user_name text, p_hazard_type text, p_description text,
+  p_latitude double precision, p_longitude double precision, p_is_high_risk boolean DEFAULT false,
+  p_people_at_risk integer DEFAULT null, p_urgency_level text DEFAULT null,
+  p_immediate_danger_status text DEFAULT 'no', p_affected_people_band text DEFAULT null,
+  p_event_time timestamptz DEFAULT now(), p_device_id text DEFAULT null
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_user_id uuid; v_existing_id uuid; v_recent_count integer; v_last_created timestamptz;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE = 'P0001'; END IF;
+
+  SELECT id
+  INTO v_existing_id
+  FROM public.hazard_reports
+  WHERE user_id = v_user_id
+    AND hazard_type = p_hazard_type
+    AND created_at > now() - interval '10 minutes'
+    AND ST_DWithin(location, ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography, 50)
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF v_existing_id IS NOT NULL THEN RETURN v_existing_id; END IF;
+
+  SELECT created_at INTO v_last_created
+  FROM public.hazard_reports
+  WHERE user_id = v_user_id
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF v_last_created IS NOT NULL AND v_last_created > now() - interval '30 seconds' THEN
+    RAISE EXCEPTION 'rate_limited_min_interval' USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT count(*)::int INTO v_recent_count
+  FROM public.hazard_reports
+  WHERE user_id = v_user_id
+    AND created_at > now() - interval '1 hour';
+
+  IF v_recent_count >= 20 THEN
+    RAISE EXCEPTION 'rate_limited_hourly' USING ERRCODE = 'P0001';
+  END IF;
+
+  INSERT INTO public.hazard_reports(
+    client_id, user_id, user_phone, user_name, hazard_type, description,
+    location, latitude, longitude, is_high_risk, people_at_risk, urgency_level,
+    immediate_danger_status, affected_people_band, status, event_time, device_id
+  )
+  VALUES (
+    p_client_id,
+    v_user_id,
+    p_user_phone,
+    NULLIF(p_user_name, ''),
+    p_hazard_type,
+    p_description,
+    ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
+    p_latitude,
+    p_longitude,
+    COALESCE(p_is_high_risk, false),
+    p_people_at_risk,
+    p_urgency_level,
+    COALESCE(NULLIF(p_immediate_danger_status, ''), 'no'),
+    CASE
+      WHEN COALESCE(NULLIF(p_immediate_danger_status, ''), 'no') = 'yes'
+        THEN COALESCE(NULLIF(p_affected_people_band, ''), 'unknown')
+      ELSE NULL
+    END,
+    'pending',
+    COALESCE(p_event_time, now()),
+    p_device_id
+  )
+  RETURNING id INTO v_existing_id;
+
+  RETURN v_existing_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_hazard_report TO authenticated;
+
+-- END MIGRATION: 032_immediate_danger_report_metadata.sql

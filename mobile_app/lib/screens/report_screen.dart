@@ -31,16 +31,16 @@ class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final AudioRecorder _audioRecorder = AudioRecorder();
-  
+
   String _selectedHazard = '';
   Position? _currentPosition;
   DateTime _now = DateTime.now();
   Timer? _clockTimer;
   final List<XFile> _selectedMedia = [];
   bool _isRecordingAudio = false;
-  bool _isHighRisk = false;
-  int _peopleAtRisk = 0;
-  String _urgencyLevel = 'Medium';
+  String _immediateDangerStatus = HazardReport.immediateDangerNotSure;
+  String _affectedPeopleBand = HazardReport.affectedPeopleUnknown;
+  bool _showImmediateDangerTip = false;
   bool _isSubmitting = false;
   final ReportService _reportService = ReportService();
 
@@ -71,16 +71,54 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  String _urgencyDisplayName(String level) {
-    switch (level) {
-      case 'Low':
-        return context.l10n.urgencyLow;
-      case 'Medium':
-        return context.l10n.urgencyMedium;
-      case 'High':
-        return context.l10n.urgencyHigh;
+  String _affectedPeopleLabel(String band) {
+    switch (band) {
+      case HazardReport.affectedPeople1To5:
+        return '1-5';
+      case HazardReport.affectedPeople6To20:
+        return '6-20';
+      case HazardReport.affectedPeople21To50:
+        return '21-50';
+      case HazardReport.affectedPeople50Plus:
+        return '50+';
+      case HazardReport.affectedPeopleUnknown:
       default:
-        return level;
+        return 'Unknown';
+    }
+  }
+
+  bool get _isImmediateDangerYes =>
+      _immediateDangerStatus == HazardReport.immediateDangerYes;
+
+  bool get _isHighRisk => _isImmediateDangerYes;
+
+  int? get _peopleAtRisk {
+    if (!_isImmediateDangerYes) return null;
+
+    switch (_affectedPeopleBand) {
+      case HazardReport.affectedPeople1To5:
+        return 3;
+      case HazardReport.affectedPeople6To20:
+        return 13;
+      case HazardReport.affectedPeople21To50:
+        return 35;
+      case HazardReport.affectedPeople50Plus:
+        return 50;
+      case HazardReport.affectedPeopleUnknown:
+      default:
+        return null;
+    }
+  }
+
+  String get _urgencyLevel {
+    switch (_immediateDangerStatus) {
+      case HazardReport.immediateDangerYes:
+        return 'High';
+      case HazardReport.immediateDangerNotSure:
+        return 'Medium';
+      case HazardReport.immediateDangerNo:
+      default:
+        return 'Low';
     }
   }
 
@@ -103,7 +141,8 @@ class _ReportScreenState extends State<ReportScreen> {
           if (best == null || pos.accuracy < best!.accuracy) {
             best = pos;
           }
-          if (!completer.isCompleted && pos.accuracy <= goodEnoughAccuracyMeters) {
+          if (!completer.isCompleted &&
+              pos.accuracy <= goodEnoughAccuracyMeters) {
             completer.complete(pos);
           }
         },
@@ -195,7 +234,11 @@ class _ReportScreenState extends State<ReportScreen> {
         if (permission == LocationPermission.denied) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.locationPermissionDeniedAllowInSettings)),
+              SnackBar(
+                content: Text(
+                  context.l10n.locationPermissionDeniedAllowInSettings,
+                ),
+              ),
             );
           }
           return;
@@ -209,7 +252,9 @@ class _ReportScreenState extends State<ReportScreen> {
             context: context,
             builder: (context) => AlertDialog(
               title: Text(context.l10n.permissionRequiredTitle),
-              content: Text(context.l10n.locationPermissionPermanentlyDeniedForReporting),
+              content: Text(
+                context.l10n.locationPermissionPermanentlyDeniedForReporting,
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -231,17 +276,22 @@ class _ReportScreenState extends State<ReportScreen> {
       }
 
       // Step 3: Get current position with accuracy
-      final position = await _getBestPosition(timeout: const Duration(seconds: 12)) ??
+      final position =
+          await _getBestPosition(timeout: const Duration(seconds: 12)) ??
           await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.bestForNavigation,
             timeLimit: const Duration(seconds: 12),
           );
-      
+
       setState(() => _currentPosition = position);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorGettingLocationWithError(e.toString()))),
+          SnackBar(
+            content: Text(
+              context.l10n.errorGettingLocationWithError(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -278,7 +328,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return mic.isGranted;
   }
 
-
   Future<void> _pickFromCamera() async {
     final granted = await _requestMediaPermission(ImageSource.camera);
     if (!mounted) return;
@@ -287,7 +336,11 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       if (_selectedMedia.length >= _maxAttachments) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
+          SnackBar(
+            content: Text(
+              context.l10n.maximumAttachmentsAllowed(_maxAttachments),
+            ),
+          ),
         );
         return;
       }
@@ -299,12 +352,15 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPickingImageWithError(e.toString()))),
+          SnackBar(
+            content: Text(
+              context.l10n.errorPickingImageWithError(e.toString()),
+            ),
+          ),
         );
       }
     }
   }
-
 
   void _removeMediaAt(int index) {
     setState(() => _selectedMedia.removeAt(index));
@@ -325,14 +381,19 @@ class _ReportScreenState extends State<ReportScreen> {
     final mt = file.mimeType;
     if (mt != null && mt.startsWith('video/')) return true;
     final lower = file.name.toLowerCase();
-    return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.mkv');
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.mkv');
   }
 
   bool _isAudio(XFile file) {
     final mt = file.mimeType;
     if (mt != null && mt.startsWith('audio/')) return true;
     final lower = file.name.toLowerCase();
-    return lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.aac');
+    return lower.endsWith('.mp3') ||
+        lower.endsWith('.wav') ||
+        lower.endsWith('.m4a') ||
+        lower.endsWith('.aac');
   }
 
   Future<void> _pickVideoFromCamera() async {
@@ -343,7 +404,11 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       if (_selectedMedia.length >= _maxAttachments) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
+          SnackBar(
+            content: Text(
+              context.l10n.maximumAttachmentsAllowed(_maxAttachments),
+            ),
+          ),
         );
         return;
       }
@@ -359,7 +424,11 @@ class _ReportScreenState extends State<ReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPickingVideoWithError(e.toString()))),
+          SnackBar(
+            content: Text(
+              context.l10n.errorPickingVideoWithError(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -369,7 +438,11 @@ class _ReportScreenState extends State<ReportScreen> {
     if (_selectedMedia.length >= _maxAttachments) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.maximumAttachmentsAllowed(_maxAttachments))),
+        SnackBar(
+          content: Text(
+            context.l10n.maximumAttachmentsAllowed(_maxAttachments),
+          ),
+        ),
       );
       return;
     }
@@ -382,13 +455,19 @@ class _ReportScreenState extends State<ReportScreen> {
         if (filePath == null || filePath.isEmpty) return;
         final name = path.basename(filePath);
         setState(() {
-          _selectedMedia.add(XFile(filePath, name: name, mimeType: 'audio/m4a'));
+          _selectedMedia.add(
+            XFile(filePath, name: name, mimeType: 'audio/m4a'),
+          );
         });
       } catch (e) {
         if (!mounted) return;
         setState(() => _isRecordingAudio = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorStoppingAudioWithError(e.toString()))),
+          SnackBar(
+            content: Text(
+              context.l10n.errorStoppingAudioWithError(e.toString()),
+            ),
+          ),
         );
       }
       return;
@@ -426,7 +505,9 @@ class _ReportScreenState extends State<ReportScreen> {
       if (!mounted) return;
       setState(() => _isRecordingAudio = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.errorStartingAudioWithError(e.toString()))),
+        SnackBar(
+          content: Text(context.l10n.errorStartingAudioWithError(e.toString())),
+        ),
       );
     }
   }
@@ -448,16 +529,9 @@ class _ReportScreenState extends State<ReportScreen> {
     }
 
     if (_currentPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.waitingForLocation)),
-      );
-      return;
-    }
-
-    if (_isHighRisk && _peopleAtRisk <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.pleaseEnterPeopleAtRisk)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.waitingForLocation)));
       return;
     }
 
@@ -469,15 +543,15 @@ class _ReportScreenState extends State<ReportScreen> {
 
       // Check connectivity
       final isOnline = await _checkRealConnectivity();
-      
+
       if (!isOnline) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.noInternetReportQueued)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.noInternetReportQueued)));
         }
         // Queue offline report for background sync
-        final userId = SupabaseConfig.client.auth.currentUser?.id;
+        final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
         if (userId == null) {
           throw Exception('User not authenticated');
         }
@@ -487,7 +561,9 @@ class _ReportScreenState extends State<ReportScreen> {
         final userName = prefs.getString('user_name');
 
         if (userPhone.trim().isEmpty) {
-          throw Exception('Missing phone number. Please complete your profile.');
+          throw Exception(
+            'Missing phone number. Please complete your profile.',
+          );
         }
 
         final report = HazardReport(
@@ -499,14 +575,21 @@ class _ReportScreenState extends State<ReportScreen> {
           latitude: _currentPosition!.latitude,
           longitude: _currentPosition!.longitude,
           isHighRisk: _isHighRisk,
-          peopleAtRisk: _isHighRisk ? _peopleAtRisk : null,
-          urgencyLevel: _isHighRisk ? _urgencyLevel : null,
+          peopleAtRisk: _peopleAtRisk,
+          urgencyLevel: _urgencyLevel,
+          immediateDangerStatus: _immediateDangerStatus,
+          affectedPeopleBand: _isImmediateDangerYes
+              ? _affectedPeopleBand
+              : null,
           mediaUrls: null,
           uploadComplete: false,
           eventTime: eventTime,
         );
 
-        await OfflineReportQueueService.enqueue(report: report, media: _selectedMedia);
+        await OfflineReportQueueService.enqueue(
+          report: report,
+          media: _selectedMedia,
+        );
         if (mounted) Navigator.pop(context);
         return;
       }
@@ -520,7 +603,7 @@ class _ReportScreenState extends State<ReportScreen> {
       );
 
       // Get user data
-      final userId = SupabaseConfig.client.auth.currentUser?.id;
+      final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('User not authenticated');
       }
@@ -537,8 +620,14 @@ class _ReportScreenState extends State<ReportScreen> {
               title: Text(l10n.profileNeededTitle),
               content: Text(l10n.profileNeededBody),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-                TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.addNow)),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(l10n.addNow),
+                ),
               ],
             ),
           );
@@ -556,7 +645,7 @@ class _ReportScreenState extends State<ReportScreen> {
       }
 
       // === TWO-PHASE UPLOAD ===
-      
+
       // Phase 1: Insert report WITHOUT media
       final report = HazardReport(
         userId: userId,
@@ -567,8 +656,10 @@ class _ReportScreenState extends State<ReportScreen> {
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
         isHighRisk: _isHighRisk,
-        peopleAtRisk: _isHighRisk ? _peopleAtRisk : null,
-        urgencyLevel: _isHighRisk ? _urgencyLevel : null,
+        peopleAtRisk: _peopleAtRisk,
+        urgencyLevel: _urgencyLevel,
+        immediateDangerStatus: _immediateDangerStatus,
+        affectedPeopleBand: _isImmediateDangerYes ? _affectedPeopleBand : null,
         mediaUrls: null,
         uploadComplete: _selectedMedia.isEmpty, // true if no media
         eventTime: DateTime.now(),
@@ -580,7 +671,8 @@ class _ReportScreenState extends State<ReportScreen> {
       // If backend dedupe returned an existing report, stop and inform user.
       final meta = await _reportService.getReportMetaById(reportId);
       final existingClientId = meta?['client_id']?.toString();
-      final isLikelyDuplicate = existingClientId != null && existingClientId != report.clientId;
+      final isLikelyDuplicate =
+          existingClientId != null && existingClientId != report.clientId;
       if (isLikelyDuplicate) {
         UploadProgressController.instance.complete(l10n.duplicateReportLinked);
         if (mounted) {
@@ -615,10 +707,9 @@ class _ReportScreenState extends State<ReportScreen> {
               subtitle: l10n.uploadingMedia,
             );
           }
-          
+
           // Phase 3: Update report with media URLs
           await _reportService.updateReportMedia(reportId, uploadedUrls);
-          
         } catch (uploadError) {
           // Partial success: Report saved, but media failed
           if (mounted) {
@@ -640,7 +731,9 @@ class _ReportScreenState extends State<ReportScreen> {
       }
 
       UploadProgressController.instance.step(l10n.finalizingReport);
-      UploadProgressController.instance.complete(l10n.reportSubmittedSuccessfully);
+      UploadProgressController.instance.complete(
+        l10n.reportSubmittedSuccessfully,
+      );
 
       if (mounted) {
         await _showSubmittedConfirmationDialog();
@@ -670,12 +763,17 @@ class _ReportScreenState extends State<ReportScreen> {
           );
         }
       } else {
-      UploadProgressController.instance.fail(l10n.uploadFailedError(e.toString()));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorWithError(e.toString())), backgroundColor: AppColors.error),
+        UploadProgressController.instance.fail(
+          l10n.uploadFailedError(e.toString()),
         );
-      }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.errorWithError(e.toString())),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -691,7 +789,9 @@ class _ReportScreenState extends State<ReportScreen> {
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -704,19 +804,30 @@ class _ReportScreenState extends State<ReportScreen> {
                     shape: BoxShape.circle,
                     color: AppColors.success.withOpacity(0.12),
                   ),
-                  child: const Icon(Icons.check_circle, color: AppColors.success, size: 42),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: AppColors.success,
+                    size: 42,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   context.l10n.reportSubmittedSuccessfully,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.uploadTimelineCompleted,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -739,13 +850,15 @@ class _ReportScreenState extends State<ReportScreen> {
   Future<bool> _checkRealConnectivity() async {
     final connectivityResults = await Connectivity().checkConnectivity();
     if (connectivityResults.contains(ConnectivityResult.none)) return false;
-    
+
     // Ping Supabase to verify real internet access
     try {
-      final response = await http.head(
-        Uri.parse('${SupabaseConfig.supabaseUrl}/rest/v1/'),
-        headers: {'apikey': SupabaseConfig.supabaseAnonKey},
-      ).timeout(const Duration(seconds: 3));
+      final response = await http
+          .head(
+            Uri.parse('${SupabaseConfig.supabaseUrl}/rest/v1/'),
+            headers: {'apikey': SupabaseConfig.supabaseAnonKey},
+          )
+          .timeout(const Duration(seconds: 3));
       return response.statusCode >= 200 && response.statusCode < 400;
     } catch (_) {
       return false;
@@ -760,12 +873,22 @@ class _ReportScreenState extends State<ReportScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.reportHazard,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -779,15 +902,22 @@ class _ReportScreenState extends State<ReportScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               context.l10n.reportHelpsKeepSafe,
-              style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
-            
+
             const SizedBox(height: 24),
 
             // Hazard Type Selection
@@ -838,7 +968,10 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryBlue,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -913,7 +1046,9 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildMediaButton(
                     _isRecordingAudio ? Icons.stop : Icons.mic,
-                    _isRecordingAudio ? context.l10n.stopAudio : context.l10n.recordAudio,
+                    _isRecordingAudio
+                        ? context.l10n.stopAudio
+                        : context.l10n.recordAudio,
                     _toggleAudioRecording,
                   ),
                 ),
@@ -955,18 +1090,33 @@ class _ReportScreenState extends State<ReportScreen> {
                                     height: 80,
                                     color: const Color(0xFFEFF3F6),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(icon, color: AppColors.primaryBlue),
+                                        Icon(
+                                          icon,
+                                          color: AppColors.primaryBlue,
+                                        ),
                                         const SizedBox(height: 4),
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                          ),
                                           child: Text(
                                             item.name,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             textAlign: TextAlign.center,
-                                            style: TextStyle(fontSize: 10, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors.textSecondary,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -984,7 +1134,11 @@ class _ReportScreenState extends State<ReportScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 padding: const EdgeInsets.all(4),
-                                child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -998,84 +1152,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
             const SizedBox(height: 24),
 
-            // High-Risk Toggle
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.warning_amber_rounded, color: AppColors.error),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.l10n.highRiskSituation,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      Switch(
-                        value: _isHighRisk,
-                        onChanged: (value) => setState(() => _isHighRisk = value),
-                        activeColor: AppColors.error,
-                      ),
-                    ],
-                  ),
-                  
-                  if (_isHighRisk) ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.peopleAtRiskEstimate,
-                        filled: true,
-                        fillColor: Theme.of(context).scaffoldBackgroundColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (value) => _peopleAtRisk = int.tryParse(value) ?? 0,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: ['Low', 'Medium', 'High'].map((level) {
-                        final isSelected = _urgencyLevel == level;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: GestureDetector(
-                              onTap: () => setState(() => _urgencyLevel = level),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.error : Theme.of(context).scaffoldBackgroundColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _urgencyDisplayName(level),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.white : AppColors.textSecondary,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            _buildDangerQuestionCard(),
 
             const SizedBox(height: 32),
 
@@ -1104,7 +1181,9 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Theme.of(context).cardColor,
+          color: isSelected
+              ? AppColors.primaryBlue
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primaryBlue : AppColors.greyOutline,
@@ -1141,7 +1220,12 @@ class _ReportScreenState extends State<ReportScreen> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1153,7 +1237,11 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildMediaButton(IconData icon, String label, VoidCallback onPressed) {
+  Widget _buildMediaButton(
+    IconData icon,
+    String label,
+    VoidCallback onPressed,
+  ) {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
@@ -1165,8 +1253,335 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           Icon(icon, color: AppColors.primaryBlue),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.textPrimary,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDangerQuestionCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isDark
+        ? AppColors.darkElevated
+        : const Color(0xFFF3F8FB);
+    final borderColor = isDark
+        ? AppColors.darkOutline
+        : AppColors.primaryBlue.withOpacity(0.10);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withOpacity(isDark ? 0.08 : 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(isDark ? 0.18 : 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.emergency_outlined,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Is anyone in immediate danger?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Flag this when the situation needs fast human attention.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => setState(
+                  () => _showImmediateDangerTip = !_showImmediateDangerTip,
+                ),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryCyan.withOpacity(
+                      isDark ? 0.18 : 0.12,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.tips_and_updates_outlined,
+                    color: AppColors.secondaryCyan,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            child: _showImmediateDangerTip
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkCard.withOpacity(0.9)
+                            : Colors.white.withOpacity(0.86),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.secondaryCyan.withOpacity(0.18),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.tips_and_updates_outlined,
+                            color: AppColors.secondaryCyan,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Use this if someone may be trapped, injured, swept away, or unable to leave safely.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.45,
+                                color: isDark
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildDangerChoice(
+                label: 'Yes',
+                icon: Icons.priority_high_rounded,
+                status: HazardReport.immediateDangerYes,
+                accentColor: AppColors.error,
+              ),
+              _buildDangerChoice(
+                label: 'No',
+                icon: Icons.check_circle_outline_rounded,
+                status: HazardReport.immediateDangerNo,
+                accentColor: AppColors.success,
+              ),
+              _buildDangerChoice(
+                label: 'Not sure',
+                icon: Icons.help_outline_rounded,
+                status: HazardReport.immediateDangerNotSure,
+                accentColor: AppColors.warning,
+              ),
+            ],
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: _isImmediateDangerYes
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'How many people seem affected nearby?',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'A quick estimate helps responders prioritize what to check first.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _buildAffectedChoice(
+                              HazardReport.affectedPeopleUnknown,
+                            ),
+                            _buildAffectedChoice(
+                              HazardReport.affectedPeople1To5,
+                            ),
+                            _buildAffectedChoice(
+                              HazardReport.affectedPeople6To20,
+                            ),
+                            _buildAffectedChoice(
+                              HazardReport.affectedPeople21To50,
+                            ),
+                            _buildAffectedChoice(
+                              HazardReport.affectedPeople50Plus,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDangerChoice({
+    required String label,
+    required IconData icon,
+    required String status,
+    required Color accentColor,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isSelected = _immediateDangerStatus == status;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => setState(() => _immediateDangerStatus = status),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? accentColor.withOpacity(isDark ? 0.18 : 0.10)
+              : (isDark ? AppColors.darkCard : Colors.white.withOpacity(0.82)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? accentColor.withOpacity(0.60)
+                : (isDark ? AppColors.darkOutline : AppColors.greyOutline),
+            width: isSelected ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected
+                  ? accentColor
+                  : (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected
+                    ? accentColor
+                    : (isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.textPrimary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAffectedChoice(String band) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isSelected = _affectedPeopleBand == band;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => setState(() => _affectedPeopleBand = band),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryBlue
+              : (isDark ? AppColors.darkCard : Colors.white.withOpacity(0.86)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryBlue
+                : (isDark ? AppColors.darkOutline : AppColors.greyOutline),
+          ),
+        ),
+        child: Text(
+          _affectedPeopleLabel(band),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          ),
+        ),
       ),
     );
   }

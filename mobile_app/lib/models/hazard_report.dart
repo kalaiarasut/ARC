@@ -4,6 +4,16 @@ import '../core/location_privacy.dart';
 import 'map_marker_data.dart';
 
 class HazardReport {
+  static const String immediateDangerYes = 'yes';
+  static const String immediateDangerNo = 'no';
+  static const String immediateDangerNotSure = 'not_sure';
+
+  static const String affectedPeopleUnknown = 'unknown';
+  static const String affectedPeople1To5 = '1_5';
+  static const String affectedPeople6To20 = '6_20';
+  static const String affectedPeople21To50 = '21_50';
+  static const String affectedPeople50Plus = '50_plus';
+
   final String? id; // DB-generated UUID
   final String clientId; // Client-generated UUID (idempotency)
   final String userId; // Supabase auth user ID
@@ -16,6 +26,8 @@ class HazardReport {
   final bool isHighRisk;
   final int? peopleAtRisk;
   final String? urgencyLevel;
+  final String immediateDangerStatus;
+  final String? affectedPeopleBand;
   final List<String>? mediaUrls; // Nullable for text-only reports
   final bool uploadComplete; // Track partial uploads
   final String status;
@@ -35,6 +47,8 @@ class HazardReport {
     this.isHighRisk = false,
     this.peopleAtRisk,
     this.urgencyLevel,
+    this.immediateDangerStatus = immediateDangerNo,
+    this.affectedPeopleBand,
     this.mediaUrls,
     this.uploadComplete = false,
     this.status = 'pending',
@@ -62,6 +76,8 @@ class HazardReport {
       'isHighRisk': isHighRisk,
       'peopleAtRisk': peopleAtRisk,
       'urgencyLevel': urgencyLevel,
+      'immediateDangerStatus': immediateDangerStatus,
+      'affectedPeopleBand': affectedPeopleBand,
       'mediaUrls': mediaUrls,
       'uploadComplete': uploadComplete,
       'status': status,
@@ -84,6 +100,8 @@ class HazardReport {
       isHighRisk: json['isHighRisk'] as bool? ?? false,
       peopleAtRisk: json['peopleAtRisk'] as int?,
       urgencyLevel: json['urgencyLevel'] as String?,
+      immediateDangerStatus: json['immediateDangerStatus'] as String? ?? immediateDangerNo,
+      affectedPeopleBand: json['affectedPeopleBand'] as String?,
       mediaUrls: json['mediaUrls'] != null ? List<String>.from(json['mediaUrls']) : null,
       uploadComplete: json['uploadComplete'] as bool? ?? false,
       status: json['status'] as String? ?? 'pending',
@@ -107,6 +125,8 @@ class HazardReport {
       'is_high_risk': isHighRisk,
       'people_at_risk': peopleAtRisk,
       'urgency_level': urgencyLevel,
+      'immediate_danger_status': immediateDangerStatus,
+      'affected_people_band': affectedPeopleBand,
       'media_urls': mediaUrls,
       'upload_complete': uploadComplete,
       'status': status,
@@ -130,6 +150,8 @@ class HazardReport {
       isHighRisk: json['is_high_risk'] ?? false,
       peopleAtRisk: json['people_at_risk'],
       urgencyLevel: json['urgency_level'],
+      immediateDangerStatus: json['immediate_danger_status'] as String? ?? immediateDangerNo,
+      affectedPeopleBand: json['affected_people_band'] as String?,
       mediaUrls: json['media_urls'] != null 
           ? List<String>.from(json['media_urls']) 
           : null,
@@ -156,6 +178,8 @@ class HazardReport {
       longitude: (json['longitude'] as num).toDouble(),
       isHighRisk: json['is_high_risk'] as bool? ?? false,
       urgencyLevel: json['urgency_level'] as String?,
+      immediateDangerStatus: json['immediate_danger_status'] as String? ?? immediateDangerNo,
+      affectedPeopleBand: json['affected_people_band'] as String?,
       mediaUrls: json['media_urls'] != null ? List<String>.from(json['media_urls'] as List) : null,
       uploadComplete: true,
       status: (json['status'] as String?) ?? 'verified',
@@ -178,6 +202,8 @@ class HazardReport {
     bool? isHighRisk,
     int? peopleAtRisk,
     String? urgencyLevel,
+    String? immediateDangerStatus,
+    String? affectedPeopleBand,
     List<String>? mediaUrls,
     bool? uploadComplete,
     String? status,
@@ -197,6 +223,8 @@ class HazardReport {
       isHighRisk: isHighRisk ?? this.isHighRisk,
       peopleAtRisk: peopleAtRisk ?? this.peopleAtRisk,
       urgencyLevel: urgencyLevel ?? this.urgencyLevel,
+      immediateDangerStatus: immediateDangerStatus ?? this.immediateDangerStatus,
+      affectedPeopleBand: affectedPeopleBand ?? this.affectedPeopleBand,
       mediaUrls: mediaUrls ?? this.mediaUrls,
       uploadComplete: uploadComplete ?? this.uploadComplete,
       status: status ?? this.status,

@@ -31,16 +31,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (loadingProgress == null) return child;
           return Container(
             color: AppColors.primaryBlue.withOpacity(0.1),
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: const Center(child: CircularProgressIndicator()),
           );
         },
         errorBuilder: (context, error, stackTrace) {
           return Container(
             color: AppColors.primaryBlue.withOpacity(0.2),
             child: const Center(
-              child: Icon(Icons.image_not_supported, size: 50, color: Colors.white),
+              child: Icon(
+                Icons.image_not_supported,
+                size: 50,
+                color: Colors.white,
+              ),
             ),
           );
         },
@@ -54,7 +56,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         return Container(
           color: AppColors.primaryBlue.withOpacity(0.2),
           child: const Center(
-            child: Icon(Icons.image_not_supported, size: 50, color: Colors.white),
+            child: Icon(
+              Icons.image_not_supported,
+              size: 50,
+              color: Colors.white,
+            ),
           ),
         );
       },
@@ -92,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
             ),
           ),
-          
+
           // 2. Curved Bottom Sheet Overlay
           Align(
             alignment: Alignment.bottomCenter,
@@ -102,20 +108,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: MediaQuery.of(context).size.height * 0.45,
                 width: double.infinity,
                 color: Theme.of(context).cardColor,
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24), // Top padding for curve
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  60,
+                  24,
+                  24,
+                ), // Top padding for curve
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Expanded(
                       child: Column(
                         children: [
-                           Text(
+                          Text(
                             titles[_currentIndex],
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E1E1E),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color ??
+                                  const Color(0xFF1E1E1E),
                               height: 1.2,
                               letterSpacing: -0.5,
                             ),
@@ -124,16 +139,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             descriptions[_currentIndex],
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF666666),
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color
+                                      ?.withOpacity(0.7) ??
+                                  const Color(0xFF666666),
                               height: 1.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     // Button
                     SizedBox(
                       width: double.infinity,
@@ -148,7 +166,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           } else {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (_) => const LanguageScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const LanguageScreen(),
+                              ),
                             );
                           }
                         },
@@ -169,16 +189,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Indicators
                     SmoothPageIndicator(
                       controller: _pageController,
                       count: _images.length,
-                      effect: const ExpandingDotsEffect(
+                      effect: ExpandingDotsEffect(
                         activeDotColor: AppColors.secondaryCyan, // Sea Cyan
-                        dotColor: Color(0xFFE0E0E0),
+                        dotColor:
+                            Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkOutline
+                            : const Color(0xFFE0E0E0),
                         dotHeight: 6,
                         dotWidth: 6,
                         expansionFactor: 4,
@@ -190,20 +213,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          
+
           // Skip Button Top Right (Overlay)
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             right: 20,
             child: TextButton(
               onPressed: () {
-                 Navigator.pushReplacement(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => const LanguageScreen()),
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -211,7 +237,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Text(
                   context.l10n.skip,
                   style: const TextStyle(
-                    color: Colors.white, 
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -235,20 +261,20 @@ class TopCurveClipper extends CustomClipper<Path> {
     path.lineTo(size.width, size.height);
     // Line up to top right (lower than top-left to create angle if needed, or straight)
     path.lineTo(size.width, 50);
-    
+
     // Quadratic bezier curve to top left
     // Control point at center, slightly UP (-20) or DOWN to create the "smile" or "hill"
-    // Reference looks like a "Smile" (concave top) or "Hill" (convex top)? 
+    // Reference looks like a "Smile" (concave top) or "Hill" (convex top)?
     // Image 1: White shape is "U" like.
-    // Let's do a subtle Convex curve (Hill) which is safer and standard. 
+    // Let's do a subtle Convex curve (Hill) which is safer and standard.
     // Wait, looking at the image: The white part dips DOWN in the middle. It is Concave.
-    
+
     path.quadraticBezierTo(size.width / 2, -30, 0, 50);
-    
+
     path.close();
     return path;
-    
-    // Actually, let's just do a clean "Hill" curve which is easier to make look good? 
+
+    // Actually, let's just do a clean "Hill" curve which is easier to make look good?
     // The reference actually looks like a CONVEX curve (Hill) - wait, looking at "Onboard..." image again.
     // The IMAGE is circular at the bottom. The WHITE is circular at the top.
     // So the white container should bow UPWARDS in the middle? No, the image bows downwards.

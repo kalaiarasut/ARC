@@ -16,7 +16,7 @@ class PushTokenService {
   }) async {
     if (!Platform.isAndroid) return;
 
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     final deviceId = await DeviceIdService().getOrCreate();
@@ -50,7 +50,7 @@ class PushTokenService {
   Future<void> setEnabled(bool enabled) async {
     if (!Platform.isAndroid) return;
 
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     final deviceId = await DeviceIdService().getOrCreate();
@@ -80,7 +80,7 @@ class PushTokenService {
   Future<void> syncLanguageCode(String languageCode) async {
     if (!Platform.isAndroid) return;
 
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     final deviceId = await DeviceIdService().getOrCreate();
@@ -108,7 +108,7 @@ class PushTokenService {
   Future<void> syncZoneMonitoringOptIn(bool enabled) async {
     if (!Platform.isAndroid) return;
 
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     final deviceId = await DeviceIdService().getOrCreate();

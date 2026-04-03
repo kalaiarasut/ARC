@@ -74,7 +74,7 @@ class ReportSyncService {
         return const ReportSyncResult(attempted: 0, succeeded: 0, failed: 0);
       }
 
-      final userId = SupabaseConfig.client.auth.currentUser?.id;
+      final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
       if (userId == null) {
         return const ReportSyncResult(attempted: 0, succeeded: 0, failed: 0);
       }

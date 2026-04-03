@@ -40,11 +40,13 @@ class _SplashScreenState extends State<SplashScreen>
       final prefs = await SharedPreferences.getInstance();
       final isOnboardingComplete =
           prefs.getBool('onboarding_complete') ?? false;
-      final isSignedIn = SupabaseConfig.client.auth.currentUser != null;
+      final isSignedIn =
+          SupabaseConfig.client.auth.currentSession?.user.id != null;
       HomeFeedBootstrapData? homeFeedBootstrap;
 
       if (isOnboardingComplete && isSignedIn) {
-        homeFeedBootstrap = await HomeFeedBootstrapService().resolveInitialHomeFeed();
+        homeFeedBootstrap = await HomeFeedBootstrapService()
+            .resolveInitialHomeFeed();
       }
 
       if (mounted) {
@@ -228,7 +230,11 @@ class PremiumOceanPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
     );
     // Moon disc — small, clean
-    canvas.drawCircle(Offset(cx, cy), 12, Paint()..color = const Color(0xFFCCD5E0));
+    canvas.drawCircle(
+      Offset(cx, cy),
+      12,
+      Paint()..color = const Color(0xFFCCD5E0),
+    );
     // Crescent mask
     canvas.drawCircle(
       Offset(cx + 5, cy - 2),
@@ -273,33 +279,35 @@ class PremiumOceanPainter extends CustomPainter {
     final hull = Path();
     hull.moveTo(-70 * s, 0);
     hull.lineTo(80 * s, 0);
-    hull.cubicTo(
-      100 * s, 2 * s,
-      95 * s, 18 * s,
-      75 * s, 28 * s,
-    );
+    hull.cubicTo(100 * s, 2 * s, 95 * s, 18 * s, 75 * s, 28 * s);
     hull.quadraticBezierTo(20 * s, 38 * s, -30 * s, 35 * s);
     hull.quadraticBezierTo(-65 * s, 30 * s, -75 * s, 12 * s);
     hull.cubicTo(-76 * s, 5 * s, -74 * s, 0, -70 * s, 0);
     hull.close();
 
     // Hull — dark, matte silhouette with subtle gradient
-    canvas.drawPath(hull, Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: const [
-          Color(0xFF1A2A3E),
-          Color(0xFF0F1C2C),
-          Color(0xFF0A1420),
-        ],
-      ).createShader(Rect.fromLTWH(-78 * s, 0, 180 * s, 38 * s)));
+    canvas.drawPath(
+      hull,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: const [
+            Color(0xFF1A2A3E),
+            Color(0xFF0F1C2C),
+            Color(0xFF0A1420),
+          ],
+        ).createShader(Rect.fromLTWH(-78 * s, 0, 180 * s, 38 * s)),
+    );
 
     // Hull edge highlight (moonlight glint)
-    canvas.drawPath(hull, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..color = const Color(0x20FFFFFF));
+    canvas.drawPath(
+      hull,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = const Color(0x20FFFFFF),
+    );
 
     // --- Superstructure (clean, geometric blocks) ---
     // Main cabin block
@@ -307,35 +315,41 @@ class PremiumOceanPainter extends CustomPainter {
       Rect.fromLTWH(-45 * s, -22 * s, 78 * s, 22 * s),
       Radius.circular(1.5 * s),
     );
-    canvas.drawRRect(cabin, Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: const [
-          Color(0xFF1E3248),
-          Color(0xFF152838),
-        ],
-      ).createShader(Rect.fromLTWH(-45 * s, -22 * s, 78 * s, 22 * s)));
-    canvas.drawRRect(cabin, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5
-      ..color = const Color(0x18FFFFFF));
+    canvas.drawRRect(
+      cabin,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: const [Color(0xFF1E3248), Color(0xFF152838)],
+        ).createShader(Rect.fromLTWH(-45 * s, -22 * s, 78 * s, 22 * s)),
+    );
+    canvas.drawRRect(
+      cabin,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..color = const Color(0x18FFFFFF),
+    );
 
     // Window strip — single horizontal band of warm light
     canvas.save();
     canvas.clipRRect(cabin);
     final windowStrip = Rect.fromLTWH(-40 * s, -13 * s, 68 * s, 4 * s);
-    canvas.drawRect(windowStrip, Paint()
-      ..shader = LinearGradient(
-        colors: const [
-          Color(0x00FFD480),
-          Color(0x40FFD480),
-          Color(0x55FFDD90),
-          Color(0x40FFD480),
-          Color(0x00FFD480),
-        ],
-        stops: const [0.0, 0.15, 0.5, 0.85, 1.0],
-      ).createShader(windowStrip));
+    canvas.drawRect(
+      windowStrip,
+      Paint()
+        ..shader = LinearGradient(
+          colors: const [
+            Color(0x00FFD480),
+            Color(0x40FFD480),
+            Color(0x55FFDD90),
+            Color(0x40FFD480),
+            Color(0x00FFD480),
+          ],
+          stops: const [0.0, 0.15, 0.5, 0.85, 1.0],
+        ).createShader(windowStrip),
+    );
     // Individual window divisions
     for (double x = -35; x <= 25; x += 10) {
       canvas.drawLine(
@@ -354,34 +368,40 @@ class PremiumOceanPainter extends CustomPainter {
       Rect.fromLTWH(-22 * s, -34 * s, 36 * s, 12 * s),
       Radius.circular(1.5 * s),
     );
-    canvas.drawRRect(bridge, Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: const [
-          Color(0xFF1C2E42),
-          Color(0xFF162636),
-        ],
-      ).createShader(Rect.fromLTWH(-22 * s, -34 * s, 36 * s, 12 * s)));
-    canvas.drawRRect(bridge, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5
-      ..color = const Color(0x15FFFFFF));
+    canvas.drawRRect(
+      bridge,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: const [Color(0xFF1C2E42), Color(0xFF162636)],
+        ).createShader(Rect.fromLTWH(-22 * s, -34 * s, 36 * s, 12 * s)),
+    );
+    canvas.drawRRect(
+      bridge,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5
+        ..color = const Color(0x15FFFFFF),
+    );
 
     // Bridge window strip
     canvas.save();
     canvas.clipRRect(bridge);
     final bWindowStrip = Rect.fromLTWH(-18 * s, -29 * s, 28 * s, 3.5 * s);
-    canvas.drawRect(bWindowStrip, Paint()
-      ..shader = LinearGradient(
-        colors: const [
-          Color(0x00FFD480),
-          Color(0x35FFD480),
-          Color(0x48FFDD90),
-          Color(0x35FFD480),
-          Color(0x00FFD480),
-        ],
-      ).createShader(bWindowStrip));
+    canvas.drawRect(
+      bWindowStrip,
+      Paint()
+        ..shader = LinearGradient(
+          colors: const [
+            Color(0x00FFD480),
+            Color(0x35FFD480),
+            Color(0x48FFDD90),
+            Color(0x35FFD480),
+            Color(0x00FFD480),
+          ],
+        ).createShader(bWindowStrip),
+    );
     canvas.restore();
 
     // --- Mast — single tall thin line ---
@@ -417,11 +437,14 @@ class PremiumOceanPainter extends CustomPainter {
     final prowLine = Path();
     prowLine.moveTo(80 * s, 0);
     prowLine.cubicTo(88 * s, -3 * s, 90 * s, -10 * s, 85 * s, -18 * s);
-    canvas.drawPath(prowLine, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5 * s
-      ..color = const Color(0xFF1A2A3E)
-      ..strokeCap = StrokeCap.round);
+    canvas.drawPath(
+      prowLine,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 * s
+        ..color = const Color(0xFF1A2A3E)
+        ..strokeCap = StrokeCap.round,
+    );
 
     // Subtle warm glow from cabin windows reflecting on water
     canvas.drawRect(
@@ -440,13 +463,55 @@ class PremiumOceanPainter extends CustomPainter {
   void _paintWaveLayers(Canvas canvas, double w, double h, double horizon) {
     // 7 wave layers, far → near, increasingly opaque
     final layers = <_WaveConfig>[
-      _WaveConfig(yOffset: -2, amplitude: 3, freq: 1.0, speed: 0.4, color: const Color(0xFF132C48)),
-      _WaveConfig(yOffset: 6, amplitude: 5, freq: 1.4, speed: 0.6, color: const Color(0xFF112643)),
-      _WaveConfig(yOffset: 14, amplitude: 6, freq: 1.9, speed: 0.8, color: const Color(0xFF0E213B)),
-      _WaveConfig(yOffset: 24, amplitude: 7, freq: 1.3, speed: 1.0, color: const Color(0xFF0B1C34)),
-      _WaveConfig(yOffset: 36, amplitude: 5, freq: 2.2, speed: 1.3, color: const Color(0xFF09182D)),
-      _WaveConfig(yOffset: 50, amplitude: 4, freq: 2.8, speed: 1.6, color: const Color(0xFF071426)),
-      _WaveConfig(yOffset: 66, amplitude: 3, freq: 3.2, speed: 2.0, color: const Color(0xFF06101F)),
+      _WaveConfig(
+        yOffset: -2,
+        amplitude: 3,
+        freq: 1.0,
+        speed: 0.4,
+        color: const Color(0xFF132C48),
+      ),
+      _WaveConfig(
+        yOffset: 6,
+        amplitude: 5,
+        freq: 1.4,
+        speed: 0.6,
+        color: const Color(0xFF112643),
+      ),
+      _WaveConfig(
+        yOffset: 14,
+        amplitude: 6,
+        freq: 1.9,
+        speed: 0.8,
+        color: const Color(0xFF0E213B),
+      ),
+      _WaveConfig(
+        yOffset: 24,
+        amplitude: 7,
+        freq: 1.3,
+        speed: 1.0,
+        color: const Color(0xFF0B1C34),
+      ),
+      _WaveConfig(
+        yOffset: 36,
+        amplitude: 5,
+        freq: 2.2,
+        speed: 1.3,
+        color: const Color(0xFF09182D),
+      ),
+      _WaveConfig(
+        yOffset: 50,
+        amplitude: 4,
+        freq: 2.8,
+        speed: 1.6,
+        color: const Color(0xFF071426),
+      ),
+      _WaveConfig(
+        yOffset: 66,
+        amplitude: 3,
+        freq: 3.2,
+        speed: 2.0,
+        color: const Color(0xFF06101F),
+      ),
     ];
 
     for (final layer in layers) {
@@ -459,17 +524,33 @@ class PremiumOceanPainter extends CustomPainter {
     }
   }
 
-  void _drawWaveLayer(Canvas canvas, double w, double h, double horizon, _WaveConfig cfg) {
+  void _drawWaveLayer(
+    Canvas canvas,
+    double w,
+    double h,
+    double horizon,
+    _WaveConfig cfg,
+  ) {
     final baseY = horizon + cfg.yOffset;
     final path = Path();
     path.moveTo(0, h);
 
     for (double x = 0; x <= w; x += 2) {
       final nx = x / w;
-      final y = baseY
-        + math.sin(nx * cfg.freq * 2 * math.pi + t * cfg.speed * 2 * math.pi) * cfg.amplitude
-        + math.sin(nx * cfg.freq * 3.7 * math.pi + t * cfg.speed * 2.8 * math.pi) * cfg.amplitude * 0.25
-        + math.sin(nx * cfg.freq * 7.1 * math.pi + t * cfg.speed * 1.3 * math.pi) * cfg.amplitude * 0.08;
+      final y =
+          baseY +
+          math.sin(nx * cfg.freq * 2 * math.pi + t * cfg.speed * 2 * math.pi) *
+              cfg.amplitude +
+          math.sin(
+                nx * cfg.freq * 3.7 * math.pi + t * cfg.speed * 2.8 * math.pi,
+              ) *
+              cfg.amplitude *
+              0.25 +
+          math.sin(
+                nx * cfg.freq * 7.1 * math.pi + t * cfg.speed * 1.3 * math.pi,
+              ) *
+              cfg.amplitude *
+              0.08;
       if (x == 0) path.lineTo(0, y);
       path.lineTo(x, y);
     }
@@ -479,25 +560,49 @@ class PremiumOceanPainter extends CustomPainter {
     canvas.drawPath(path, Paint()..color = cfg.color);
   }
 
-  void _drawWaveFoam(Canvas canvas, double w, double h, double horizon, _WaveConfig cfg) {
+  void _drawWaveFoam(
+    Canvas canvas,
+    double w,
+    double h,
+    double horizon,
+    _WaveConfig cfg,
+  ) {
     final baseY = horizon + cfg.yOffset;
     final path = Path();
     bool started = false;
 
     for (double x = 0; x <= w; x += 2) {
       final nx = x / w;
-      final y = baseY
-        + math.sin(nx * cfg.freq * 2 * math.pi + t * cfg.speed * 2 * math.pi) * cfg.amplitude
-        + math.sin(nx * cfg.freq * 3.7 * math.pi + t * cfg.speed * 2.8 * math.pi) * cfg.amplitude * 0.25
-        + math.sin(nx * cfg.freq * 7.1 * math.pi + t * cfg.speed * 1.3 * math.pi) * cfg.amplitude * 0.08;
-      if (!started) { path.moveTo(x, y); started = true; } else { path.lineTo(x, y); }
+      final y =
+          baseY +
+          math.sin(nx * cfg.freq * 2 * math.pi + t * cfg.speed * 2 * math.pi) *
+              cfg.amplitude +
+          math.sin(
+                nx * cfg.freq * 3.7 * math.pi + t * cfg.speed * 2.8 * math.pi,
+              ) *
+              cfg.amplitude *
+              0.25 +
+          math.sin(
+                nx * cfg.freq * 7.1 * math.pi + t * cfg.speed * 1.3 * math.pi,
+              ) *
+              cfg.amplitude *
+              0.08;
+      if (!started) {
+        path.moveTo(x, y);
+        started = true;
+      } else {
+        path.lineTo(x, y);
+      }
     }
 
-    canvas.drawPath(path, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
-      ..color = const Color(0x10FFFFFF)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5));
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0
+        ..color = const Color(0x10FFFFFF)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -579,7 +684,12 @@ class PremiumOceanPainter extends CustomPainter {
 // Helper data classes
 class _Star {
   final double x, y, size, phase;
-  const _Star({required this.x, required this.y, required this.size, required this.phase});
+  const _Star({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.phase,
+  });
 }
 
 class _WaveConfig {

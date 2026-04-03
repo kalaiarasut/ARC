@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +47,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
   String _userName = '';
+  String? _profilePhotoPath;
   List<OfficialAdvisory> _liveAdvisories = const [];
 
   HomeFeedWindow _reportWindow = HomeFeedWindow.now;
@@ -59,7 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserProfile();
     if (widget.initialUserLocation != null) {
       _setUserLocationAfterBuild(widget.initialUserLocation!);
     } else {
@@ -83,7 +86,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     // If location becomes available later (e.g. map screen updates it), refresh report feed.
-    _locationSub = ref.listenManual<LatLng?>(userLocationProvider, (prev, next) {
+    _locationSub = ref.listenManual<LatLng?>(userLocationProvider, (
+      prev,
+      next,
+    ) {
       if (next != null && (prev == null || prev != next)) {
         _loadLiveReports();
         _loadLiveAdvisories();
@@ -107,7 +113,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _loadLastKnownLocationSilently() async {
     try {
       final perm = await Geolocator.checkPermission();
-      final hasPermission = perm == LocationPermission.always || perm == LocationPermission.whileInUse;
+      final hasPermission =
+          perm == LocationPermission.always ||
+          perm == LocationPermission.whileInUse;
       if (!hasPermission) return;
 
       final pos = await Geolocator.getLastKnownPosition();
@@ -127,12 +135,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  Future<void> _loadUserName() async {
+  Future<void> _loadUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('user_name');
-    if (name != null && mounted) {
-      setState(() => _userName = name);
+    final name = prefs.getString('user_name') ?? '';
+    final photoPath = prefs.getString('profile_photo_path');
+    final resolvedPhotoPath = photoPath != null && File(photoPath).existsSync()
+        ? photoPath
+        : null;
+
+    if (photoPath != null && resolvedPhotoPath == null) {
+      await prefs.remove('profile_photo_path');
     }
+
+    if (!mounted) return;
+    setState(() {
+      _userName = name;
+      _profilePhotoPath = resolvedPhotoPath;
+    });
   }
 
   Future<void> _loadLiveAdvisories({LatLng? locationOverride}) async {
@@ -176,7 +195,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<List<MapMarkerData>> _fetchLiveReportsForWindow(HomeFeedWindow window, {required LatLng? loc}) async {
+  Future<List<MapMarkerData>> _fetchLiveReportsForWindow(
+    HomeFeedWindow window, {
+    required LatLng? loc,
+  }) async {
     final since = _sinceForWindow(window);
 
     double minLat = -90, maxLat = 90, minLon = -180, maxLon = 180;
@@ -196,18 +218,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       limit: 200,
     );
 
-    final filtered = items
-        .where((r) => r.timestamp.isAfter(since))
-        .where((r) => _selectedHazard == null || r.hazardType == _selectedHazard)
-        .where((r) =>
-            _selectedUrgency == null ||
-            (_selectedUrgency == 'High' &&
-                (r.urgencyLevel.toLowerCase() == 'high' ||
-                    r.urgencyLevel.toLowerCase() == 'critical')) ||
-            (_selectedUrgency != 'High' &&
-                r.urgencyLevel.toLowerCase() == _selectedUrgency!.toLowerCase()))
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final filtered =
+        items
+            .where((r) => r.timestamp.isAfter(since))
+            .where(
+              (r) => _selectedHazard == null || r.hazardType == _selectedHazard,
+            )
+            .where(
+              (r) =>
+                  _selectedUrgency == null ||
+                  (_selectedUrgency == 'High' &&
+                      (r.urgencyLevel.toLowerCase() == 'high' ||
+                          r.urgencyLevel.toLowerCase() == 'critical')) ||
+                  (_selectedUrgency != 'High' &&
+                      r.urgencyLevel.toLowerCase() ==
+                          _selectedUrgency!.toLowerCase()),
+            )
+            .toList()
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return filtered.take(10).toList();
   }
@@ -219,7 +247,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       final loc = locationOverride ?? ref.read(userLocationProvider);
 
-      final shouldApplyStartupFallback = applyStartupWindowFallback &&
+      final shouldApplyStartupFallback =
+          applyStartupWindowFallback &&
           !_didApplyStartupWindowFallback &&
           _reportWindow == HomeFeedWindow.now &&
           _selectedHazard == null &&
@@ -227,7 +256,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (shouldApplyStartupFallback) {
         _didApplyStartupWindowFallback = true;
-        final fallbackOrder = [HomeFeedWindow.now, HomeFeedWindow.week, HomeFeedWindow.month];
+        final fallbackOrder = [
+          HomeFeedWindow.now,
+          HomeFeedWindow.week,
+          HomeFeedWindow.month,
+        ];
 
         HomeFeedWindow resolvedWindow = HomeFeedWindow.month;
         List<MapMarkerData> resolvedItems = const [];
@@ -273,27 +306,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = description.trim();
     final src = text;
     if (src.isEmpty) return '';
-    if (src.length <= 70) return src;
-    return '${src.substring(0, 70)}.......';
+    if (src.length <= 92) return src;
+    return '${src.substring(0, 92).trimRight()}.....';
+  }
+
+  Color _advisorySeverityColor(String severity) {
+    switch (severity.trim().toLowerCase()) {
+      case 'warning':
+        return AppColors.error;
+      case 'watch':
+        return AppColors.warning;
+      default:
+        return AppColors.primaryBlue;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Light greyish-blue bg
+      backgroundColor: Theme.of(
+        context,
+      ).scaffoldBackgroundColor, // Light greyish-blue bg
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Bottom padding for FAB
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            100,
+          ), // Bottom padding for FAB
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Header
               Row(
                 children: [
-                   const CircleAvatar(
+                  CircleAvatar(
                     radius: 24,
-                    backgroundImage: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop'),
+                    backgroundColor: AppColors.primaryBlue,
+                    backgroundImage: _profilePhotoPath != null
+                        ? FileImage(File(_profilePhotoPath!))
+                        : null,
+                    child: _profilePhotoPath == null
+                        ? const Icon(Icons.person, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -304,7 +361,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           context.l10n.hiWelcome,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                           ),
                         ),
                         Text(
@@ -314,25 +374,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
                   ),
                   ValueListenableBuilder(
-                    valueListenable: Hive.box(OfflineReportQueueService.boxName).listenable(),
+                    valueListenable: Hive.box(
+                      OfflineReportQueueService.boxName,
+                    ).listenable(),
                     builder: (context, box, _) {
                       final count = box.length;
                       if (count == 0) return const SizedBox.shrink();
                       return Flexible(
                         child: Container(
                           margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.warning.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+                            border: Border.all(
+                              color: AppColors.warning.withOpacity(0.35),
+                            ),
                           ),
                           child: Text(
                             context.l10n.pendingCount(count),
@@ -341,7 +411,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -354,24 +428,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationsScreen(),
+                        ),
                       );
                     },
-                    child: _buildHeaderIcon(Icons.notifications_outlined, hasBadge: true),
+                    child: _buildHeaderIcon(
+                      Icons.notifications_outlined,
+                      hasBadge: true,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      );
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      ).then((_) => _loadUserProfile());
                     },
                     child: _buildHeaderIcon(Icons.settings_outlined),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
 
               // 2. Hero Banner (Sea Theme)
@@ -380,7 +461,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFE0F7FA), Color(0xFFB2EBF2)], // Light Cyan Gradient
+                    colors: [
+                      Color(0xFFE0F7FA),
+                      Color(0xFFB2EBF2),
+                    ], // Light Cyan Gradient
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -407,10 +491,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             height: 36,
                             child: ElevatedButton(
                               onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const UpdatesScreen()),
-                                  );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const UpdatesScreen(),
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryBlue,
@@ -419,7 +505,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                               ),
                               child: Text(context.l10n.seeUpdates),
                             ),
@@ -433,7 +521,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         'https://cdn-icons-png.flaticon.com/512/2909/2909355.png', // Placceholder Illustration
                         height: 100,
                         fit: BoxFit.contain,
-                        errorBuilder: (c, e, s) => const Icon(Icons.people, size: 60, color: AppColors.secondaryCyan),
+                        errorBuilder: (c, e, s) => const Icon(
+                          Icons.people,
+                          size: 60,
+                          color: AppColors.secondaryCyan,
+                        ),
                       ),
                     ),
                   ],
@@ -454,7 +546,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -462,12 +556,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const ReportsScreen(),
+                        ),
                       );
                     },
                     child: Text(
                       context.l10n.seeAll,
-                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -523,16 +623,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     'No reports yet',
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 )
               else
                 SizedBox(
-                  height: 255,
+                  height: 244,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _liveReports.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       final r = _liveReports[index];
                       final loc = ref.read(userLocationProvider);
@@ -549,15 +654,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       final urgencyColor = urgency.toLowerCase() == 'critical'
                           ? AppColors.error
                           : urgency.toLowerCase() == 'high'
-                              ? AppColors.warning
-                              : AppColors.primaryBlue;
+                          ? AppColors.warning
+                          : AppColors.primaryBlue;
 
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ReportDetailsScreen(reportId: r.id, isOwnReport: false),
+                              builder: (_) => ReportDetailsScreen(
+                                reportId: r.id,
+                                isOwnReport: false,
+                              ),
                             ),
                           );
                         },
@@ -577,69 +685,124 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildReportMediaPreview(r, height: 130, borderRadius: 16),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: urgencyColor.withOpacity(0.12),
-                                            borderRadius: BorderRadius.circular(999),
-                                          ),
-                                          child: Text(
-                                            urgency.isEmpty ? 'LOW' : urgency.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.w800,
-                                              color: urgencyColor,
+                              _buildReportMediaPreview(
+                                r,
+                                height: 140,
+                                borderRadius: 16,
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    14,
+                                    8,
+                                    14,
+                                    2,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: urgencyColor.withOpacity(
+                                                0.12,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              urgency.isEmpty
+                                                  ? 'LOW'
+                                                  : urgency.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: urgencyColor,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            r.hazardType,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 13.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              r.hazardType,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.bold,
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? AppColors.darkTextPrimary
+                                                    : AppColors.textPrimary,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    if (_shortDescription(r.description).isNotEmpty)
-                                      Text(
-                                        _shortDescription(r.description),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontSize: 12.5, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                        ],
                                       ),
-                                    if (_shortDescription(r.description).isNotEmpty)
-                                      const SizedBox(height: 10),
-                                    Row(
-                                      children: [
+                                      const SizedBox(height: 2),
+                                      if (_shortDescription(
+                                        r.description,
+                                      ).isNotEmpty)
                                         Text(
-                                          _timeAgo(r.timestamp),
-                                          style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                                        ),
-                                        const Spacer(),
-                                        if (distanceText.isNotEmpty)
-                                          Text(
-                                            distanceText,
-                                            style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                          _shortDescription(r.description),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            height: 1.28,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.textSecondary,
                                           ),
-                                      ],
-                                    ),
-                                  ],
+                                        ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            _timeAgo(r.timestamp),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? AppColors.darkTextSecondary
+                                                  : AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          if (distanceText.isNotEmpty)
+                                            Text(
+                                              distanceText,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors.textSecondary,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -664,7 +827,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -672,12 +837,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const UpdatesScreen(),
+                        ),
                       );
                     },
                     child: Text(
                       context.l10n.seeAll,
-                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -688,7 +859,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     context.l10n.noUpdatesYet,
-                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                   ),
                 )
               else
@@ -697,15 +872,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _liveAdvisories.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       final a = _liveAdvisories[index];
-                      final languageCode = Localizations.localeOf(context).languageCode;
+                      final languageCode = Localizations.localeOf(
+                        context,
+                      ).languageCode;
+                      final severityColor = _advisorySeverityColor(a.severity);
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const UpdatesScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const UpdatesScreen(),
+                            ),
                           );
                         },
                         child: Container(
@@ -726,17 +907,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue.withOpacity(0.12),
+                                  color: severityColor.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  advisorySeverityLabelForLanguage(a.severity, languageCode).toUpperCase(),
-                                  style: const TextStyle(
+                                  advisorySeverityLabelForLanguage(
+                                    a.severity,
+                                    languageCode,
+                                  ).toUpperCase(),
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.primaryBlue,
+                                    color: severityColor,
                                   ),
                                 ),
                               ),
@@ -752,23 +939,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.darkTextPrimary
+                                            : AppColors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    if (a.region != null && a.region!.trim().isNotEmpty)
+                                    if (a.region != null &&
+                                        a.region!.trim().isNotEmpty)
                                       Text(
                                         a.region!,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? AppColors.darkTextSecondary
+                                              : AppColors.textSecondary,
+                                        ),
                                       ),
                                     const Spacer(),
                                     Text(
                                       _timeAgo(a.publishedAt),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -784,7 +990,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      
+
       // Bottom Navigation Bar with FAB
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -796,7 +1002,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         backgroundColor: AppColors.primaryBlue, // Sea Blue FAB
         elevation: 4,
-        child: const Icon(Icons.phone_in_talk, color: Colors.white, size: 28), // Or Report icon
+        child: const Icon(
+          Icons.phone_in_talk,
+          color: Colors.white,
+          size: 28,
+        ), // Or Report icon
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
@@ -809,11 +1019,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(child: _buildNavItem(Icons.home_filled, context.l10n.homeTab, 0)),
-              Expanded(child: _buildNavItem(Icons.map_outlined, context.l10n.mapTab, 1)),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.home_filled,
+                  context.l10n.homeTab,
+                  0,
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.map_outlined,
+                  context.l10n.mapTab,
+                  1,
+                ),
+              ),
               const SizedBox(width: 48), // Space for FAB
-              Expanded(child: _buildNavItem(Icons.article_outlined, context.l10n.updatesTab, 2)),
-              Expanded(child: _buildNavItem(Icons.person_outline, context.l10n.profileTab, 3)),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.article_outlined,
+                  context.l10n.updatesTab,
+                  2,
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.person_outline,
+                  context.l10n.profileTab,
+                  3,
+                ),
+              ),
             ],
           ),
         ),
@@ -829,8 +1063,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         shape: BoxShape.circle,
       ),
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, size: 24),
+          Icon(
+            icon,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            size: 24,
+          ),
           if (hasBadge)
             Positioned(
               right: 0,
@@ -883,7 +1124,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: AppColors.greyOutline.withOpacity(0.22),
-              child: Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              child: Icon(
+                Icons.broken_image,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
@@ -898,14 +1144,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         color: AppColors.greyOutline.withOpacity(0.22),
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.darkTextPrimary
+              : AppColors.textPrimary.withOpacity(0.7),
           size: 34,
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected, {required VoidCallback onTap}) {
+  Widget _buildFilterChip(
+    String label,
+    bool isSelected, {
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -921,7 +1173,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             children: [
               if (isSelected) ...[
-                Icon(Icons.notifications_active, color: Theme.of(context).cardColor, size: 16),
+                Icon(
+                  Icons.notifications_active,
+                  color: Theme.of(context).cardColor,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -944,7 +1200,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : Theme.of(context).cardColor,
+          color: isSelected
+              ? AppColors.primaryBlue
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: isSelected ? null : Border.all(color: Colors.transparent),
         ),
@@ -959,7 +1217,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down, size: 18, color: isSelected ? Colors.white : AppColors.textSecondary),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -975,15 +1237,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       itemBuilder: (ctx) => [
         PopupMenuItem(value: null, child: Text(context.l10n.filterAllHazards)),
-        PopupMenuItem(value: 'High Waves', child: Text(context.l10n.hazardHighWaves)),
-        PopupMenuItem(value: 'Tsunami', child: Text(context.l10n.hazardTsunami)),
+        PopupMenuItem(
+          value: 'High Waves',
+          child: Text(context.l10n.hazardHighWaves),
+        ),
+        PopupMenuItem(
+          value: 'Tsunami',
+          child: Text(context.l10n.hazardTsunami),
+        ),
         PopupMenuItem(value: 'Storm', child: Text(context.l10n.hazardStorm)),
         PopupMenuItem(value: 'Flood', child: Text(context.l10n.hazardFlood)),
-        PopupMenuItem(value: 'Rip Current', child: Text(context.l10n.filterRipCurrent)),
-        PopupMenuItem(value: 'Pollution', child: Text(context.l10n.filterPollution)),
-        PopupMenuItem(value: 'Earthquake', child: Text(context.l10n.filterEarthquake)),
+        PopupMenuItem(
+          value: 'Rip Current',
+          child: Text(context.l10n.filterRipCurrent),
+        ),
+        PopupMenuItem(
+          value: 'Pollution',
+          child: Text(context.l10n.filterPollution),
+        ),
+        PopupMenuItem(
+          value: 'Earthquake',
+          child: Text(context.l10n.filterEarthquake),
+        ),
       ],
-      child: _buildDropdownFilterChip(_selectedHazard ?? context.l10n.filterAllHazards, _selectedHazard != null),
+      child: _buildDropdownFilterChip(
+        _selectedHazard ?? context.l10n.filterAllHazards,
+        _selectedHazard != null,
+      ),
     );
   }
 
@@ -995,12 +1275,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       itemBuilder: (ctx) => [
-        PopupMenuItem(value: null, child: Text(context.l10n.filterAllUrgencies)),
+        PopupMenuItem(
+          value: null,
+          child: Text(context.l10n.filterAllUrgencies),
+        ),
         PopupMenuItem(value: 'High', child: Text(context.l10n.urgencyHigh)),
         PopupMenuItem(value: 'Medium', child: Text(context.l10n.urgencyMedium)),
         PopupMenuItem(value: 'Low', child: Text(context.l10n.low)),
       ],
-      child: _buildDropdownFilterChip(_selectedUrgency ?? context.l10n.filterAllUrgencies, _selectedUrgency != null),
+      child: _buildDropdownFilterChip(
+        _selectedUrgency ?? context.l10n.filterAllUrgencies,
+        _selectedUrgency != null,
+      ),
     );
   }
 
@@ -1044,10 +1330,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             softWrap: false,
             style: TextStyle(
               fontSize: 10,
-               color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
-               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected
+                  ? AppColors.primaryBlue
+                  : AppColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-          )
+          ),
         ],
       ),
     );
@@ -1081,7 +1369,9 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
 
   Future<void> _init() async {
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+      );
       await controller.initialize();
       await controller.pause();
       await controller.setVolume(0);
@@ -1113,6 +1403,7 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
         height: widget.height,
         width: double.infinity,
         child: Stack(
+          alignment: Alignment.center,
           fit: StackFit.expand,
           children: [
             if (_ready && _controller != null)
@@ -1131,7 +1422,9 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   child: Icon(
                     Icons.videocam,
                     size: 34,
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.8),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary.withOpacity(0.8),
                   ),
                 ),
               ),
@@ -1144,7 +1437,11 @@ class _VideoReportThumbnailState extends State<_VideoReportThumbnail> {
                   color: Colors.black.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Icon(Icons.play_arrow, size: 18, color: Colors.white),
+                child: const Icon(
+                  Icons.play_arrow,
+                  size: 18,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],

@@ -33,7 +33,9 @@ class _QueuedReportsScreenState extends State<QueuedReportsScreen> {
                 ? context.l10n.nothingToSync
                 : context.l10n.syncDone(result.succeeded, result.failed),
           ),
-          backgroundColor: result.failed == 0 ? AppColors.success : AppColors.warning,
+          backgroundColor: result.failed == 0
+              ? AppColors.success
+              : AppColors.warning,
         ),
       );
     } finally {
@@ -89,7 +91,9 @@ class _QueuedReportsScreenState extends State<QueuedReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ValueListenableBuilder(
-              valueListenable: Hive.box(OfflineReportQueueService.boxName).listenable(),
+              valueListenable: Hive.box(
+                OfflineReportQueueService.boxName,
+              ).listenable(),
               builder: (context, box, _) {
                 final count = box.length;
                 final stuckCount = box.values.where((value) {
@@ -114,7 +118,10 @@ class _QueuedReportsScreenState extends State<QueuedReportsScreen> {
                           color: AppColors.warning.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.inventory_2_outlined, color: AppColors.warning),
+                        child: const Icon(
+                          Icons.inventory_2_outlined,
+                          color: AppColors.warning,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -123,15 +130,22 @@ class _QueuedReportsScreenState extends State<QueuedReportsScreen> {
                           children: [
                             Text(
                               context.l10n.queuedReportsCount(count),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               stuckCount > 0
-                                  ? context.l10n.stuckItemsManualAttention(stuckCount)
+                                  ? context.l10n.stuckItemsManualAttention(
+                                      stuckCount,
+                                    )
                                   : context.l10n.reviewRetryStatus,
                               style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? AppColors.darkTextSecondary
                                     : AppColors.textSecondary,
                               ),

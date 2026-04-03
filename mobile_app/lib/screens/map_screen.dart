@@ -29,7 +29,8 @@ class MapScreen extends ConsumerStatefulWidget {
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserver {
+class _MapScreenState extends ConsumerState<MapScreen>
+    with WidgetsBindingObserver {
   final MapController _mapController = MapController();
   final LayerHitNotifier<MonitoringZone> _monitoringZonePolygonHitNotifier =
       ValueNotifier(null);
@@ -60,12 +61,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
   Future<void> _openDirectionsTo(double lat, double lon) async {
     // Use Google Maps directions with destination only; Google Maps will default origin to current location.
-    final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon');
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon',
+    );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.couldNotOpenMaps)));
     }
   }
 
@@ -88,7 +91,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           if (best == null || pos.accuracy < best!.accuracy) {
             best = pos;
           }
-          if (!completer.isCompleted && pos.accuracy <= goodEnoughAccuracyMeters) {
+          if (!completer.isCompleted &&
+              pos.accuracy <= goodEnoughAccuracyMeters) {
             completer.complete(pos);
           }
         },
@@ -134,8 +138,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
     getUserLocation();
 
-    _languageSub = ref.listenManual<String>(languageCodeProvider, (previous, next) {
-      if (previous != null && previous != next && ref.read(mapProvider).currentBounds != null) {
+    _languageSub = ref.listenManual<String>(languageCodeProvider, (
+      previous,
+      next,
+    ) {
+      if (previous != null &&
+          previous != next &&
+          ref.read(mapProvider).currentBounds != null) {
         // ignore: discarded_futures
         ref.read(mapProvider.notifier).refresh();
       }
@@ -179,7 +188,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     });
     _scheduleMapRefresh(recenter: true);
   }
-
 
   Future<bool> promptEnableLocationServices() async {
     if (!mounted) return false;
@@ -228,7 +236,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.permissionRequiredTitle),
-        content: Text(context.l10n.locationPermissionPermanentlyDeniedForCurrentLocation),
+        content: Text(
+          context.l10n.locationPermissionPermanentlyDeniedForCurrentLocation,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -270,7 +280,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.enableLocationServicesForCurrentLocation)),
+              SnackBar(
+                content: Text(
+                  context.l10n.enableLocationServicesForCurrentLocation,
+                ),
+              ),
             );
           }
         }
@@ -289,7 +303,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.locationPermissionDeniedAllowForCurrentLocation)),
+              SnackBar(
+                content: Text(
+                  context.l10n.locationPermissionDeniedAllowForCurrentLocation,
+                ),
+              ),
             );
           }
         }
@@ -304,7 +322,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           await Future<void>.delayed(Duration.zero);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.locationPermissionBlockedEnableInSettings)),
+              SnackBar(
+                content: Text(
+                  context.l10n.locationPermissionBlockedEnableInSettings,
+                ),
+              ),
             );
           }
         }
@@ -325,7 +347,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       }
 
       // Get a more precise fix: sample stream briefly and pick best accuracy.
-      final position = await _getBestPosition(timeout: const Duration(seconds: 12)) ??
+      final position =
+          await _getBestPosition(timeout: const Duration(seconds: 12)) ??
           await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.bestForNavigation,
             timeLimit: const Duration(seconds: 12),
@@ -350,7 +373,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
         await Future<void>.delayed(Duration.zero);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.errorGettingLocationWithError(e.toString()))),
+            SnackBar(
+              content: Text(
+                context.l10n.errorGettingLocationWithError(e.toString()),
+              ),
+            ),
           );
         }
       }
@@ -374,12 +401,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
       if (!mounted) return;
       final bounds = _mapController.camera.visibleBounds;
       final filters = ref.read(mapFiltersProvider);
-      
-      ref.read(mapProvider.notifier).updateViewport(
-        bounds,
-        currentUserId: SupabaseConfig.client.auth.currentUser?.id,
-        filters: filters,
-      );
+
+      ref
+          .read(mapProvider.notifier)
+          .updateViewport(
+            bounds,
+            currentUserId: SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id,
+            filters: filters,
+          );
     });
   }
 
@@ -396,8 +425,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     final zone = (circleHit != null && circleHit.hitValues.isNotEmpty)
         ? circleHit.hitValues.first
         : (polygonHit != null && polygonHit.hitValues.isNotEmpty)
-            ? polygonHit.hitValues.first
-            : null;
+        ? polygonHit.hitValues.first
+        : null;
 
     if (zone == null) {
       _clearOverlaySelections();
@@ -451,7 +480,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               const SizedBox(height: 16),
               Text(
                 context.l10n.gettingYourLocation,
-                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -467,7 +500,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _userLocation ?? LatLng(20.5937, 78.9629), // India center
+              initialCenter:
+                  _userLocation ?? LatLng(20.5937, 78.9629), // India center
               initialZoom: _userLocation != null ? 14 : 5,
               minZoom: 5,
               maxZoom: 18,
@@ -481,20 +515,38 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               if (Theme.of(context).brightness == Brightness.dark)
                 ColorFiltered(
                   colorFilter: const ColorFilter.matrix(<double>[
-                    -1, 0, 0, 0, 255,
-                    0, -1, 0, 0, 255,
-                    0, 0, -1, 0, 255,
-                    0, 0, 0, 1, 0,
+                    -1,
+                    0,
+                    0,
+                    0,
+                    255,
+                    0,
+                    -1,
+                    0,
+                    0,
+                    255,
+                    0,
+                    0,
+                    -1,
+                    0,
+                    255,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
                   ]),
                   child: TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.ocean.civil_alert_system',
                     maxZoom: 19,
-                    tileProvider: FMTCStore(TileCachingService.storeName).getTileProvider(
-                      settings: FMTCTileProviderSettings(
-                        behavior: CacheBehavior.cacheFirst,
-                      ),
-                    ),
+                    tileProvider: FMTCStore(TileCachingService.storeName)
+                        .getTileProvider(
+                          settings: FMTCTileProviderSettings(
+                            behavior: CacheBehavior.cacheFirst,
+                          ),
+                        ),
                   ),
                 )
               else
@@ -502,11 +554,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.ocean.civil_alert_system',
                   maxZoom: 19,
-                  tileProvider: FMTCStore(TileCachingService.storeName).getTileProvider(
-                    settings: FMTCTileProviderSettings(
-                      behavior: CacheBehavior.cacheFirst,
-                    ),
-                  ),
+                  tileProvider: FMTCStore(TileCachingService.storeName)
+                      .getTileProvider(
+                        settings: FMTCTileProviderSettings(
+                          behavior: CacheBehavior.cacheFirst,
+                        ),
+                      ),
                 ),
 
               if (mapState.monitoringZones.isNotEmpty)
@@ -514,15 +567,21 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   onTap: _selectMonitoringZoneFromHitNotifiers,
                   child: Stack(
                     children: [
-                      if (mapState.monitoringZones.any((zone) => zone.isPolygon))
+                      if (mapState.monitoringZones.any(
+                        (zone) => zone.isPolygon,
+                      ))
                         PolygonLayer(
                           hitNotifier: _monitoringZonePolygonHitNotifier,
-                          polygons: _buildMonitoringZonePolygons(mapState.monitoringZones),
+                          polygons: _buildMonitoringZonePolygons(
+                            mapState.monitoringZones,
+                          ),
                         ),
                       if (mapState.monitoringZones.any((zone) => zone.isCircle))
                         CircleLayer(
                           hitNotifier: _monitoringZoneCircleHitNotifier,
-                          circles: _buildMonitoringZoneCircles(mapState.monitoringZones),
+                          circles: _buildMonitoringZoneCircles(
+                            mapState.monitoringZones,
+                          ),
                         ),
                     ],
                   ),
@@ -530,18 +589,20 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
               // Risk zones (if enabled)
               if (filters.showRiskZones && mapState.riskZones.isNotEmpty)
-                ...mapState.riskZones.map((zone) => CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: LatLng(zone.latitude, zone.longitude),
-                      radius: zone.radiusMeters,
-                      useRadiusInMeter: true,
-                      color: zone.color,
-                      borderColor: zone.color.withOpacity(0.8),
-                      borderStrokeWidth: 2,
-                    ),
-                  ],
-                )),
+                ...mapState.riskZones.map(
+                  (zone) => CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: LatLng(zone.latitude, zone.longitude),
+                        radius: zone.radiusMeters,
+                        useRadiusInMeter: true,
+                        color: zone.color,
+                        borderColor: zone.color.withOpacity(0.8),
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
+                  ),
+                ),
 
               // Hazard markers with clustering
               MarkerClusterLayerWidget(
@@ -553,14 +614,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       point: markerData.location,
                       width: 40 * _markerScale,
                       height: 50 * _markerScale,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_selectedMonitoringZone != null) {
-                              setState(() => _selectedMonitoringZone = null);
-                            }
-                            ref.read(mapProvider.notifier).selectMarker(markerData);
-                          },
-                          child: Transform.scale(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (_selectedMonitoringZone != null) {
+                            setState(() => _selectedMonitoringZone = null);
+                          }
+                          ref
+                              .read(mapProvider.notifier)
+                              .selectMarker(markerData);
+                        },
+                        child: Transform.scale(
                           scale: _markerScale,
                           alignment: Alignment.bottomCenter,
                           child: buildMarkerWidget(markerData),
@@ -573,7 +636,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlue,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3 * _markerScale),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 3 * _markerScale,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
@@ -606,31 +672,42 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                     markers: mapState.advisories
                         .where((a) => a.latitude != null && a.longitude != null)
                         .map((advisory) {
-                      return Marker(
-                        point: LatLng(advisory.latitude!, advisory.longitude!),
-                        width: 40 * _markerScale,
-                        height: 50 * _markerScale,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_selectedMonitoringZone != null) {
-                              setState(() => _selectedMonitoringZone = null);
-                            }
-                            ref.read(mapProvider.notifier).selectAdvisory(advisory);
-                          },
-                          child: Transform.scale(
-                            scale: _markerScale,
-                            alignment: Alignment.bottomCenter,
-                            child: buildAdvisoryMarkerWidget(advisory),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          return Marker(
+                            point: LatLng(
+                              advisory.latitude!,
+                              advisory.longitude!,
+                            ),
+                            width: 40 * _markerScale,
+                            height: 50 * _markerScale,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_selectedMonitoringZone != null) {
+                                  setState(
+                                    () => _selectedMonitoringZone = null,
+                                  );
+                                }
+                                ref
+                                    .read(mapProvider.notifier)
+                                    .selectAdvisory(advisory);
+                              },
+                              child: Transform.scale(
+                                scale: _markerScale,
+                                alignment: Alignment.bottomCenter,
+                                child: buildAdvisoryMarkerWidget(advisory),
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
                     builder: (context, markers) {
                       return Container(
                         decoration: BoxDecoration(
                           color: AppColors.secondaryCyan,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3 * _markerScale),
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 3 * _markerScale,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.2),
@@ -662,7 +739,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       CircleMarker(
                         point: _userLocation!,
                         // Clamp to avoid massive circles on bad GPS.
-                        radius: (_userAccuracyMeters!.clamp(10, 1000)).toDouble(),
+                        radius: (_userAccuracyMeters!.clamp(
+                          10,
+                          1000,
+                        )).toDouble(),
                         useRadiusInMeter: true,
                         color: AppColors.primaryBlue.withOpacity(0.12),
                         borderColor: AppColors.primaryBlue.withOpacity(0.25),
@@ -670,29 +750,29 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       ),
                   ],
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _userLocation!,
-                      width: 20,
-                      height: 20,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlue,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryBlue.withOpacity(0.3),
-                              blurRadius: 12,
-                              spreadRadius: 4,
-                            ),
-                          ],
-                        ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _userLocation!,
+                    width: 20,
+                    height: 20,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withOpacity(0.3),
+                            blurRadius: 12,
+                            spreadRadius: 4,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
 
@@ -713,20 +793,29 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       elevation: 2,
                       borderRadius: BorderRadius.circular(999),
                       child: IconButton(
-                        icon: Icon(Icons.arrow_back_ios_new, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimary, size: 18),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          size: 18,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     const SizedBox(width: 10),
                     // Freshness indicator
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: mapState.isStale
-                          ? AppColors.warning.withOpacity(0.95)
-                          : Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.darkElevated.withOpacity(0.95)
-                              : Colors.white.withOpacity(0.95),
+                            ? AppColors.warning.withOpacity(0.95)
+                            : Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkElevated.withOpacity(0.95)
+                            : Colors.white.withOpacity(0.95),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -742,7 +831,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           Icon(
                             Icons.schedule,
                             size: 16,
-                            color: mapState.isStale ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                            color: mapState.isStale
+                                ? Colors.white
+                                : (Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.textSecondary),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -750,13 +844,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: mapState.isStale ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              color: mapState.isStale
+                                  ? Colors.white
+                                  : (Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textSecondary),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     const Spacer(),
 
                     // Filter toggle button
@@ -767,13 +866,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       borderRadius: BorderRadius.circular(12),
                       elevation: 4,
                       child: InkWell(
-                        onTap: () => setState(() => _showFilters = !_showFilters),
+                        onTap: () =>
+                            setState(() => _showFilters = !_showFilters),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           child: Icon(
                             _showFilters ? Icons.close : Icons.tune,
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkPrimaryBlue
+                                : AppColors.primaryBlue,
                           ),
                         ),
                       ),
@@ -783,7 +886,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               ),
             ),
           ),
-
 
           // Filter panel (collapsible)
           if (_showFilters)
@@ -807,7 +909,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -818,7 +923,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -828,17 +936,22 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             final isSelected = filters.daysBack == days;
                             return ChoiceChip(
                               label: Text(
-                                days == 1 ? context.l10n.twentyFourHours : context.l10n.daysNumber(days),
+                                days == 1
+                                    ? context.l10n.twentyFourHours
+                                    : context.l10n.daysNumber(days),
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textSecondary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               selected: isSelected,
                               onSelected: (selected) {
                                 if (selected) {
-                                  ref.read(mapFiltersProvider.notifier).update(
-                                    filters.copyWith(daysBack: days));
+                                  ref
+                                      .read(mapFiltersProvider.notifier)
+                                      .update(filters.copyWith(daysBack: days));
                                   updateMapData();
                                 }
                               },
@@ -863,22 +976,35 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           value: filters.showRiskZones,
                           activeColor: AppColors.primaryBlue,
                           onChanged: (value) async {
-                            final nextFilters = filters.copyWith(showRiskZones: value);
-                            ref.read(mapFiltersProvider.notifier).update(nextFilters);
+                            final nextFilters = filters.copyWith(
+                              showRiskZones: value,
+                            );
+                            ref
+                                .read(mapFiltersProvider.notifier)
+                                .update(nextFilters);
 
                             // Force a fetch immediately (no need to wait for a moveend).
                             final bounds = _mapController.camera.visibleBounds;
-                            await ref.read(mapProvider.notifier).updateViewport(
-                              bounds,
-                              currentUserId: SupabaseConfig.client.auth.currentUser?.id,
-                              filters: nextFilters,
-                            );
+                            await ref
+                                .read(mapProvider.notifier)
+                                .updateViewport(
+                                  bounds,
+                                  currentUserId: SupabaseConfig
+                                      .client
+                                      .auth
+                                      .currentUser
+                                      ?.id,
+                                  filters: nextFilters,
+                                );
                             if (!context.mounted) return;
                             // Give users feedback when there are no verified zones available.
-                            if (value == true && ref.read(mapProvider).riskZones.isEmpty) {
+                            if (value == true &&
+                                ref.read(mapProvider).riskZones.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(context.l10n.noVerifiedRiskZones),
+                                  content: Text(
+                                    context.l10n.noVerifiedRiskZones,
+                                  ),
                                   duration: const Duration(seconds: 3),
                                 ),
                               );
@@ -899,8 +1025,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                           value: filters.showOnlyHighRisk,
                           activeColor: AppColors.error,
                           onChanged: (value) {
-                            ref.read(mapFiltersProvider.notifier).update(
-                              filters.copyWith(showOnlyHighRisk: value));
+                            ref
+                                .read(mapFiltersProvider.notifier)
+                                .update(
+                                  filters.copyWith(showOnlyHighRisk: value),
+                                );
                             updateMapData();
                           },
                         ),
@@ -913,15 +1042,20 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
 
           // Recenter FAB
           Positioned(
-            bottom: (mapState.selectedMarker != null ||
+            bottom:
+                (mapState.selectedMarker != null ||
                     mapState.selectedAdvisory != null ||
                     _selectedMonitoringZone != null)
                 ? 280
                 : 100,
             right: 16,
             child: FloatingActionButton(
-              onPressed: _isFetchingLocation ? null : _refreshUserLocationAndCenter,
-              backgroundColor: _isFetchingLocation ? Colors.grey[200] : Theme.of(context).cardColor,
+              onPressed: _isFetchingLocation
+                  ? null
+                  : _refreshUserLocationAndCenter,
+              backgroundColor: _isFetchingLocation
+                  ? Colors.grey[200]
+                  : Theme.of(context).cardColor,
               elevation: 4,
               child: _isFetchingLocation
                   ? const SizedBox(
@@ -944,7 +1078,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue,
                     borderRadius: BorderRadius.circular(20),
@@ -963,7 +1100,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                       const SizedBox(width: 12),
                       Text(
                         context.l10n.loadingText,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -1001,7 +1141,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   color: Color(marker.urgencyColor),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: marker.isOwnReport ? AppColors.primaryBlue : Colors.white,
+                    color: marker.isOwnReport
+                        ? AppColors.primaryBlue
+                        : Colors.white,
                     width: marker.isOwnReport ? 3 : 2,
                   ),
                   boxShadow: [
@@ -1028,10 +1170,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryBlue, width: 2),
+                      border: Border.all(
+                        color: AppColors.primaryBlue,
+                        width: 2,
+                      ),
                     ),
                     child: const Center(
-                      child: Icon(Icons.person, size: 10, color: AppColors.primaryBlue),
+                      child: Icon(
+                        Icons.person,
+                        size: 10,
+                        color: AppColors.primaryBlue,
+                      ),
                     ),
                   ),
                 ),
@@ -1069,44 +1218,44 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     return const Color(0xFF4CAF50);
   }
 
-  List<Polygon<MonitoringZone>> _buildMonitoringZonePolygons(List<MonitoringZone> zones) {
-    return zones
-        .where((zone) => zone.isPolygon)
-        .map((zone) {
-          final color = _monitoringZoneColor(zone.peopleCount);
-          return Polygon(
-            points: zone.polygonPoints
-                .map((point) => LatLng(point.lat, point.lng))
-                .toList(),
-            color: color.withOpacity(0.14),
-            borderColor: color.withOpacity(0.9),
-            borderStrokeWidth: 2,
-            hitValue: zone,
-          );
-        })
-        .toList();
+  List<Polygon<MonitoringZone>> _buildMonitoringZonePolygons(
+    List<MonitoringZone> zones,
+  ) {
+    return zones.where((zone) => zone.isPolygon).map((zone) {
+      final color = _monitoringZoneColor(zone.peopleCount);
+      return Polygon(
+        points: zone.polygonPoints
+            .map((point) => LatLng(point.lat, point.lng))
+            .toList(),
+        color: color.withOpacity(0.14),
+        borderColor: color.withOpacity(0.9),
+        borderStrokeWidth: 2,
+        hitValue: zone,
+      );
+    }).toList();
   }
 
-  List<CircleMarker<MonitoringZone>> _buildMonitoringZoneCircles(List<MonitoringZone> zones) {
-    return zones
-        .where((zone) => zone.isCircle)
-        .map((zone) {
-          final color = _monitoringZoneColor(zone.peopleCount);
-          return CircleMarker(
-            point: LatLng(zone.centerLat, zone.centerLng),
-            radius: zone.radiusMeters,
-            useRadiusInMeter: true,
-            color: color.withOpacity(0.14),
-            borderColor: color.withOpacity(0.9),
-            borderStrokeWidth: 2,
-            hitValue: zone,
-          );
-        })
-        .toList();
+  List<CircleMarker<MonitoringZone>> _buildMonitoringZoneCircles(
+    List<MonitoringZone> zones,
+  ) {
+    return zones.where((zone) => zone.isCircle).map((zone) {
+      final color = _monitoringZoneColor(zone.peopleCount);
+      return CircleMarker(
+        point: LatLng(zone.centerLat, zone.centerLng),
+        radius: zone.radiusMeters,
+        useRadiusInMeter: true,
+        color: color.withOpacity(0.14),
+        borderColor: color.withOpacity(0.9),
+        borderStrokeWidth: 2,
+        hitValue: zone,
+      );
+    }).toList();
   }
 
   String _monitoringZoneTypeLabel(MonitoringZone zone) {
-    return zone.isPolygon ? 'Polygon monitoring zone' : 'Circular monitoring zone';
+    return zone.isPolygon
+        ? 'Polygon monitoring zone'
+        : 'Circular monitoring zone';
   }
 
   String _monitoringZoneSummary(MonitoringZone zone) {
@@ -1122,8 +1271,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
   Widget _buildMonitoringZoneDetailsSheet(MonitoringZone zone) {
     final color = _monitoringZoneColor(zone.peopleCount);
     final detailRows = <Widget>[
-      _buildMonitoringZoneDetailRow(Icons.category_outlined, 'Type', _monitoringZoneTypeLabel(zone)),
-      _buildMonitoringZoneDetailRow(Icons.people_alt_outlined, 'People in zone', '${zone.peopleCount}'),
+      _buildMonitoringZoneDetailRow(
+        Icons.category_outlined,
+        'Type',
+        _monitoringZoneTypeLabel(zone),
+      ),
+      _buildMonitoringZoneDetailRow(
+        Icons.people_alt_outlined,
+        'People in zone',
+        '${zone.peopleCount}',
+      ),
       if (zone.isCircle)
         _buildMonitoringZoneDetailRow(
           Icons.radio_button_checked,
@@ -1189,7 +1346,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        zone.isPolygon ? Icons.polyline : Icons.radio_button_checked,
+                        zone.isPolygon
+                            ? Icons.polyline
+                            : Icons.radio_button_checked,
                         color: color,
                       ),
                     ),
@@ -1203,7 +1362,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? AppColors.darkTextPrimary
                                   : AppColors.textPrimary,
                             ),
@@ -1213,7 +1374,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             _monitoringZoneTypeLabel(zone),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? AppColors.darkTextSecondary
                                   : AppColors.textSecondary,
                             ),
@@ -1278,7 +1441,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget _buildMonitoringZoneDetailRow(IconData icon, String label, String value) {
+  Widget _buildMonitoringZoneDetailRow(
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -1414,10 +1581,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
             ),
           ),
         ),
-        CustomPaint(
-          size: const Size(10, 10),
-          painter: _TrianglePainter(color),
-        ),
+        CustomPaint(size: const Size(10, 10), painter: _TrianglePainter(color)),
       ],
     );
   }
@@ -1431,10 +1595,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
     );
     final validityParts = <String>[];
     if (advisory.startsAt != null) {
-      validityParts.add('${advisoryLabelForLanguage('starts', languageCode)}: ${advisory.startsAt!.toLocal()}');
+      validityParts.add(
+        '${advisoryLabelForLanguage('starts', languageCode)}: ${advisory.startsAt!.toLocal()}',
+      );
     }
     if (advisory.expiresAt != null) {
-      validityParts.add('${advisoryLabelForLanguage('expires', languageCode)}: ${advisory.expiresAt!.toLocal()}');
+      validityParts.add(
+        '${advisoryLabelForLanguage('expires', languageCode)}: ${advisory.expiresAt!.toLocal()}',
+      );
     }
 
     return Positioned(
@@ -1498,7 +1666,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -1507,7 +1679,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             runSpacing: 8,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: color.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(12),
@@ -1523,7 +1698,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                               ),
                               if ((advisory.region ?? '').isNotEmpty)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.grey[100],
                                     borderRadius: BorderRadius.circular(12),
@@ -1533,7 +1711,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textSecondary,
                                     ),
                                   ),
                                 ),
@@ -1553,7 +1735,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
                     height: 1.35,
                   ),
                 ),
@@ -1563,12 +1747,24 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.event, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      Icon(
+                        Icons.event,
+                        size: 16,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           validityParts.join(' • '),
-                          style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -1581,15 +1777,39 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                   const SizedBox(height: 12),
                   Text(
                     advisoryLabelForLanguage('contacts', languageCode),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   if ((advisory.contactPhone ?? '').isNotEmpty)
-                    Text('${advisoryLabelForLanguage('phone', languageCode)}: ${advisory.contactPhone}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text(
+                      '${advisoryLabelForLanguage('phone', languageCode)}: ${advisory.contactPhone}',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
                   if ((advisory.contactWhatsapp ?? '').isNotEmpty)
-                    Text('${advisoryLabelForLanguage('whatsapp', languageCode)}: ${advisory.contactWhatsapp}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text(
+                      '${advisoryLabelForLanguage('whatsapp', languageCode)}: ${advisory.contactWhatsapp}',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
                   if ((advisory.contactHotline ?? '').isNotEmpty)
-                    Text('${advisoryLabelForLanguage('hotline', languageCode)}: ${advisory.contactHotline}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    Text(
+                      '${advisoryLabelForLanguage('hotline', languageCode)}: ${advisory.contactHotline}',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
                 ],
 
                 const SizedBox(height: 20),
@@ -1599,7 +1819,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          ref.read(mapProvider.notifier).clearSelectedAdvisory();
+                          ref
+                              .read(mapProvider.notifier)
+                              .clearSelectedAdvisory();
                         },
                         icon: const Icon(Icons.close, size: 18),
                         label: Text(context.l10n.close),
@@ -1613,7 +1835,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         ),
                       ),
                     ),
-                    if (advisory.latitude != null && advisory.longitude != null) ...[
+                    if (advisory.latitude != null &&
+                        advisory.longitude != null) ...[
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
@@ -1625,28 +1848,33 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                             _openDirectionsTo(lat, lon);
                           },
                           icon: const Icon(Icons.directions, size: 18),
-                           label: Text(advisoryLabelForLanguage('directions', languageCode)),
-                           style: ElevatedButton.styleFrom(
-                             backgroundColor: AppColors.secondaryCyan,
-                             foregroundColor: Colors.white,
-                             elevation: 0,
-                             shape: RoundedRectangleBorder(
-                               borderRadius: BorderRadius.circular(12),
-                             ),
-                             padding: const EdgeInsets.symmetric(vertical: 14),
-                           ),
-                         ),
-                       ),
-                     ],
-                   ],
-                 ),
-               ],
-             ),
-           ),
-         ),
-       ),
-     );
-   }
+                          label: Text(
+                            advisoryLabelForLanguage(
+                              'directions',
+                              languageCode,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondaryCyan,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildMarkerDetailsSheet(MapMarkerData marker) {
     return Positioned(
@@ -1697,7 +1925,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1706,13 +1936,21 @@ class _MapScreenState extends ConsumerState<MapScreen> with WidgetsBindingObserv
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       marker.timeAgo,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -1795,5 +2033,6 @@ class _TrianglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TrianglePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_TrianglePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

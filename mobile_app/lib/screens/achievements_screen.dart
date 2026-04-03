@@ -21,7 +21,9 @@ class AchievementsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(context.l10n.achievementsTitle),
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+        foregroundColor: isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -39,7 +41,8 @@ class AchievementsScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text(context.l10n.error(e.toString()))),
         data: (stats) => allBadgesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(context.l10n.error(e.toString()))),
+          error: (e, _) =>
+              Center(child: Text(context.l10n.error(e.toString()))),
           data: (allBadges) => RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(citizenStatsProvider);
@@ -50,7 +53,12 @@ class AchievementsScreen extends ConsumerWidget {
               children: [
                 _buildStatsCard(context, stats),
                 const SizedBox(height: 20),
-                _buildSectionTitle(context, context.l10n.earnedBadges, stats.badges.length, isDark),
+                _buildSectionTitle(
+                  context,
+                  context.l10n.earnedBadges,
+                  stats.badges.length,
+                  isDark,
+                ),
                 const SizedBox(height: 12),
                 _buildEarnedBadges(context, stats.badges),
                 const SizedBox(height: 24),
@@ -63,7 +71,12 @@ class AchievementsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _buildLockedBadges(context, allBadges, stats.badges),
                 const SizedBox(height: 24),
-                _buildSectionTitle(context, context.l10n.pointsHistory, stats.recentPoints.length, isDark),
+                _buildSectionTitle(
+                  context,
+                  context.l10n.pointsHistory,
+                  stats.recentPoints.length,
+                  isDark,
+                ),
                 const SizedBox(height: 12),
                 _buildPointsHistory(context, stats.recentPoints),
                 const SizedBox(height: 32),
@@ -111,23 +124,27 @@ class AchievementsScreen extends ConsumerWidget {
                   ),
                   Text(
                     context.l10n.totalPoints,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                 ],
               ),
               if (stats.rank > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                      const Icon(
+                        Icons.emoji_events,
+                        color: Colors.amber,
+                        size: 20,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '#${stats.rank}',
@@ -190,7 +207,12 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, int count, bool isDark) {
+  Widget _buildSectionTitle(
+    BuildContext context,
+    String title,
+    int count,
+    bool isDark,
+  ) {
     return Row(
       children: [
         Text(
@@ -232,7 +254,11 @@ class AchievementsScreen extends ConsumerWidget {
         child: Center(
           child: Column(
             children: [
-              const Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
+              const Icon(
+                Icons.emoji_events_outlined,
+                size: 40,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 8),
               Text(
                 context.l10n.submitFirstReportBadge,
@@ -260,13 +286,18 @@ class AchievementsScreen extends ConsumerWidget {
           icon: _iconFromString(badge.icon),
           name: badge.name,
           isEarned: true,
-          onTap: () => _showBadgeDetail(context, badge.name, badge.description, true),
+          onTap: () =>
+              _showBadgeDetail(context, badge.name, badge.description, true),
         );
       },
     );
   }
 
-  Widget _buildLockedBadges(BuildContext context, List<BadgeDefinition> all, List<EarnedBadge> earned) {
+  Widget _buildLockedBadges(
+    BuildContext context,
+    List<BadgeDefinition> all,
+    List<EarnedBadge> earned,
+  ) {
     final earnedIds = earned.map((e) => e.badgeId).toSet();
     final locked = all.where((b) => !earnedIds.contains(b.id)).toList();
 
@@ -302,7 +333,8 @@ class AchievementsScreen extends ConsumerWidget {
           icon: _iconFromString(badge.icon),
           name: badge.name,
           isEarned: false,
-          onTap: () => _showBadgeDetail(context, badge.name, badge.description, false),
+          onTap: () =>
+              _showBadgeDetail(context, badge.name, badge.description, false),
         );
       },
     );
@@ -317,7 +349,10 @@ class AchievementsScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
-          child: Text(context.l10n.noPointsHistoryYet, style: const TextStyle(color: Colors.grey)),
+          child: Text(
+            context.l10n.noPointsHistoryYet,
+            style: const TextStyle(color: Colors.grey),
+          ),
         ),
       );
     }
@@ -365,7 +400,12 @@ class AchievementsScreen extends ConsumerWidget {
     );
   }
 
-  void _showBadgeDetail(BuildContext context, String name, String desc, bool earned) {
+  void _showBadgeDetail(
+    BuildContext context,
+    String name,
+    String desc,
+    bool earned,
+  ) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -475,7 +515,11 @@ class _BadgeTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isEarned ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary) : Colors.grey,
+                  color: isEarned
+                      ? (isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary)
+                      : Colors.grey,
                 ),
               ),
             ),

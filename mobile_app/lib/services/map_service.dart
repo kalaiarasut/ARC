@@ -56,7 +56,10 @@ class MapService {
 
         final mediaRaw = json['media_urls'];
         final mediaUrls = mediaRaw is List
-            ? mediaRaw.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList()
+            ? mediaRaw
+                  .map((e) => e.toString())
+                  .where((e) => e.trim().isNotEmpty)
+                  .toList()
             : const <String>[];
 
         // Prefer event_time; fall back to created_at.
@@ -86,6 +89,7 @@ class MapService {
 
       if (missingDescriptionIds.isEmpty) return markers;
 
+      final descriptionsById = <String, String>{};
       try {
         final rows = await _supabase
             .from('hazard_reports')
@@ -93,18 +97,45 @@ class MapService {
             .inFilter('id', missingDescriptionIds)
             .eq('status', 'verified');
 
-        final byId = <String, String>{};
         for (final row in (rows as List)) {
           final json = row as Map<String, dynamic>;
           final id = json['id']?.toString();
           final description = (json['description'] as String?)?.trim() ?? '';
           if (id != null && description.isNotEmpty) {
-            byId[id] = description;
+            descriptionsById[id] = description;
           }
         }
+      } catch (_) {
+        // Fall through to detail RPC fallback below.
+      }
 
-        return markers
-            .map((m) => byId.containsKey(m.id)
+      final unresolvedIds = missingDescriptionIds
+          .where((id) => !descriptionsById.containsKey(id))
+          .toList();
+
+      for (final id in unresolvedIds) {
+        try {
+          final response = await _supabase.rpc(
+            'get_verified_report_details',
+            params: {'report_uuid': id},
+          );
+          final rows = response as List;
+          if (rows.isEmpty) continue;
+          final json = rows.first as Map<String, dynamic>;
+          final description = (json['description'] as String?)?.trim() ?? '';
+          if (description.isNotEmpty) {
+            descriptionsById[id] = description;
+          }
+        } catch (_) {
+          // Best-effort only.
+        }
+      }
+
+      if (descriptionsById.isEmpty) return markers;
+
+      return markers
+          .map(
+            (m) => descriptionsById.containsKey(m.id)
                 ? MapMarkerData(
                     id: m.id,
                     location: m.location,
@@ -114,13 +145,11 @@ class MapService {
                     isHighRisk: m.isHighRisk,
                     isOwnReport: m.isOwnReport,
                     mediaUrls: m.mediaUrls,
-                    description: byId[m.id]!,
+                    description: descriptionsById[m.id]!,
                   )
-                : m)
-            .toList();
-      } catch (_) {
-        return markers;
-      }
+                : m,
+          )
+          .toList();
     } catch (e) {
       // Offline or network error - return empty list for graceful degradation
       return [];
@@ -139,7 +168,9 @@ class MapService {
     try {
       final safeLimit = limit > 300 ? 300 : (limit < 1 ? 1 : limit);
       final languageCode = (() {
-        final saved = (StorageService.getLanguage() ?? 'en').trim().toLowerCase();
+        final saved = (StorageService.getLanguage() ?? 'en')
+            .trim()
+            .toLowerCase();
         switch (saved) {
           case 'bn':
           case 'ta':
@@ -167,7 +198,9 @@ class MapService {
       );
 
       final list = (response as List)
-          .map((json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => OfficialAdvisory.fromJson(json as Map<String, dynamic>),
+          )
           .where((a) => a.latitude != null && a.longitude != null)
           .where((a) => a.latitude! >= minLat && a.latitude! <= maxLat)
           .where((a) => a.longitude! >= minLon && a.longitude! <= maxLon)
@@ -211,7 +244,9 @@ class MapService {
     try {
       final response = await _supabase
           .from('monitoring_zones')
-          .select('id,name,description,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at')
+          .select(
+            'id,name,description,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at',
+          )
           .order('created_at', ascending: false);
 
       return (response as List)
@@ -234,7 +269,9 @@ class MapService {
   }) async {
     // Check rate limit
     if (_lastOnDemandCalculation != null) {
-      final timeSinceLastCalc = DateTime.now().difference(_lastOnDemandCalculation!);
+      final timeSinceLastCalc = DateTime.now().difference(
+        _lastOnDemandCalculation!,
+      );
       if (timeSinceLastCalc < _onDemandCooldown) {
         return [];
       }
@@ -269,10 +306,7 @@ class MapService {
     try {
       final response = await _supabase.rpc(
         'get_user_reports_on_map',
-        params: {
-          'user_uuid': userId,
-          'days_back': daysBack,
-        },
+        params: {'user_uuid': userId, 'days_back': daysBack},
       );
 
       // RPC returns a limited, safe shape. Convert directly.
@@ -337,7 +371,6 @@ class MapService {
       lastUpdated: DateTime.now(),
     );
   }
-
 }
 
 /// Container for map data

@@ -48,7 +48,9 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
       await profileDir.create(recursive: true);
     }
 
-    final ext = p.extension(picked.path).isNotEmpty ? p.extension(picked.path) : '.jpg';
+    final ext = p.extension(picked.path).isNotEmpty
+        ? p.extension(picked.path)
+        : '.jpg';
     final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}$ext';
     final destPath = p.join(profileDir.path, fileName);
 
@@ -88,43 +90,69 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
               ),
               const SizedBox(height: 12),
               ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryBlue),
+                leading: const Icon(
+                  Icons.camera_alt_outlined,
+                  color: AppColors.primaryBlue,
+                ),
                 title: Text(context.l10n.camera),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   try {
-                    final picked = await _imagePicker.pickImage(source: ImageSource.camera, imageQuality: 90);
+                    final picked = await _imagePicker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 90,
+                    );
                     if (picked == null) return;
                     await _setPhotoFromXFile(picked);
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.l10n.failedToTakePhoto(e.toString()))),
+                      SnackBar(
+                        content: Text(
+                          context.l10n.failedToTakePhoto(e.toString()),
+                        ),
+                      ),
                     );
                   }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primaryBlue),
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.primaryBlue,
+                ),
                 title: Text(context.l10n.chooseFromGallery),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   try {
-                    final picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                    final picked = await _imagePicker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 90,
+                    );
                     if (picked == null) return;
                     await _setPhotoFromXFile(picked);
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.l10n.failedToPickPhoto(e.toString()))),
+                      SnackBar(
+                        content: Text(
+                          context.l10n.failedToPickPhoto(e.toString()),
+                        ),
+                      ),
                     );
                   }
                 },
               ),
               if (_photoPath != null)
                 ListTile(
-                  leading: const Icon(Icons.delete_outline, color: AppColors.error),
-                  title: Text(context.l10n.remove, style: const TextStyle(color: AppColors.error)),
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.error,
+                  ),
+                  title: Text(
+                    context.l10n.remove,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     await _removePhoto();
@@ -140,7 +168,9 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = (_name == null || _name!.trim().isEmpty) ? context.l10n.user : _name!.trim();
+    final displayName = (_name == null || _name!.trim().isEmpty)
+        ? context.l10n.user
+        : _name!.trim();
     final phone = _phone?.trim();
 
     return Scaffold(
@@ -149,12 +179,22 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.profile,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Padding(
@@ -177,10 +217,14 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                         CircleAvatar(
                           radius: 22,
                           backgroundColor: AppColors.primaryBlue,
-                          backgroundImage: (_photoPath != null && File(_photoPath!).existsSync())
+                          backgroundImage:
+                              (_photoPath != null &&
+                                  File(_photoPath!).existsSync())
                               ? FileImage(File(_photoPath!))
                               : null,
-                          child: (_photoPath == null || !File(_photoPath!).existsSync())
+                          child:
+                              (_photoPath == null ||
+                                  !File(_photoPath!).existsSync())
                               ? const Icon(Icons.person, color: Colors.white)
                               : null,
                         ),
@@ -192,9 +236,15 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                             decoration: BoxDecoration(
                               color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.greyOutline.withOpacity(0.7)),
+                              border: Border.all(
+                                color: AppColors.greyOutline.withOpacity(0.7),
+                              ),
                             ),
-                            child: const Icon(Icons.edit, size: 14, color: AppColors.primaryBlue),
+                            child: const Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: AppColors.primaryBlue,
+                            ),
                           ),
                         ),
                       ],
@@ -209,14 +259,24 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                           displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          (phone == null || phone.isEmpty) ? context.l10n.phoneNotSet : phone,
+                          (phone == null || phone.isEmpty)
+                              ? context.l10n.phoneNotSet
+                              : phone,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -225,7 +285,10 @@ class _ProfileModuleScreenState extends State<ProfileModuleScreen> {
                     onPressed: () async {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const UserDetailsScreen(isOnboarding: false)),
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const UserDetailsScreen(isOnboarding: false),
+                        ),
                       );
                       await _loadProfile();
                     },

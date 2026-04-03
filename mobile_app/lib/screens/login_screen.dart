@@ -29,11 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(context.l10n.loginTitle),
         backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.darkTextPrimary
+            : AppColors.textPrimary,
         elevation: 0,
       ),
       body: SafeArea(
@@ -47,7 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                   height: 1.3,
                 ),
               ),
@@ -56,17 +60,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 context.l10n.otpIntro,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               Text(
                 context.l10n.mobileNumberLabel,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -83,12 +91,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   LengthLimitingTextInputFormatter(10),
                 ],
               ),
-              
+
               const Spacer(),
-              
-              
+
               PrimaryButton(
-                text: _isSending ? context.l10n.sendingLabel : context.l10n.sendOtp,
+                text: _isSending
+                    ? context.l10n.sendingLabel
+                    : context.l10n.sendOtp,
                 onPressed: (_mobileController.text.length >= 10 && !_isSending)
                     ? () async {
                         final raw = _mobileController.text.trim();
@@ -101,7 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => OtpScreen(mobileNumber: phone)),
+                            MaterialPageRoute(
+                              builder: (_) => OtpScreen(mobileNumber: phone),
+                            ),
                           );
                         } catch (e) {
                           if (!context.mounted) return;
@@ -124,11 +135,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       }
                     : () {},
-                backgroundColor: _mobileController.text.length >= 10 
-                    ? AppColors.primaryBlue 
+                backgroundColor: _mobileController.text.length >= 10
+                    ? AppColors.primaryBlue
                     : AppColors.greyOutline,
-                textColor: _mobileController.text.length >= 10 
-                    ? Colors.white 
+                textColor: _mobileController.text.length >= 10
+                    ? Colors.white
                     : AppColors.textSecondary,
               ),
               const SizedBox(height: 16),

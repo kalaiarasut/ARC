@@ -80,9 +80,9 @@ class _SeverityDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasSelection = selectedSeverity != null;
     final languageCode = Localizations.localeOf(context).languageCode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String getLabel() {
       if (selectedSeverity == null) return context.l10n.filterSeverity;
@@ -103,14 +103,14 @@ class _SeverityDropdown extends StatelessWidget {
     return PopupMenuButton<String?>(
       onSelected: onSelected,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isDark ? AppColors.darkCard : Colors.white,
+      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCard : Colors.white,
       itemBuilder: (ctx) => [
         PopupMenuItem(
           value: null,
           child: Row(
             children: [
               if (selectedSeverity == null) ...[
-                Icon(Icons.check, size: 18, color: isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
+                Icon(Icons.check, size: 18, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
                 const SizedBox(width: 8),
               ] else
                 const SizedBox(width: 26),
@@ -124,7 +124,7 @@ class _SeverityDropdown extends StatelessWidget {
             child: Row(
               children: [
                 if (selectedSeverity == sev) ...[
-                  Icon(Icons.check, size: 18, color: isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
+                  Icon(Icons.check, size: 18, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
                   const SizedBox(width: 8),
                 ] else
                   const SizedBox(width: 26),
@@ -163,7 +163,6 @@ class _CategoryDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasSelection = selectedCategory != null;
     final languageCode = Localizations.localeOf(context).languageCode;
 
@@ -177,7 +176,7 @@ class _CategoryDropdown extends StatelessWidget {
     return PopupMenuButton<AdvisoryCategory?>(
       onSelected: onSelected,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isDark ? AppColors.darkCard : Colors.white,
+      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkCard : Colors.white,
       constraints: const BoxConstraints(maxHeight: 350),
       itemBuilder: (ctx) => [
         PopupMenuItem(
@@ -185,7 +184,7 @@ class _CategoryDropdown extends StatelessWidget {
           child: Row(
             children: [
               if (selectedCategory == null) ...[
-                Icon(Icons.check, size: 18, color: isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
+                Icon(Icons.check, size: 18, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
                 const SizedBox(width: 8),
               ] else
                 const SizedBox(width: 26),
@@ -199,7 +198,7 @@ class _CategoryDropdown extends StatelessWidget {
             child: Row(
               children: [
                 if (selectedCategory == cat) ...[
-                  Icon(Icons.check, size: 18, color: isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
+                  Icon(Icons.check, size: 18, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue),
                   const SizedBox(width: 8),
                 ] else
                   const SizedBox(width: 26),
@@ -226,6 +225,10 @@ class _NearMeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedColor =
+        isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue;
+    final unselectedText =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Material(
       color: Colors.transparent,
@@ -233,35 +236,27 @@ class _NearMeChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isActive
-                ? (isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue)
-                : (isDark ? AppColors.darkCard : Colors.white),
+            color: isActive ? selectedColor : (isDark ? AppColors.darkCard : Colors.white),
             borderRadius: BorderRadius.circular(20),
-            border: isActive
-                ? null
-                : Border.all(color: isDark ? AppColors.darkOutline : AppColors.greyOutline),
+            border: isActive ? null : Border.all(color: Colors.transparent),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.near_me,
-                size: 16,
-                color: isActive
-                    ? Colors.white
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                Icons.near_me_rounded,
+                size: 14,
+                color: isActive ? Colors.white : unselectedText,
               ),
               const SizedBox(width: 6),
               Text(
                 context.l10n.filterNearMe,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive
-                      ? Colors.white
-                      : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                  color: isActive ? Colors.white : unselectedText,
                 ),
               ),
             ],
@@ -318,27 +313,18 @@ class _SortDropdown extends StatelessWidget {
           ),
       ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? AppColors.darkOutline : AppColors.greyOutline.withOpacity(0.5),
-          ),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.sort,
-              size: 16,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
             Text(
               getSortLabel(selectedSort),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
@@ -434,49 +420,34 @@ class _DropdownChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedColor =
+        isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue;
+    final unselectedText =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected
-            ? (isDark ? AppColors.darkPrimaryBlue : AppColors.primaryBlue)
-            : (isDark ? AppColors.darkCard : Colors.white),
+        color: isSelected ? selectedColor : (isDark ? AppColors.darkCard : Colors.white),
         borderRadius: BorderRadius.circular(20),
-        border: isSelected
-            ? null
-            : Border.all(color: isDark ? AppColors.darkOutline : AppColors.greyOutline),
+        border: isSelected ? null : Border.all(color: Colors.transparent),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (severityColor != null && isSelected) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
           Text(
             label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected
-                  ? Colors.white
-                  : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              color: isSelected ? Colors.white : unselectedText,
             ),
           ),
           const SizedBox(width: 4),
           Icon(
             Icons.keyboard_arrow_down,
             size: 18,
-            color: isSelected
-                ? Colors.white
-                : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+            color: isSelected ? Colors.white : unselectedText,
           ),
         ],
       ),
@@ -491,7 +462,14 @@ class ActiveFiltersRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterState = ref.watch(advisoryFilterProvider);
-    final activeFilters = filterState.activeFilters;
+    final activeFilters = filterState.activeFilters
+        .where(
+          (filter) =>
+              filter.type != FilterType.severity &&
+              filter.type != FilterType.category &&
+              filter.type != FilterType.nearMe,
+        )
+        .toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final languageCode = Localizations.localeOf(context).languageCode;
 

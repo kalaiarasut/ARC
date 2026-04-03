@@ -68,7 +68,7 @@ void callbackDispatcher() {
       await SupabaseConfig.initialize();
 
       // If the user is signed out, don't keep retrying.
-      final userId = SupabaseConfig.client.auth.currentUser?.id;
+      final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
       if (userId == null) return true;
 
       if (task == AndroidWorkmanagerReportSync.zoneTaskName) {

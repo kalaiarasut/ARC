@@ -2,6 +2,8 @@ export type HazardType = 'High Waves' | 'Tsunami' | 'Storm' | 'Flood' | 'Other';
 export type UrgencyLevel = 'Low' | 'Medium' | 'High';
 export type ReportStatus = 'pending' | 'verified' | 'rejected' | 'resolved';
 export type ReportTranslationStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+export type ImmediateDangerStatus = 'yes' | 'no' | 'not_sure';
+export type AffectedPeopleBand = 'unknown' | '1_5' | '6_20' | '21_50' | '50_plus';
 
 export interface HazardReport {
   id: string;
@@ -26,6 +28,8 @@ export interface HazardReport {
   is_high_risk: boolean;
   people_at_risk: number | null;
   urgency_level: UrgencyLevel | null;
+  immediate_danger_status?: ImmediateDangerStatus | null;
+  affected_people_band?: AffectedPeopleBand | null;
   media_urls: string[] | null;
   upload_complete: boolean;
   status: ReportStatus;

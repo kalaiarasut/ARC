@@ -21,10 +21,18 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? AppColors.darkTextPrimary : AppColors.primaryBlue),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.primaryBlue,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Support Us', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+        title: Text(
+          'Support Us',
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -35,14 +43,18 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
           children: [
             Text(
               'Make a Donation',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Your contribution helps us maintain and expand the Civil Alert System saving lives during emergencies.',
-              style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 32),
             Wrap(
@@ -51,7 +63,9 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
               children: presetAmounts.map((amount) {
                 final isSelected = selectedAmount == amount;
                 return ChoiceChip(
-                  label: Text('₦${amount.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), ',')}'),
+                  label: Text(
+                    '₦${amount.toString().replaceAll(RegExp(r'\B(?=(\d{3})+(?!\d))'), ',')}',
+                  ),
                   selected: selectedAmount == amount,
                   onSelected: (selected) {
                     if (selected) {
@@ -63,15 +77,26 @@ class _DonationAmountScreenState extends State<DonationAmountScreen> {
                   },
                   selectedColor: Theme.of(context).primaryColor,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary),
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
-                  backgroundColor: isDark ? AppColors.darkSurface : Colors.grey.shade200,
+                  backgroundColor: isDark
+                      ? AppColors.darkSurface
+                      : Colors.grey.shade200,
                 );
               }).toList(),
             ),
             const SizedBox(height: 24),
-            Text('Custom Amount', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Custom Amount',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _customAmountController,
@@ -118,10 +143,20 @@ class PaymentMethodScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? AppColors.darkSecondaryCyan : AppColors.secondaryCyan),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: isDark
+                ? AppColors.darkSecondaryCyan
+                : AppColors.secondaryCyan,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Payment Method', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+        title: Text(
+          'Payment Method',
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -136,10 +171,18 @@ class PaymentMethodScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? AppColors.darkSecondaryCyan : AppColors.secondaryCyan,
-                  side: BorderSide(color: isDark ? AppColors.darkSecondaryCyan : AppColors.secondaryCyan),
+                  foregroundColor: isDark
+                      ? AppColors.darkSecondaryCyan
+                      : AppColors.secondaryCyan,
+                  side: BorderSide(
+                    color: isDark
+                        ? AppColors.darkSecondaryCyan
+                        : AppColors.secondaryCyan,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: () {
                   Navigator.push(
@@ -147,15 +190,19 @@ class PaymentMethodScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const AddCardScreen()),
                   );
                 },
-                child: const Text('Add New Card', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Add New Card',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
             const SizedBox(height: 32),
             Text(
               'Other Payment Options',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: 'Times New Roman', // Giving a bit of serif feel like the screenshot "Other Payment Options"
-                  ),
+                fontFamily:
+                    'Times New Roman', // Giving a bit of serif feel like the screenshot "Other Payment Options"
+              ),
             ),
             const SizedBox(height: 16),
             Container(
@@ -169,25 +216,50 @@ class PaymentMethodScreen extends StatelessWidget {
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
               ),
               child: Column(
                 children: [
-                  _buildPaymentOption(context, 'PayPal', Icons.paypal, Colors.blue),
-                  _buildPaymentOption(context, 'Google Pay', Icons.g_mobiledata, Colors.green),
-                  _buildPaymentOption(context, 'Apple Pay', Icons.apple, isDark ? Colors.white : Colors.black),
-                  _buildPaymentOption(context, 'Bank Transfer', Icons.account_balance, Colors.grey),
+                  _buildPaymentOption(
+                    context,
+                    'PayPal',
+                    Icons.paypal,
+                    Colors.blue,
+                  ),
+                  _buildPaymentOption(
+                    context,
+                    'Google Pay',
+                    Icons.g_mobiledata,
+                    Colors.green,
+                  ),
+                  _buildPaymentOption(
+                    context,
+                    'Apple Pay',
+                    Icons.apple,
+                    isDark ? Colors.white : Colors.black,
+                  ),
+                  _buildPaymentOption(
+                    context,
+                    'Bank Transfer',
+                    Icons.account_balance,
+                    Colors.grey,
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPaymentOption(BuildContext context, String title, IconData icon, Color iconColor) {
+  Widget _buildPaymentOption(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color iconColor,
+  ) {
     return ListTile(
       leading: Icon(icon, color: iconColor, size: 32),
       title: Text(title),
@@ -212,7 +284,7 @@ class PaymentMethodScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               // Mock Mastercard logo
+              // Mock Mastercard logo
               SizedBox(
                 width: 40,
                 height: 24,
@@ -250,9 +322,30 @@ class PaymentMethodScreen extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
               Text('8679', style: TextStyle(color: Colors.white, fontSize: 18)),
             ],
           ),
@@ -260,10 +353,16 @@ class PaymentMethodScreen extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ODAFE DARLINGTON OYIBO', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              Text('Credit Card', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'ODAFE DARLINGTON OYIBO',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              Text(
+                'Credit Card',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -278,7 +377,6 @@ class AddCardScreen extends StatefulWidget {
 }
 
 class _AddCardScreenState extends State<AddCardScreen> {
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -286,10 +384,20 @@ class _AddCardScreenState extends State<AddCardScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? AppColors.darkSecondaryCyan : AppColors.secondaryCyan),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: isDark
+                ? AppColors.darkSecondaryCyan
+                : AppColors.secondaryCyan,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Add Card', style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+        title: Text(
+          'Add Card',
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -312,13 +420,16 @@ class _AddCardScreenState extends State<AddCardScreen> {
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Card Number', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Card Number',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 8),
                   TextFormField(
                     keyboardType: TextInputType.number,
@@ -333,7 +444,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Expiry Date', style: TextStyle(fontWeight: FontWeight.w600)),
+                            const Text(
+                              'Expiry Date',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                             const SizedBox(height: 8),
                             TextFormField(
                               keyboardType: TextInputType.datetime,
@@ -349,7 +463,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('CVV', style: TextStyle(fontWeight: FontWeight.w600)),
+                            const Text(
+                              'CVV',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                             const SizedBox(height: 8),
                             TextFormField(
                               keyboardType: TextInputType.number,
@@ -364,12 +481,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('Name on Card', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Name on Card',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 8),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      hintText: 'Enter name',
-                    ),
+                    decoration: const InputDecoration(hintText: 'Enter name'),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -377,16 +495,23 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     child: ElevatedButton(
                       onPressed: () => _processPayment(context, isDark),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E1E1E), // Dark button like in screenshot
+                        backgroundColor: const Color(
+                          0xFF1E1E1E,
+                        ), // Dark button like in screenshot
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
                       ),
-                      child: const Text('Confirm', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      child: const Text(
+                        'Confirm',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -431,7 +556,7 @@ class _CreditCardWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               // Mock Mastercard logo
+              // Mock Mastercard logo
               SizedBox(
                 width: 40,
                 height: 24,
@@ -469,9 +594,30 @@ class _CreditCardWidget extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
-              Text('****', style: TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2)),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                '****',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
               Text('8679', style: TextStyle(color: Colors.white, fontSize: 18)),
             ],
           ),
@@ -479,10 +625,16 @@ class _CreditCardWidget extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ODAFE DARLINGTON OYIBO', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              Text('Credit Card', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'ODAFE DARLINGTON OYIBO',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              Text(
+                'Credit Card',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -495,7 +647,7 @@ class _ProcessingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -514,7 +666,11 @@ class _ProcessingDialog extends StatelessWidget {
             Text(
               'Your transfer is processing',
               textAlign: TextAlign.center,
-              style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -554,21 +710,38 @@ class _SuccessDialog extends StatelessWidget {
             Text(
               'Your transfer was successful',
               textAlign: TextAlign.center,
-              style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 // Return all the way to Settings
-                Navigator.of(context).popUntil((route) => route.isFirst || route.settings.name == '/settings' || route.settings.name == null);
+                Navigator.of(context).popUntil(
+                  (route) =>
+                      route.isFirst ||
+                      route.settings.name == '/settings' ||
+                      route.settings.name == null,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E1E1E), // Dark button tone
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 12,
+                ),
               ),
-              child: const Text('Nice one!', style: TextStyle(color: Colors.white)),
-            )
+              child: const Text(
+                'Nice one!',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           ],
         ),
       ),
@@ -602,7 +775,11 @@ class _ErrorDialog extends StatelessWidget {
             Text(
               'Please ensure you are connected to the internet and try again.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -613,8 +790,13 @@ class _ErrorDialog extends StatelessWidget {
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.grey.shade200,
                     foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                   child: const Text('Close'),
                 ),
@@ -622,14 +804,24 @@ class _ErrorDialog extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E1E1E), // Dark button tone
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    backgroundColor: const Color(
+                      0xFF1E1E1E,
+                    ), // Dark button tone
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text('Try again', style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Try again',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

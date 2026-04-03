@@ -18,26 +18,45 @@ class PrivacyControlsScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.privacyTitle,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Container(
-            decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: SwitchListTile(
               value: privacy.reduceMapPrecision,
-              onChanged: (v) => ref.read(privacySettingsProvider.notifier).setReduceMapPrecision(v),
+              onChanged: (v) => ref
+                  .read(privacySettingsProvider.notifier)
+                  .setReduceMapPrecision(v),
               title: Text(context.l10n.privacyReducePrecisionTitle),
               subtitle: Text(
                 context.l10n.privacyReducePrecisionSubtitle,
-                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
               ),
               activeColor: AppColors.primaryBlue,
             ),

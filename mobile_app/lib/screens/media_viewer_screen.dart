@@ -22,10 +22,16 @@ class MediaViewerScreen extends StatefulWidget {
           path.endsWith('.gif')) {
         return MediaKind.image;
       }
-      if (path.endsWith('.mp4') || path.endsWith('.mov') || path.endsWith('.mkv') || path.endsWith('.webm')) {
+      if (path.endsWith('.mp4') ||
+          path.endsWith('.mov') ||
+          path.endsWith('.mkv') ||
+          path.endsWith('.webm')) {
         return MediaKind.video;
       }
-      if (path.endsWith('.m4a') || path.endsWith('.aac') || path.endsWith('.mp3') || path.endsWith('.wav')) {
+      if (path.endsWith('.m4a') ||
+          path.endsWith('.aac') ||
+          path.endsWith('.mp3') ||
+          path.endsWith('.wav')) {
         return MediaKind.audio;
       }
     } catch (_) {}
@@ -53,7 +59,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
   Future<void> _init() async {
     try {
       if (_kind == MediaKind.video) {
-        final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+        final controller = VideoPlayerController.networkUrl(
+          Uri.parse(widget.url),
+        );
         await controller.initialize();
         controller.setLooping(true);
         if (!mounted) return;
@@ -114,11 +122,15 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
             child: Image.network(
               widget.url,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  Text(context.l10n.failedToLoadImage, style: const TextStyle(color: Colors.white70)),
+              errorBuilder: (context, error, stackTrace) => Text(
+                context.l10n.failedToLoadImage,
+                style: const TextStyle(color: Colors.white70),
+              ),
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
-                return const Center(child: CircularProgressIndicator(color: Colors.white));
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               },
             ),
           ),
@@ -127,7 +139,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
       case MediaKind.video:
         final controller = _video;
         if (controller == null) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
         }
 
         return Column(
@@ -155,7 +169,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                       setState(() {});
                     },
                     icon: Icon(
-                      controller.value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                      controller.value.isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_filled,
                       color: Colors.white,
                       size: 40,
                     ),
@@ -180,7 +196,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
       case MediaKind.audio:
         final player = _audio;
         if (player == null) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
         }
 
         return Padding(
@@ -198,8 +216,12 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                     stream: player.positionStream,
                     builder: (context, snapshotPosition) {
                       final position = snapshotPosition.data ?? Duration.zero;
-                      final maxMs = duration.inMilliseconds <= 0 ? 1.0 : duration.inMilliseconds.toDouble();
-                      final valueMs = position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble();
+                      final maxMs = duration.inMilliseconds <= 0
+                          ? 1.0
+                          : duration.inMilliseconds.toDouble();
+                      final valueMs = position.inMilliseconds
+                          .clamp(0, duration.inMilliseconds)
+                          .toDouble();
 
                       return Column(
                         children: [
@@ -210,14 +232,22 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                             activeColor: AppColors.primaryBlue,
                             inactiveColor: Colors.white24,
                             onChanged: (v) async {
-                              await player.seek(Duration(milliseconds: v.toInt()));
+                              await player.seek(
+                                Duration(milliseconds: v.toInt()),
+                              );
                             },
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(_fmt(position), style: const TextStyle(color: Colors.white70)),
-                              Text(_fmt(duration), style: const TextStyle(color: Colors.white70)),
+                              Text(
+                                _fmt(position),
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                              Text(
+                                _fmt(duration),
+                                style: const TextStyle(color: Colors.white70),
+                              ),
                             ],
                           ),
                         ],
@@ -242,12 +272,21 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                       }
                     },
                     icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                    label: Text(playing ? context.l10n.pauseLabel : context.l10n.playLabel),
+                    label: Text(
+                      playing
+                          ? context.l10n.pauseLabel
+                          : context.l10n.playLabel,
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                     ),
                   );
                 },
@@ -260,7 +299,10 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(context.l10n.unsupportedMediaType, style: const TextStyle(color: Colors.white70)),
+            child: Text(
+              context.l10n.unsupportedMediaType,
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
         );
     }

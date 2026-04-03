@@ -344,8 +344,10 @@ export function Reports() {
         'latitude',
         'longitude',
         'is_high_risk',
+        'immediate_danger_status',
         'urgency_level',
         'people_at_risk',
+        'affected_people_band',
         'user_name',
         'user_phone',
         'event_time',
@@ -639,6 +641,67 @@ export function Reports() {
       default:
         return { label: 'Pending', color: 'warning' as const };
     }
+  };
+
+  const getImmediateDangerStatus = (report: HazardReport) => {
+    if (report.immediate_danger_status) return report.immediate_danger_status;
+    if (report.is_high_risk || (report.people_at_risk ?? 0) > 0) return 'yes' as const;
+    return 'no' as const;
+  };
+
+  const getImmediateDangerMeta = (report: HazardReport) => {
+    switch (getImmediateDangerStatus(report)) {
+      case 'yes':
+        return {
+          label: 'Yes',
+          tooltip: 'Someone appears to be in immediate danger',
+          background: alpha(theme.palette.error.main, 0.08),
+          color: theme.palette.error.main,
+          border: alpha(theme.palette.error.main, 0.18),
+        };
+      case 'not_sure':
+        return {
+          label: 'Not sure',
+          tooltip: 'Reporter was unsure if anyone was in immediate danger',
+          background: alpha(theme.palette.warning.main, 0.10),
+          color: theme.palette.warning.dark,
+          border: alpha(theme.palette.warning.main, 0.20),
+        };
+      case 'no':
+      default:
+        return {
+          label: 'No',
+          tooltip: 'No immediate danger was reported',
+          background: alpha(theme.palette.success.main, 0.08),
+          color: theme.palette.success.main,
+          border: alpha(theme.palette.success.main, 0.18),
+        };
+    }
+  };
+
+  const getAffectedPeopleBandLabel = (band?: HazardReport['affected_people_band'] | null) => {
+    switch (band) {
+      case '1_5':
+        return '1-5';
+      case '6_20':
+        return '6-20';
+      case '21_50':
+        return '21-50';
+      case '50_plus':
+        return '50+';
+      case 'unknown':
+        return 'Unknown';
+      default:
+        return null;
+    }
+  };
+
+  const getAffectedNearbyLabel = (report: HazardReport) => {
+    const bandLabel = getAffectedPeopleBandLabel(report.affected_people_band);
+    if (bandLabel) return bandLabel;
+    if (getImmediateDangerStatus(report) === 'yes') return 'Unknown';
+    if ((report.people_at_risk ?? 0) > 0) return String(report.people_at_risk);
+    return null;
   };
 
   const isTranslationLive = (report: HazardReport | null) =>
@@ -1251,7 +1314,7 @@ export function Reports() {
                   <TableCell sx={{ width: '50%' }}>Description</TableCell>
                   <TableCell sx={{ width: 124, pl: 2 }}>Location</TableCell>
                   <TableCell sx={{ width: 86, textAlign: 'center' }}>Urgency</TableCell>
-                  <TableCell sx={{ width: 72, textAlign: 'center' }}>People</TableCell>
+                  <TableCell sx={{ width: 86, textAlign: 'center' }}>Affected</TableCell>
                   <TableCell sx={{ width: 56, textAlign: 'center' }}>Media</TableCell>
                   <TableCell sx={{ width: 108, textAlign: 'right', pr: 1 }}>Date & Time</TableCell>
                   <TableCell sx={{ width: 95, textAlign: 'center' }}>Actions</TableCell>
@@ -1302,6 +1365,7 @@ export function Reports() {
                       const isRejected = report.status === 'rejected';
                       const isResolved = report.status === 'resolved';
                       const isPending = report.status === 'pending';
+                      const affectedNearbyLabel = getAffectedNearbyLabel(report);
                       const displayedDescription =
                         report.translation_status === 'completed' && report.translated_english?.trim()
                           ? report.translated_english
@@ -1457,21 +1521,22 @@ export function Reports() {
                         )}
                       </TableCell>
 
-                      {/* People at risk */}
+                      {/* Affected nearby */}
                       <TableCell align="center">
-                        {report.people_at_risk && report.people_at_risk > 0 ? (
-                          <Tooltip title="People at Risk" arrow>
+                        {affectedNearbyLabel ? (
+                          <Tooltip title="How many people seem affected nearby" arrow>
                             <Chip
-                              label={report.people_at_risk}
+                              label={affectedNearbyLabel}
                               size="small"
                               sx={{
                                 fontSize: '0.65rem',
                                 height: 20,
                                 fontWeight: 600,
-                                minWidth: 34,
-                                bgcolor: alpha(theme.palette.error.main, 0.06),
-                                color: theme.palette.error.main,
-                                border: 'none',
+                                minWidth: 44,
+                                bgcolor: alpha(theme.palette.primary.main, 0.06),
+                                color: theme.palette.primary.main,
+                                border: '1px solid',
+                                borderColor: alpha(theme.palette.primary.main, 0.14),
                                 '& .MuiChip-label': { px: 0.75 },
                               }}
                             />
@@ -1908,17 +1973,18 @@ export function Reports() {
                         border: 'none' 
                       }} 
                     />
-                    {selectedReport.is_high_risk && (
+                    {getAffectedNearbyLabel(selectedReport) && (
                       <Chip 
-                        icon={<WarningIcon sx={{ fontSize: '0.85rem !important', color: 'inherit' }} />} 
-                        label="HIGH RISK" 
+                        icon={<PeopleIcon sx={{ fontSize: '0.85rem !important', color: 'inherit' }} />} 
+                        label={`Affected nearby: ${getAffectedNearbyLabel(selectedReport)}`} 
                         size="small" 
                         sx={{ 
                           fontWeight: 700, fontSize: '0.7rem', px: 0.5,
-                          bgcolor: alpha(theme.palette.error.main, 0.08),
-                          color: theme.palette.error.main,
-                          border: 'none',
-                          '& .MuiChip-icon': { ml: 0.5, mr: -0.5 }
+                          bgcolor: alpha(theme.palette.primary.main, 0.08),
+                          color: theme.palette.primary.main,
+                          border: '1px solid',
+                          borderColor: alpha(theme.palette.primary.main, 0.16),
+                          '& .MuiChip-icon': { ml: 0.5, mr: -0.5, color: 'inherit' }
                         }} 
                       />
                     )}
@@ -2186,18 +2252,35 @@ export function Reports() {
                           </Stack>
                         </Box>
 
-                        {/* Risk Info inline */}
-                        {selectedReport.people_at_risk && selectedReport.people_at_risk > 0 && (
+                        {/* Urgency info inline */}
+                        <Box>
+                          <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                            Urgency
+                          </Typography>
+                          <Box sx={{ mt: 0.5 }}>
+                            {selectedReport.urgency_level ? (
+                              <Chip
+                                label={selectedReport.urgency_level}
+                                size="small"
+                                sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08) : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08) : alpha(theme.palette.success.main, 0.08), color: selectedReport.urgency_level === 'High' ? theme.palette.error.main : selectedReport.urgency_level === 'Medium' ? theme.palette.warning.dark : theme.palette.success.main, border: '1px solid', borderColor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.2) : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.2) : alpha(theme.palette.success.main, 0.2) }}
+                              />
+                            ) : (
+                              <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>—</Typography>
+                            )}
+                          </Box>
+                        </Box>
+
+                        {getAffectedNearbyLabel(selectedReport) && (
                           <Box>
                             <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
-                              People at Risk
+                              Affected Nearby
                             </Typography>
                             <Box sx={{ mt: 0.5 }}>
                               <Chip
                                 icon={<PeopleIcon sx={{ fontSize: '1rem !important' }} />}
-                                label={`${selectedReport.people_at_risk} people`}
+                                label={getAffectedNearbyLabel(selectedReport)}
                                 size="small"
-                                sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: alpha(theme.palette.error.main, 0.08), color: theme.palette.error.main, border: '1px solid', borderColor: alpha(theme.palette.error.main, 0.2), '& .MuiChip-icon': { color: alpha(theme.palette.error.main, 0.8) } }}
+                                sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: alpha(theme.palette.primary.main, 0.08), color: theme.palette.primary.main, border: '1px solid', borderColor: alpha(theme.palette.primary.main, 0.2), '& .MuiChip-icon': { color: alpha(theme.palette.primary.main, 0.8) } }}
                               />
                             </Box>
                           </Box>

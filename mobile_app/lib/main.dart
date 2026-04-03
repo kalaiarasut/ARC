@@ -24,7 +24,7 @@ import 'widgets/upload_progress_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set system UI style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
@@ -43,7 +43,8 @@ void main() async {
   if (Platform.isAndroid) {
     await AndroidWorkmanagerReportSync.initialize(debug: false);
 
-    final notificationsEnabled = await NotificationSettingsService().isEnabled();
+    final notificationsEnabled = await NotificationSettingsService()
+        .isEnabled();
 
     if (notificationsEnabled) {
       await NotificationService.instance.initialize();
@@ -77,14 +78,27 @@ void main() async {
 
   runApp(
     // Wrap with ProviderScope for Riverpod
-    const ProviderScope(
-      child: MyApp(),
-    ),
+    const ProviderScope(child: MyApp()),
   );
 }
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
+
+  TextDirection _textDirectionForLocale(Locale locale) {
+    switch (locale.languageCode.toLowerCase()) {
+      case 'ar':
+      case 'fa':
+      case 'he':
+      case 'ps':
+      case 'sd':
+      case 'ug':
+      case 'ur':
+        return TextDirection.rtl;
+      default:
+        return TextDirection.ltr;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,31 +116,35 @@ class MyApp extends ConsumerWidget {
     return ThemeProvider(
       initTheme: resolvedTheme,
       builder: (_, theme) {
-        return ThemeSwitchingArea(
-          child: MaterialApp(
-            title: 'ARC',
-            debugShowCheckedModeBanner: false,
-            navigatorKey: appNavigatorKey,
-            theme: theme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeMode,
-            locale: locale,
-            supportedLocales: AppLocalizations.supportedLocales,
-            localizationsDelegates: [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  if (child != null) child,
-                  const UploadProgressOverlay(),
-                ],
-              );
-            },
-            home: const SplashScreen(),
+        return Directionality(
+          textDirection: _textDirectionForLocale(locale),
+          child: ThemeSwitchingArea(
+            child: MaterialApp(
+              title: 'ARC',
+              debugShowCheckedModeBanner: false,
+              navigatorKey: appNavigatorKey,
+              theme: theme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeMode,
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              builder: (context, child) {
+                return Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    if (child != null) child,
+                    const UploadProgressOverlay(),
+                  ],
+                );
+              },
+              home: const SplashScreen(),
+            ),
           ),
         );
       },

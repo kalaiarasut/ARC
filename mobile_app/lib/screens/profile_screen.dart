@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _refreshMyReports() {
-    final userId = SupabaseConfig.client.auth.currentUser?.id;
+    final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
     if (userId == null) {
       setState(() => _myReportsFuture = Future.value(const []));
       return;
@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadStats() async {
-    final userId = SupabaseConfig.client.auth.currentUser?.id;
+    final userId = SupabaseConfig.client.auth.currentSession?.user.id ?? SupabaseConfig.client.auth.currentUser?.id;
     if (userId == null || !_isOnline) return;
     try {
       final stats = await _gamificationService.getCitizenStats(userId);
@@ -107,7 +107,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? context.l10n.nothingToSync
               : context.l10n.syncDone(result.succeeded, result.failed),
         ),
-        backgroundColor: result.failed == 0 ? AppColors.success : AppColors.warning,
+        backgroundColor: result.failed == 0
+            ? AppColors.success
+            : AppColors.warning,
       ),
     );
 
@@ -122,12 +124,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.profileAndReports,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Padding(
@@ -148,7 +160,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       elevation: 0,
                     ),
@@ -169,7 +183,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const QueuedReportsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const QueuedReportsScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.arrow_forward, size: 18),
@@ -202,7 +218,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final err = snapshot.error;
                     final errText = err?.toString() ?? '';
                     final isNetworkError =
-                        err is SocketException || errText.contains('SocketException') || errText.contains('Failed host lookup');
+                        err is SocketException ||
+                        errText.contains('SocketException') ||
+                        errText.contains('Failed host lookup');
                     if (!_isOnline || isNetworkError) {
                       return Center(
                         child: Column(
@@ -210,12 +228,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               context.l10n.youreOffline,
-                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               context.l10n.connectToInternetToLoadMyReports,
-                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              style: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 10),
@@ -231,7 +262,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Center(
                       child: Text(
                         '${context.l10n.failedToLoadReports}: ${snapshot.error}',
-                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     );
                   }
@@ -239,7 +274,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Center(
                       child: Text(
                         context.l10n.noUploadedReportsYet,
-                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     );
                   }
@@ -255,7 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       final statusColor = status == 'verified'
                           ? AppColors.success
-                          : (status == 'resolved' ? AppColors.secondaryCyan : AppColors.warning);
+                          : (status == 'resolved'
+                                ? AppColors.secondaryCyan
+                                : AppColors.warning);
 
                       return InkWell(
                         borderRadius: BorderRadius.circular(14),
@@ -265,7 +306,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ReportDetailsScreen(reportId: reportId, isOwnReport: true),
+                              builder: (_) => ReportDetailsScreen(
+                                reportId: reportId,
+                                isOwnReport: true,
+                              ),
                             ),
                           );
                         },
@@ -280,31 +324,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Container(
                                 width: 10,
                                 height: 10,
-                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(hazardType, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(
+                                      hazardType,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '${createdAt.toLocal()}'.split('.').first,
-                                      style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: statusColor.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
                                   status,
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: statusColor,
+                                  ),
                                 ),
                               ),
                             ],
@@ -349,12 +415,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     '${stats.totalPoints} pts',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   if (stats.rank > 0)
                     Text(
                       'Rank #${stats.rank}',
-                      style: const TextStyle(fontSize: 13, color: Colors.white70),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                      ),
                     ),
                 ],
               ),
@@ -381,15 +454,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AchievementsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AchievementsScreen(),
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white54),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
-                  child: Text(context.l10n.achievements, style: const TextStyle(fontSize: 13)),
+                  child: Text(
+                    context.l10n.achievements,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -397,15 +477,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const LeaderboardScreen(),
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white54),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
-                  child: Text(context.l10n.leaderboard, style: const TextStyle(fontSize: 13)),
+                  child: Text(
+                    context.l10n.leaderboard,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 ),
               ),
             ],

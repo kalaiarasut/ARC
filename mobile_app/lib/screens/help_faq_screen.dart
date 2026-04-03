@@ -20,12 +20,22 @@ class HelpFaqScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.helpTitle,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: ListView.builder(
@@ -40,12 +50,20 @@ class HelpFaqScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: ExpansionTile(
-              title: Text(item.q, style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(
+                item.q,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               children: [
                 Text(
                   item.a,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, height: 1.35),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),

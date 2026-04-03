@@ -10,22 +10,24 @@ import '../l10n/l10n.dart';
 class AdvisoryDetailsScreen extends StatelessWidget {
   final String advisoryId;
 
-  const AdvisoryDetailsScreen({
-    super.key,
-    required this.advisoryId,
-  });
+  const AdvisoryDetailsScreen({super.key, required this.advisoryId});
 
-  Future<void> _openDirections(BuildContext context, OfficialAdvisory advisory) async {
+  Future<void> _openDirections(
+    BuildContext context,
+    OfficialAdvisory advisory,
+  ) async {
     final lat = advisory.latitude;
     final lon = advisory.longitude;
     if (lat == null || lon == null) return;
 
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
+    );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.couldNotOpenMaps)));
     }
   }
 
@@ -113,7 +115,9 @@ class AdvisoryDetailsScreen extends StatelessWidget {
         future: AdvisoryService().getById(advisoryId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            );
           }
 
           if (snapshot.hasError) {
@@ -164,12 +168,15 @@ class AdvisoryDetailsScreen extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       _pill(
-                        text: advisorySeverityLabelForLanguage(advisory.severity, languageCode).toUpperCase(),
+                        text: advisorySeverityLabelForLanguage(
+                          advisory.severity,
+                          languageCode,
+                        ).toUpperCase(),
                         color: advisory.severity.toLowerCase() == 'warning'
                             ? AppColors.error
                             : advisory.severity.toLowerCase() == 'watch'
-                                ? AppColors.warning
-                                : AppColors.primaryBlue,
+                            ? AppColors.warning
+                            : AppColors.primaryBlue,
                       ),
                       _pill(
                         text: advisoryCategoryLabelForLanguage(
@@ -187,19 +194,27 @@ class AdvisoryDetailsScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           advisory.title,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       if (advisory.displayLanguage != advisory.sourceLanguage)
                         IconButton(
-                          onPressed: () => _showOriginalMessage(context, advisory),
+                          onPressed: () =>
+                              _showOriginalMessage(context, advisory),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints.tightFor(width: 22, height: 22),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 22,
+                            height: 22,
+                          ),
                           splashRadius: 18,
                           icon: Icon(
                             Icons.translate,
                             size: 16,
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? AppColors.darkTextSecondary
                                 : AppColors.textSecondary,
                           ),
@@ -230,19 +245,28 @@ class AdvisoryDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '${advisoryLabelForLanguage('published', languageCode)}: ${advisory.publishedAt.toLocal()}'.split('.').first,
+                    '${advisoryLabelForLanguage('published', languageCode)}: ${advisory.publishedAt.toLocal()}'
+                        .split('.')
+                        .first,
                     style: TextStyle(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? AppColors.darkTextSecondary
                           : AppColors.textSecondary,
                     ),
                   ),
-                  if (advisory.startsAt != null || advisory.expiresAt != null) ...[
+                  if (advisory.startsAt != null ||
+                      advisory.expiresAt != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       [
-                        if (advisory.startsAt != null) '${advisoryLabelForLanguage('starts', languageCode)}: ${advisory.startsAt!.toLocal()}'.split('.').first,
-                        if (advisory.expiresAt != null) '${advisoryLabelForLanguage('expires', languageCode)}: ${advisory.expiresAt!.toLocal()}'.split('.').first,
+                        if (advisory.startsAt != null)
+                          '${advisoryLabelForLanguage('starts', languageCode)}: ${advisory.startsAt!.toLocal()}'
+                              .split('.')
+                              .first,
+                        if (advisory.expiresAt != null)
+                          '${advisoryLabelForLanguage('expires', languageCode)}: ${advisory.expiresAt!.toLocal()}'
+                              .split('.')
+                              .first,
                       ].join(' | '),
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
@@ -260,18 +284,30 @@ class AdvisoryDetailsScreen extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    if ((advisory.contactPhone ?? '').isNotEmpty) Text('${advisoryLabelForLanguage('phone', languageCode)}: ${advisory.contactPhone}'),
-                    if ((advisory.contactWhatsapp ?? '').isNotEmpty) Text('${advisoryLabelForLanguage('whatsapp', languageCode)}: ${advisory.contactWhatsapp}'),
-                    if ((advisory.contactHotline ?? '').isNotEmpty) Text('${advisoryLabelForLanguage('hotline', languageCode)}: ${advisory.contactHotline}'),
+                    if ((advisory.contactPhone ?? '').isNotEmpty)
+                      Text(
+                        '${advisoryLabelForLanguage('phone', languageCode)}: ${advisory.contactPhone}',
+                      ),
+                    if ((advisory.contactWhatsapp ?? '').isNotEmpty)
+                      Text(
+                        '${advisoryLabelForLanguage('whatsapp', languageCode)}: ${advisory.contactWhatsapp}',
+                      ),
+                    if ((advisory.contactHotline ?? '').isNotEmpty)
+                      Text(
+                        '${advisoryLabelForLanguage('hotline', languageCode)}: ${advisory.contactHotline}',
+                      ),
                   ],
-                  if (advisory.latitude != null && advisory.longitude != null) ...[
+                  if (advisory.latitude != null &&
+                      advisory.longitude != null) ...[
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => _openDirections(context, advisory),
                         icon: const Icon(Icons.directions, size: 18),
-                        label: Text(advisoryLabelForLanguage('directions', languageCode)),
+                        label: Text(
+                          advisoryLabelForLanguage('directions', languageCode),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryBlue,
                           foregroundColor: Colors.white,

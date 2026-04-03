@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_config.dart';
@@ -53,8 +54,30 @@ class ZoneMonitoringService with WidgetsBindingObserver {
   bool _started = false;
 
   static const Duration _foregroundHeartbeatDebounce = Duration(seconds: 30);
+  static const String _diagStatusKey = 'zone_monitoring_diag_status';
+  static const String _diagMessageKey = 'zone_monitoring_diag_message';
+  static const String _diagUpdatedAtKey = 'zone_monitoring_diag_updated_at';
 
   bool get _isAndroid => Platform.isAndroid;
+
+  static Future<void> _recordDiagnostic({
+    required String status,
+    String? message,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_diagStatusKey, status);
+    await prefs.setString(_diagMessageKey, message ?? '');
+    await prefs.setString(_diagUpdatedAtKey, DateTime.now().toIso8601String());
+  }
+
+  static Future<Map<String, String?>> getLatestDiagnostic() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'status': prefs.getString(_diagStatusKey),
+      'message': prefs.getString(_diagMessageKey),
+      'updated_at': prefs.getString(_diagUpdatedAtKey),
+    };
+  }
 
   Future<void> start() async {
     if (!_isAndroid || _started) return;
@@ -144,6 +167,10 @@ class ZoneMonitoringService with WidgetsBindingObserver {
     await _settings.setEnabled(false);
     await PushTokenService().syncZoneMonitoringOptIn(false);
     _lastForegroundHeartbeatAt = null;
+    await _recordDiagnostic(
+      status: 'disabled',
+      message: 'Safety Zone Monitoring is off.',
+    );
     await _restart();
   }
 
@@ -163,7 +190,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
       );
     }
 
-    if (_supabase.auth.currentUser == null) {
+    if (_supabase.auth.currentSession?.user.id == null) {
       return const ZoneMonitoringStatus(
         mode: ZoneMonitoringMode.signedOut,
         enabled: true,
@@ -258,6 +285,11 @@ class ZoneMonitoringService with WidgetsBindingObserver {
 
     if (initialPosition != null) {
       await _maybeSendForegroundHeartbeat(initialPosition, force: true);
+    } else {
+      await _recordDiagnostic(
+        status: 'position_unavailable',
+        message: 'Could not read current GPS position.',
+      );
     }
 
     const locationSettings = LocationSettings(
@@ -306,24 +338,142 @@ class ZoneMonitoringService with WidgetsBindingObserver {
     Position position, {
     required String source,
   }) async {
-    final userId = SupabaseConfig.client.auth.currentUser?.id;
-    if (userId == null) return;
+    final session = await _ensureValidHeartbeatSession();
+
+    final userId = session?.user.id;
+    if (userId == null) {
+      await _recordDiagnostic(
+        status: 'missing_session',
+        message: 'No active Supabase session found for zone heartbeat.',
+      );
+      return;
+    }
 
     final deviceId = await DeviceIdService().getOrCreate();
     final zoneMonitoringOptIn = await ZoneMonitoringSettingsService().isEnabled();
 
-    await SupabaseConfig.client.functions.invoke(
-      'process_zone_heartbeat',
-      body: {
-        'device_id': deviceId,
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'accuracy_meters': position.accuracy,
-        'observed_at': position.timestamp.toUtc().toIso8601String(),
-        'source': source,
-        'zone_monitoring_opt_in': zoneMonitoringOptIn,
-      },
-    );
+    try {
+      await _recordDiagnostic(
+        status: 'sending',
+        message: 'Sending $source heartbeat...',
+      );
+
+      final response = await SupabaseConfig.client.functions.invoke(
+        'process_zone_heartbeat',
+        headers: {
+          'x-supabase-auth': 'Bearer ${session!.accessToken}',
+        },
+        body: {
+          'device_id': deviceId,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'accuracy_meters': position.accuracy,
+          'observed_at': position.timestamp.toUtc().toIso8601String(),
+          'source': source,
+          'zone_monitoring_opt_in': zoneMonitoringOptIn,
+        },
+      );
+
+      await _recordDiagnostic(
+        status: 'sent',
+        message: 'Heartbeat sent successfully (${response.status}).',
+      );
+    } catch (error) {
+      await _recordDiagnostic(
+        status: 'failed',
+        message: 'Heartbeat failed: $error',
+      );
+      rethrow;
+    }
+  }
+
+  static Future<Session?> _ensureValidHeartbeatSession() async {
+    final auth = SupabaseConfig.client.auth;
+    Session? session = auth.currentSession;
+
+    for (var attempt = 0; session == null && attempt < 10; attempt++) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      session = auth.currentSession;
+    }
+
+    if (session == null) {
+      await _recordDiagnostic(
+        status: 'signed_out',
+        message: 'Sign in before testing zone monitoring.',
+      );
+      return null;
+    }
+
+    final expiry = session.expiresAt;
+    final isExpiringSoon = expiry != null
+        ? DateTime.fromMillisecondsSinceEpoch(expiry * 1000).isBefore(
+            DateTime.now().add(const Duration(minutes: 1)),
+          )
+        : false;
+
+    if (isExpiringSoon) {
+      try {
+        final refreshed = await auth.refreshSession();
+        session = refreshed.session ?? auth.currentSession ?? session;
+      } catch (error) {
+        await _recordDiagnostic(
+          status: 'refresh_failed',
+          message: 'Supabase session refresh failed. Continuing with current session. Error: $error',
+        );
+      }
+    }
+
+    return auth.currentSession ?? session;
+  }
+
+  Future<String?> sendTestHeartbeatNow() async {
+    if (!_isAndroid) {
+      await _recordDiagnostic(
+        status: 'unsupported',
+        message: 'Zone monitoring is Android-only.',
+      );
+      return 'Zone monitoring is Android-only.';
+    }
+
+    final session = await _ensureValidHeartbeatSession();
+    if (session?.user.id == null) {
+      await _recordDiagnostic(
+        status: 'signed_out',
+        message: 'Sign in before testing zone monitoring.',
+      );
+      return 'Sign in before testing zone monitoring.';
+    }
+
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      await _recordDiagnostic(
+        status: 'location_services_off',
+        message: 'Turn on GPS before testing zone monitoring.',
+      );
+      return 'Turn on GPS before testing zone monitoring.';
+    }
+
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      await _recordDiagnostic(
+        status: 'location_denied',
+        message: 'Location permission is required before testing zone monitoring.',
+      );
+      return 'Location permission is required before testing zone monitoring.';
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 20),
+      );
+      await sendHeartbeatForPosition(position, source: 'foreground');
+      return null;
+    } catch (error) {
+      final message = 'Test heartbeat failed: $error';
+      await _recordDiagnostic(status: 'failed', message: message);
+      return message;
+    }
   }
 
   static Future<bool> runBackgroundHeartbeat() async {
@@ -332,7 +482,7 @@ class ZoneMonitoringService with WidgetsBindingObserver {
     final settings = ZoneMonitoringSettingsService();
     if (!await settings.isEnabled()) return true;
 
-    if (SupabaseConfig.client.auth.currentUser?.id == null) return true;
+    if (SupabaseConfig.client.auth.currentSession?.user.id == null) return true;
 
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return true;

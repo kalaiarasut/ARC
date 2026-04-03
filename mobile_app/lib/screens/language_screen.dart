@@ -88,8 +88,19 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
       code: "or",
     ),
   ];
-  
-  static const Set<String> _supportedCodes = {'bn', 'en', 'gu', 'hi', 'kn', 'ml', 'mr', 'or', 'ta', 'te'};
+
+  static const Set<String> _supportedCodes = {
+    'bn',
+    'en',
+    'gu',
+    'hi',
+    'kn',
+    'ml',
+    'mr',
+    'or',
+    'ta',
+    'te',
+  };
 
   String _selectedCode = 'en';
 
@@ -114,14 +125,24 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
         toolbarHeight: widget.fromSettings ? kToolbarHeight : 0,
         leading: widget.fromSettings
             ? IconButton(
-                icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                ),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: widget.fromSettings
             ? Text(
                 context.l10n.language,
-                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               )
             : null,
       ),
@@ -129,7 +150,10 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 16,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,16 +162,21 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : Colors.black,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkTextPrimary
+                          : Colors.black,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             Expanded(
               child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
@@ -159,12 +188,14 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                   final item = _languages[index];
                   final isSelected = item.code == _selectedCode;
                   final isSupported = _supportedCodes.contains(item.code);
-                  
+
                   return GestureDetector(
                     onTap: () {
                       if (!isSupported) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(context.l10n.languageComingSoon)),
+                          SnackBar(
+                            content: Text(context.l10n.languageComingSoon),
+                          ),
                         );
                         return;
                       }
@@ -172,10 +203,12 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSupported ? item.color : item.color.withOpacity(0.35),
+                        color: isSupported
+                            ? item.color
+                            : item.color.withOpacity(0.35),
                         borderRadius: BorderRadius.circular(12),
-                        border: isSelected 
-                            ? Border.all(color: AppColors.primaryBlue, width: 3) 
+                        border: isSelected
+                            ? Border.all(color: AppColors.primaryBlue, width: 3)
                             : null,
                       ),
                       child: Stack(
@@ -198,7 +231,11 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                               style: TextStyle(
                                 fontSize: 60, // Big character
                                 fontWeight: FontWeight.bold,
-                                color: _getCharacterColor(isSupported ? item.color : item.color.withOpacity(0.35)),
+                                color: _getCharacterColor(
+                                  isSupported
+                                      ? item.color
+                                      : item.color.withOpacity(0.35),
+                                ),
                               ),
                             ),
                           ),
@@ -219,7 +256,7 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                 },
               ),
             ),
-            
+
             Container(
               padding: const EdgeInsets.all(24),
               child: PrimaryButton(
@@ -234,7 +271,9 @@ class _LanguageScreenState extends ConsumerState<LanguageScreen> {
                     return;
                   }
 
-                  await ref.read(languageCodeProvider.notifier).setLanguageCode(_selectedCode);
+                  await ref
+                      .read(languageCodeProvider.notifier)
+                      .setLanguageCode(_selectedCode);
                   if (!context.mounted) return;
                   if (widget.fromSettings) {
                     Navigator.pop(context);

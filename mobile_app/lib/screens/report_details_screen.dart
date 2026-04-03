@@ -26,12 +26,22 @@ class ReportDetailsScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.moreDetails,
-          style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.darkTextPrimary
+                : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: FutureBuilder<HazardReport>(
@@ -40,7 +50,9 @@ class ReportDetailsScreen extends ConsumerWidget {
             : ReportService().getVerifiedReportDetailsById(reportId: reportId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            );
           }
 
           if (snapshot.hasError) {
@@ -50,7 +62,11 @@ class ReportDetailsScreen extends ConsumerWidget {
                 child: Text(
                   '${context.l10n.failedToLoadReports}: ${snapshot.error}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
             );
@@ -61,7 +77,11 @@ class ReportDetailsScreen extends ConsumerWidget {
             return Center(
               child: Text(
                 context.l10n.failedToLoadReports,
-                style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
+                ),
               ),
             );
           }
@@ -71,14 +91,18 @@ class ReportDetailsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _card(context,
+                _card(
+                  context,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primaryBlue.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(999),
@@ -95,7 +119,10 @@ class ReportDetailsScreen extends ConsumerWidget {
                           const Spacer(),
                           if (report.isHighRisk)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.error.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(999),
@@ -114,22 +141,43 @@ class ReportDetailsScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       Text(
                         report.hazardType,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         report.description,
-                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary, height: 1.35),
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textSecondary,
+                          height: 1.35,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       Row(
                         children: [
-                          Icon(Icons.access_time, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               '${report.eventTime.toLocal()}'.split('.').first,
-                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              style: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -137,12 +185,25 @@ class ReportDetailsScreen extends ConsumerWidget {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               '${report.latitude.toStringAsFixed(isOwnReport ? 5 : 3)}, ${report.longitude.toStringAsFixed(isOwnReport ? 5 : 3)}',
-                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              style: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -157,10 +218,17 @@ class ReportDetailsScreen extends ConsumerWidget {
                               final uri = Uri.parse(
                                 'https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}',
                               );
-                              final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              final ok = await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
                               if (!ok && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(context.l10n.couldNotOpenMaps)),
+                                  SnackBar(
+                                    content: Text(
+                                      context.l10n.couldNotOpenMaps,
+                                    ),
+                                  ),
                                 );
                               }
                             },
@@ -183,23 +251,28 @@ class ReportDetailsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 if (report.mediaUrls != null && report.mediaUrls!.isNotEmpty)
-                  _card(context,
+                  _card(
+                    context,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           context.l10n.media,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
                           itemCount: report.mediaUrls!.length,
                           itemBuilder: (context, i) {
                             final url = report.mediaUrls![i];
@@ -220,7 +293,10 @@ class ReportDetailsScreen extends ConsumerWidget {
                                   onTap: () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (context) => MediaViewerScreen(url: url)),
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MediaViewerScreen(url: url),
+                                      ),
                                     );
                                   },
                                   child: Stack(
@@ -230,16 +306,44 @@ class ReportDetailsScreen extends ConsumerWidget {
                                         Image.network(
                                           url,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            color: AppColors.greyOutline.withOpacity(0.3),
-                                            child: Icon(Icons.broken_image, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                                          ),
+                                          errorBuilder:
+                                              (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) => Container(
+                                                color: AppColors.greyOutline
+                                                    .withOpacity(0.3),
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  color:
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.dark
+                                                      ? AppColors
+                                                            .darkTextSecondary
+                                                      : AppColors.textSecondary,
+                                                ),
+                                              ),
                                         )
                                       else
                                         Container(
-                                          color: AppColors.greyOutline.withOpacity(0.22),
+                                          color: AppColors.greyOutline
+                                              .withOpacity(0.22),
                                           child: Center(
-                                            child: Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary.withOpacity(0.85), size: 34),
+                                            child: Icon(
+                                              icon,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? AppColors.darkTextPrimary
+                                                  : AppColors.textPrimary
+                                                        .withOpacity(0.85),
+                                              size: 34,
+                                            ),
                                           ),
                                         ),
 
@@ -249,10 +353,18 @@ class ReportDetailsScreen extends ConsumerWidget {
                                         child: Container(
                                           padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.55),
-                                            borderRadius: BorderRadius.circular(999),
+                                            color: Colors.black.withOpacity(
+                                              0.55,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
                                           ),
-                                          child: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
+                                          child: const Icon(
+                                            Icons.play_arrow,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ],
