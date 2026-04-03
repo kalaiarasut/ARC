@@ -85,6 +85,47 @@ class ZoneMonitoringService with WidgetsBindingObserver {
       );
     }
 
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      await _settings.setEnabled(false);
+      await PushTokenService().syncZoneMonitoringOptIn(false);
+      await _restart();
+      return const ZoneMonitoringStatus(
+        mode: ZoneMonitoringMode.locationServicesOff,
+        enabled: false,
+      );
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      await _settings.setEnabled(false);
+      await PushTokenService().syncZoneMonitoringOptIn(false);
+      await _restart();
+      return const ZoneMonitoringStatus(
+        mode: ZoneMonitoringMode.locationDenied,
+        enabled: false,
+      );
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      await _settings.setEnabled(false);
+      await PushTokenService().syncZoneMonitoringOptIn(false);
+      await _restart();
+      return const ZoneMonitoringStatus(
+        mode: ZoneMonitoringMode.locationDenied,
+        enabled: false,
+      );
+    }
+
+    try {
+      await Permission.locationAlways.request();
+    } catch (_) {
+      // Best effort only. Foreground-only mode is still valid.
+    }
+
     await _settings.setEnabled(true);
     await PushTokenService().syncZoneMonitoringOptIn(true);
     await NotificationService.instance.initialize();
@@ -93,27 +134,6 @@ class ZoneMonitoringService with WidgetsBindingObserver {
       await FcmPushService.instance.enable();
     } catch (_) {
       // Keep monitoring enabled even if push bootstrap fails.
-    }
-
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      await _restart();
-      return getStatus();
-    }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      await _restart();
-      return getStatus();
-    }
-
-    try {
-      await Permission.locationAlways.request();
-    } catch (_) {
-      // Best effort only. Foreground-only mode is still valid.
     }
 
     await _restart();
@@ -223,6 +243,17 @@ class ZoneMonitoringService with WidgetsBindingObserver {
       initialPosition = await Geolocator.getLastKnownPosition();
     } catch (_) {
       initialPosition = null;
+    }
+
+    if (initialPosition == null) {
+      try {
+        initialPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 15),
+        );
+      } catch (_) {
+        initialPosition = null;
+      }
     }
 
     if (initialPosition != null) {

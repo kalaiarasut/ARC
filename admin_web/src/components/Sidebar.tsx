@@ -17,6 +17,7 @@ import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import { IconButton } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { useThemeContext } from '../contexts/ThemeContext';
+import { preloadRoute } from '../routes/routePrefetch';
 
 export const DRAWER_WIDTH = 240;
 
@@ -37,9 +38,11 @@ interface NavItemProps {
     onClick: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, isDark, onClick }) => (
+const NavItem: React.FC<NavItemProps> = ({ icon, label, path, isActive, isDark, onClick }) => (
     <Box
         onClick={onClick}
+        onMouseEnter={() => preloadRoute(path)}
+        onFocus={() => preloadRoute(path)}
         sx={{
             display: 'flex',
             alignItems: 'center',
@@ -119,6 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     };
 
     const handleNavClick = (path: string) => {
+        preloadRoute(path);
         navigate(path);
         if (onNavigate) onNavigate();
     };

@@ -758,8 +758,7 @@ RETURNS TABLE (
   radius_meters DOUBLE PRECISION,
   polygon_points JSONB,
   people_count INTEGER,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
+  created_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -770,7 +769,12 @@ BEGIN
     RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
   END IF;
 
-  PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+  BEGIN
+    PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+  EXCEPTION
+    WHEN SQLSTATE '25006' THEN
+      NULL;
+  END;
 
   RETURN QUERY
   SELECT
@@ -783,8 +787,7 @@ BEGIN
     mz.radius_meters,
     mz.polygon_points,
     mz.people_count,
-    mz.created_at,
-    mz.updated_at
+    mz.created_at
   FROM public.monitoring_zones AS mz
   ORDER BY mz.created_at DESC;
 END;
@@ -818,7 +821,12 @@ BEGIN
     RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
   END IF;
 
-  PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+  BEGIN
+    PERFORM public.refresh_monitoring_zone_people_counts(NULL);
+  EXCEPTION
+    WHEN SQLSTATE '25006' THEN
+      NULL;
+  END;
 
   RETURN QUERY
   SELECT
@@ -1579,3 +1587,544 @@ GRANT EXECUTE ON FUNCTION public.admin_stop_live_location_session(UUID) TO authe
 GRANT EXECUTE ON FUNCTION public.admin_get_live_exact_pins(UUID, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, INTEGER) TO authenticated;
 
 -- END MIGRATION: 030_admin_live_presence.sql
+
+-- ============================================================================
+-- BEGIN MIGRATION: 031_admin_audit_trail.sql
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.admin_audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_kind TEXT NOT NULL DEFAULT 'audit' CHECK (event_kind IN ('audit', 'activity')),
+  entity_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  actor_email TEXT,
+  reason TEXT,
+  old_data JSONB,
+  new_data JSONB,
+  metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+  changed_fields TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created_at
+  ON public.admin_audit_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_entity
+  ON public.admin_audit_log (entity_type, entity_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_kind_created
+  ON public.admin_audit_log (event_kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_actor
+  ON public.admin_audit_log (actor_user_id, created_at DESC);
+
+ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins read admin audit log" ON public.admin_audit_log;
+CREATE POLICY "Admins read admin audit log"
+  ON public.admin_audit_log FOR SELECT TO authenticated
+  USING (public.is_admin());
+
+DROP POLICY IF EXISTS "No direct admin audit writes" ON public.admin_audit_log;
+CREATE POLICY "No direct admin audit writes"
+  ON public.admin_audit_log FOR INSERT TO authenticated
+  WITH CHECK (false);
+
+CREATE OR REPLACE FUNCTION public.audit_changed_fields(
+  p_old JSONB,
+  p_new JSONB
+)
+RETURNS TEXT[]
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  WITH keys AS (
+    SELECT key
+    FROM jsonb_object_keys(COALESCE(p_old, '{}'::JSONB)) AS key
+    UNION
+    SELECT key
+    FROM jsonb_object_keys(COALESCE(p_new, '{}'::JSONB)) AS key
+  )
+  SELECT COALESCE(array_agg(key ORDER BY key), ARRAY[]::TEXT[])
+  FROM keys
+  WHERE COALESCE(p_old -> key, 'null'::JSONB) IS DISTINCT FROM COALESCE(p_new -> key, 'null'::JSONB);
+$$;
+
+CREATE OR REPLACE FUNCTION public.current_request_actor_email()
+RETURNS TEXT
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+  v_claims TEXT := current_setting('request.jwt.claims', true);
+BEGIN
+  IF v_claims IS NULL OR btrim(v_claims) = '' THEN
+    RETURN 'system/unknown';
+  END IF;
+
+  RETURN COALESCE(NULLIF((v_claims::JSONB ->> 'email'), ''), 'system/unknown');
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN 'system/unknown';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.lookup_auth_user_email(p_user_id UUID)
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+AS $$
+  SELECT u.email
+  FROM auth.users AS u
+  WHERE u.id = p_user_id
+  LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.trg_sync_report_status_audit_to_admin_audit_log()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO public.admin_audit_log (
+    event_kind,
+    entity_type,
+    entity_id,
+    action,
+    actor_user_id,
+    actor_email,
+    old_data,
+    new_data,
+    changed_fields,
+    created_at
+  )
+  VALUES (
+    'audit',
+    'report',
+    NEW.report_id::TEXT,
+    'status_changed',
+    NEW.admin_id,
+    NEW.admin_email,
+    jsonb_build_object('status', NEW.old_status),
+    jsonb_build_object('status', NEW.new_status),
+    ARRAY['status']::TEXT[],
+    NEW.changed_at
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_report_status_audit_to_admin_audit_log ON public.report_status_audit;
+CREATE TRIGGER trg_sync_report_status_audit_to_admin_audit_log
+  AFTER INSERT ON public.report_status_audit
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_sync_report_status_audit_to_admin_audit_log();
+
+CREATE OR REPLACE FUNCTION public.trg_audit_monitoring_zone_changes()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_old JSONB;
+  v_new JSONB;
+  v_action TEXT;
+  v_entity_id TEXT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'created';
+    v_entity_id := NEW.id::TEXT;
+    v_old := NULL;
+    v_new := to_jsonb(NEW) - ARRAY['created_at', 'updated_at'];
+  ELSIF TG_OP = 'UPDATE' THEN
+    v_action := 'updated';
+    v_entity_id := NEW.id::TEXT;
+    v_old := to_jsonb(OLD) - ARRAY['created_at', 'updated_at'];
+    v_new := to_jsonb(NEW) - ARRAY['created_at', 'updated_at'];
+
+    IF v_old IS NOT DISTINCT FROM v_new THEN
+      RETURN NEW;
+    END IF;
+  ELSE
+    v_action := 'deleted';
+    v_entity_id := OLD.id::TEXT;
+    v_old := to_jsonb(OLD) - ARRAY['created_at', 'updated_at'];
+    v_new := NULL;
+  END IF;
+
+  INSERT INTO public.admin_audit_log (
+    event_kind,
+    entity_type,
+    entity_id,
+    action,
+    actor_user_id,
+    actor_email,
+    old_data,
+    new_data,
+    changed_fields
+  )
+  VALUES (
+    'audit',
+    'monitoring_zone',
+    v_entity_id,
+    v_action,
+    auth.uid(),
+    public.current_request_actor_email(),
+    v_old,
+    v_new,
+    public.audit_changed_fields(v_old, v_new)
+  );
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_audit_monitoring_zone_changes ON public.monitoring_zones;
+CREATE TRIGGER trg_audit_monitoring_zone_changes
+  AFTER INSERT OR UPDATE OR DELETE ON public.monitoring_zones
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_audit_monitoring_zone_changes();
+
+CREATE OR REPLACE FUNCTION public.trg_sync_live_location_audit_to_admin_audit_log()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_actor_email TEXT;
+BEGIN
+  v_actor_email := COALESCE(public.lookup_auth_user_email(NEW.actor_user_id), 'system/unknown');
+
+  INSERT INTO public.admin_audit_log (
+    event_kind,
+    entity_type,
+    entity_id,
+    action,
+    actor_user_id,
+    actor_email,
+    reason,
+    metadata,
+    changed_fields,
+    created_at
+  )
+  VALUES (
+    'audit',
+    'live_location_session',
+    COALESCE(NEW.session_id::TEXT, COALESCE(NEW.incident_id, NEW.id::TEXT)),
+    NEW.action,
+    NEW.actor_user_id,
+    v_actor_email,
+    NULLIF(NEW.details ->> 'reason', ''),
+    jsonb_build_object(
+      'session_id', NEW.session_id,
+      'incident_id', NEW.incident_id,
+      'details', COALESCE(NEW.details, '{}'::JSONB)
+    ),
+    ARRAY[]::TEXT[],
+    NEW.created_at
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_live_location_audit_to_admin_audit_log ON public.live_location_audit_logs;
+CREATE TRIGGER trg_sync_live_location_audit_to_admin_audit_log
+  AFTER INSERT ON public.live_location_audit_logs
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_sync_live_location_audit_to_admin_audit_log();
+
+CREATE OR REPLACE FUNCTION public.trg_sync_zone_transition_event_to_admin_audit_log()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_zone_name TEXT;
+BEGIN
+  SELECT mz.name
+  INTO v_zone_name
+  FROM public.monitoring_zones AS mz
+  WHERE mz.id = NEW.zone_id;
+
+  INSERT INTO public.admin_audit_log (
+    event_kind,
+    entity_type,
+    entity_id,
+    action,
+    actor_user_id,
+    actor_email,
+    metadata,
+    changed_fields,
+    created_at
+  )
+  VALUES (
+    'activity',
+    'zone_transition',
+    NEW.zone_id::TEXT,
+    NEW.event_type,
+    NULL,
+    'system/zone-monitor',
+    jsonb_build_object(
+      'zone_name', v_zone_name,
+      'user_id', NEW.user_id,
+      'device_id', NEW.device_id,
+      'latitude', NEW.latitude,
+      'longitude', NEW.longitude,
+      'source', NEW.source,
+      'delivery_status', NEW.delivery_status,
+      'notification_outbox_id', NEW.notification_outbox_id
+    ),
+    ARRAY[]::TEXT[],
+    NEW.created_at
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_zone_transition_event_to_admin_audit_log ON public.zone_transition_events;
+CREATE TRIGGER trg_sync_zone_transition_event_to_admin_audit_log
+  AFTER INSERT ON public.zone_transition_events
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trg_sync_zone_transition_event_to_admin_audit_log();
+
+INSERT INTO public.admin_audit_log (
+  event_kind,
+  entity_type,
+  entity_id,
+  action,
+  actor_user_id,
+  actor_email,
+  old_data,
+  new_data,
+  changed_fields,
+  created_at
+)
+SELECT
+  'audit',
+  'report',
+  rsa.report_id::TEXT,
+  'status_changed',
+  rsa.admin_id,
+  rsa.admin_email,
+  jsonb_build_object('status', rsa.old_status),
+  jsonb_build_object('status', rsa.new_status),
+  ARRAY['status']::TEXT[],
+  rsa.changed_at
+FROM public.report_status_audit AS rsa
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.admin_audit_log AS aal
+  WHERE aal.entity_type = 'report'
+    AND aal.entity_id = rsa.report_id::TEXT
+    AND aal.action = 'status_changed'
+    AND aal.created_at = rsa.changed_at
+    AND COALESCE(aal.actor_email, '') = COALESCE(rsa.admin_email, '')
+);
+
+INSERT INTO public.admin_audit_log (
+  event_kind,
+  entity_type,
+  entity_id,
+  action,
+  actor_user_id,
+  actor_email,
+  reason,
+  metadata,
+  changed_fields,
+  created_at
+)
+SELECT
+  'audit',
+  'live_location_session',
+  COALESCE(lla.session_id::TEXT, COALESCE(lla.incident_id, lla.id::TEXT)),
+  lla.action,
+  lla.actor_user_id,
+  COALESCE(public.lookup_auth_user_email(lla.actor_user_id), 'system/unknown'),
+  NULLIF(lla.details ->> 'reason', ''),
+  jsonb_build_object(
+    'session_id', lla.session_id,
+    'incident_id', lla.incident_id,
+    'details', COALESCE(lla.details, '{}'::JSONB)
+  ),
+  ARRAY[]::TEXT[],
+  lla.created_at
+FROM public.live_location_audit_logs AS lla
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.admin_audit_log AS aal
+  WHERE aal.entity_type = 'live_location_session'
+    AND aal.entity_id = COALESCE(lla.session_id::TEXT, COALESCE(lla.incident_id, lla.id::TEXT))
+    AND aal.action = lla.action
+    AND aal.created_at = lla.created_at
+);
+
+INSERT INTO public.admin_audit_log (
+  event_kind,
+  entity_type,
+  entity_id,
+  action,
+  actor_user_id,
+  actor_email,
+  metadata,
+  changed_fields,
+  created_at
+)
+SELECT
+  'activity',
+  'zone_transition',
+  zte.zone_id::TEXT,
+  zte.event_type,
+  NULL,
+  'system/zone-monitor',
+  jsonb_build_object(
+    'zone_name', mz.name,
+    'user_id', zte.user_id,
+    'device_id', zte.device_id,
+    'latitude', zte.latitude,
+    'longitude', zte.longitude,
+    'source', zte.source,
+    'delivery_status', zte.delivery_status,
+    'notification_outbox_id', zte.notification_outbox_id
+  ),
+  ARRAY[]::TEXT[],
+  zte.created_at
+FROM public.zone_transition_events AS zte
+LEFT JOIN public.monitoring_zones AS mz ON mz.id = zte.zone_id
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.admin_audit_log AS aal
+  WHERE aal.entity_type = 'zone_transition'
+    AND aal.entity_id = zte.zone_id::TEXT
+    AND aal.action = zte.event_type
+    AND aal.created_at = zte.created_at
+);
+
+CREATE OR REPLACE FUNCTION public.admin_list_audit_events(
+  p_limit INTEGER DEFAULT 250,
+  p_offset INTEGER DEFAULT 0,
+  p_search TEXT DEFAULT NULL,
+  p_entity_type TEXT DEFAULT NULL,
+  p_action TEXT DEFAULT NULL,
+  p_event_kind TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID,
+  event_kind TEXT,
+  entity_type TEXT,
+  entity_id TEXT,
+  action TEXT,
+  actor_user_id UUID,
+  actor_email TEXT,
+  reason TEXT,
+  old_data JSONB,
+  new_data JSONB,
+  metadata JSONB,
+  changed_fields TEXT[],
+  created_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    aal.id,
+    aal.event_kind,
+    aal.entity_type,
+    aal.entity_id,
+    aal.action,
+    aal.actor_user_id,
+    aal.actor_email,
+    aal.reason,
+    aal.old_data,
+    aal.new_data,
+    aal.metadata,
+    aal.changed_fields,
+    aal.created_at
+  FROM public.admin_audit_log AS aal
+  WHERE (p_entity_type IS NULL OR p_entity_type = '' OR aal.entity_type = p_entity_type)
+    AND (p_action IS NULL OR p_action = '' OR aal.action = p_action)
+    AND (p_event_kind IS NULL OR p_event_kind = '' OR aal.event_kind = p_event_kind)
+    AND (
+      p_search IS NULL
+      OR p_search = ''
+      OR aal.entity_id ILIKE '%' || p_search || '%'
+      OR aal.entity_type ILIKE '%' || p_search || '%'
+      OR aal.action ILIKE '%' || p_search || '%'
+      OR COALESCE(aal.actor_email, '') ILIKE '%' || p_search || '%'
+      OR COALESCE(aal.reason, '') ILIKE '%' || p_search || '%'
+      OR COALESCE(aal.metadata ->> 'entity_label', '') ILIKE '%' || p_search || '%'
+      OR COALESCE(aal.metadata ->> 'zone_name', '') ILIKE '%' || p_search || '%'
+      OR COALESCE(aal.metadata ->> 'incident_id', '') ILIKE '%' || p_search || '%'
+    )
+  ORDER BY aal.created_at DESC
+  LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 250), 1000))
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_get_entity_audit_history(
+  p_entity_type TEXT,
+  p_entity_id TEXT,
+  p_limit INTEGER DEFAULT 100
+)
+RETURNS TABLE (
+  id UUID,
+  event_kind TEXT,
+  entity_type TEXT,
+  entity_id TEXT,
+  action TEXT,
+  actor_user_id UUID,
+  actor_email TEXT,
+  reason TEXT,
+  old_data JSONB,
+  new_data JSONB,
+  metadata JSONB,
+  changed_fields TEXT[],
+  created_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'admin_only' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    aal.id,
+    aal.event_kind,
+    aal.entity_type,
+    aal.entity_id,
+    aal.action,
+    aal.actor_user_id,
+    aal.actor_email,
+    aal.reason,
+    aal.old_data,
+    aal.new_data,
+    aal.metadata,
+    aal.changed_fields,
+    aal.created_at
+  FROM public.admin_audit_log AS aal
+  WHERE aal.entity_type = p_entity_type
+    AND aal.entity_id = p_entity_id
+  ORDER BY aal.created_at DESC
+  LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 100), 500));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.audit_changed_fields(JSONB, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_request_actor_email() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.lookup_auth_user_email(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_audit_events(INTEGER, INTEGER, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_entity_audit_history(TEXT, TEXT, INTEGER) TO authenticated;
+
+-- END MIGRATION: 031_admin_audit_trail.sql

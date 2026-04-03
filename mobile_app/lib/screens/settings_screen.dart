@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 
@@ -76,6 +77,155 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       case ZoneMonitoringMode.disabled:
       case null:
         return 'Uses current location to warn when this device enters or exits monitoring zones.';
+    }
+  }
+
+  Future<bool> _confirmZoneMonitoringDialog({
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Future<bool> _waitForLocationServicesEnabled() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      if (await Geolocator.isLocationServiceEnabled()) {
+        return true;
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    return Geolocator.isLocationServiceEnabled();
+  }
+
+  Future<bool> _waitForLocationPermissionGranted() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        return true;
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+  }
+
+  void _showZoneMonitoringSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _handleEnableZoneMonitoring() async {
+    final gpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!gpsEnabled) {
+      final shouldOpenSettings = await _confirmZoneMonitoringDialog(
+        title: 'Turn on GPS',
+        message:
+            'Safety Zone Monitoring needs Android location services to detect when this device enters or exits a zone.',
+        confirmLabel: 'Open location settings',
+      );
+
+      if (!shouldOpenSettings) {
+        await _loadZoneMonitoringSetting();
+        _showZoneMonitoringSnackBar(
+          'Safety Zone Monitoring stays off until GPS is enabled.',
+        );
+        return;
+      }
+
+      await Geolocator.openLocationSettings();
+      final enabledAfterPrompt = await _waitForLocationServicesEnabled();
+      if (!enabledAfterPrompt) {
+        await _loadZoneMonitoringSetting();
+        _showZoneMonitoringSnackBar(
+          'GPS is still off. Turn on location services to enable Safety Zone Monitoring.',
+        );
+        return;
+      }
+    }
+
+    var status = await ZoneMonitoringService.instance.enable();
+
+    if (!mounted) return;
+
+    if (!status.enabled && status.mode == ZoneMonitoringMode.locationDenied) {
+      final shouldOpenAppSettings = await _confirmZoneMonitoringDialog(
+        title: 'Allow location access',
+        message:
+            'Safety Zone Monitoring needs location permission. Android denied the request, so open app settings to allow location access.',
+        confirmLabel: 'Open app settings',
+      );
+
+      if (shouldOpenAppSettings) {
+        await Geolocator.openAppSettings();
+        final grantedAfterPrompt = await _waitForLocationPermissionGranted();
+        if (grantedAfterPrompt) {
+          status = await ZoneMonitoringService.instance.enable();
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _notificationsEnabled = status.enabled ? true : _notificationsEnabled;
+      _zoneMonitoringEnabled = status.enabled;
+      _zoneMonitoringMode = status.mode;
+    });
+
+    if (!status.enabled) {
+      switch (status.mode) {
+        case ZoneMonitoringMode.locationServicesOff:
+          _showZoneMonitoringSnackBar(
+            'GPS must be on before Safety Zone Monitoring can start.',
+          );
+          break;
+        case ZoneMonitoringMode.locationDenied:
+          _showZoneMonitoringSnackBar(
+            'Location permission is required for Safety Zone Monitoring.',
+          );
+          break;
+        case ZoneMonitoringMode.signedOut:
+          _showZoneMonitoringSnackBar(
+            'Sign in again to enable Safety Zone Monitoring on this device.',
+          );
+          break;
+        default:
+          _showZoneMonitoringSnackBar(
+            'Safety Zone Monitoring could not be enabled on this device.',
+          );
+      }
+      await _loadZoneMonitoringSetting();
+      return;
+    }
+
+    if (status.mode == ZoneMonitoringMode.foregroundOnly) {
+      _showZoneMonitoringSnackBar(
+        'Safety Zone Monitoring is on. Background location was not granted, so alerts work while the app is open.',
+      );
     }
   }
 
@@ -245,16 +395,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onChanged: _zoneMonitoringEnabled == null
                       ? null
                       : (v) async {
-                          setState(() => _zoneMonitoringEnabled = v);
                           if (v) {
-                            final status = await ZoneMonitoringService.instance.enable();
-                            if (!mounted) return;
-                            setState(() {
-                              _notificationsEnabled = true;
-                              _zoneMonitoringEnabled = status.enabled;
-                              _zoneMonitoringMode = status.mode;
-                            });
+                            setState(() => _zoneMonitoringEnabled = true);
+                            await _handleEnableZoneMonitoring();
                           } else {
+                            setState(() => _zoneMonitoringEnabled = false);
                             await ZoneMonitoringService.instance.disable();
                             await _loadZoneMonitoringSetting();
                           }

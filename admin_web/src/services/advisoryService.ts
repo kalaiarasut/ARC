@@ -209,6 +209,7 @@ export const advisoryService = {
         source_language: input.source_language ?? 'en',
         translations: input.translations,
         replace_translations: input.replace_translations ?? true,
+        audit_reason: toNullableString(input.audit_reason),
       });
       return data.advisory;
     } catch (error) {
@@ -217,7 +218,7 @@ export const advisoryService = {
     }
   },
 
-  async deleteAdvisory(advisoryId: string): Promise<void> {
+  async deleteAdvisory(advisoryId: string, auditReason: string): Promise<void> {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase not configured');
     }
@@ -227,8 +228,12 @@ export const advisoryService = {
       throw new Error('Missing advisory id');
     }
 
-    const { error } = await supabase.from('official_advisories').delete().eq('id', id);
-    if (error) {
+    try {
+      await invokeEdgeFunction<{ success: boolean }>('delete_advisory_with_audit', {
+        advisory_id: id,
+        audit_reason: toNullableString(auditReason),
+      });
+    } catch (error) {
       console.error('Error deleting advisory:', error);
       throw error;
     }

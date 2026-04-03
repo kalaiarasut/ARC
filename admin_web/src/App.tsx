@@ -1,25 +1,27 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { Layout } from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CustomThemeProvider } from './contexts/ThemeContext';
-
-const Dashboard = lazy(() => import('./pages/Dashboard').then((module) => ({ default: module.Dashboard })));
-const Reports = lazy(() => import('./pages/Reports').then((module) => ({ default: module.Reports })));
-const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
-const MapView = lazy(() => import('./pages/MapView').then((module) => ({ default: module.MapView })));
-const Advisories = lazy(() => import('./pages/Advisories').then((module) => ({ default: module.Advisories })));
-const GeneratedZones = lazy(() => import('./pages/GeneratedZones').then((module) => ({ default: module.GeneratedZones })));
-const AuditLogs = lazy(() => import('./pages/AuditLogs').then((module) => ({ default: module.AuditLogs })));
-const ApiReference = lazy(() => import('./pages/ApiReference').then((module) => ({ default: module.ApiReference })));
-const Users = lazy(() => import('./pages/Users').then((module) => ({ default: module.Users })));
-const UserDetails = lazy(() => import('./pages/UserDetails').then((module) => ({ default: module.UserDetails })));
-const UserForm = lazy(() => import('./pages/UserForm').then((module) => ({ default: module.UserForm })));
-const Organizations = lazy(() => import('./pages/Organizations').then((module) => ({ default: module.Organizations })));
-const Verifications = lazy(() => import('./pages/Verifications').then((module) => ({ default: module.Verifications })));
-const VerificationCaseReview = lazy(() => import('./pages/VerificationCaseReview'));
+import {
+  Advisories,
+  ApiReference,
+  AuditLogs,
+  Dashboard,
+  GeneratedZones,
+  Login,
+  MapView,
+  Organizations,
+  Reports,
+  UserDetails,
+  UserForm,
+  Users,
+  VerificationCaseReview,
+  Verifications,
+  warmCommonRoutes,
+} from './routes/routePrefetch';
 
 const RouteFallback = () => (
   <Box
@@ -36,6 +38,11 @@ const RouteFallback = () => (
 );
 
 function App() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    warmCommonRoutes();
+  }, []);
+
   return (
     <CustomThemeProvider>
       <AuthProvider>

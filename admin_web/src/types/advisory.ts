@@ -79,6 +79,7 @@ export interface AdvisoryCreateInput {
   source_language?: AdvisoryLanguageCode;
   translations: AdvisoryTranslationDraft[];
   replace_translations?: boolean;
+  audit_reason?: string | null;
 }
 
 export interface AdvisoryTranslationPreviewResponse {

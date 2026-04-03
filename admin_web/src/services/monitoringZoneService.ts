@@ -40,6 +40,75 @@ const normalizeMonitoringZone = (row: any): MonitoringZone => ({
   people_count: Number.isFinite(Number(row?.people_count)) ? Number(row.people_count) : 0,
 });
 
+const shouldUseMonitoringZoneFallback = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const rpcError = error as { code?: string; message?: string; details?: string };
+  const message = (rpcError.message ?? '').toLowerCase();
+  const details = (rpcError.details ?? '').toLowerCase();
+
+  return (
+    rpcError.code === '25006' ||
+    rpcError.code === '42703' ||
+    message.includes('read-only transaction') ||
+    details.includes('read-only transaction') ||
+    message.includes('updated_at') ||
+    details.includes('updated_at')
+  );
+};
+
+const listMonitoringZonesFallback = async (): Promise<MonitoringZone[]> => {
+  const { data, error } = await supabase
+    .from('monitoring_zones')
+    .select('id,name,description,shape,center_lat,center_lng,radius_meters,polygon_points,people_count,created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return ((data as any[]) ?? []).map(normalizeMonitoringZone);
+};
+
+const listZoneTransitionEventsFallback = async (params?: {
+  limit?: number;
+  zoneId?: string | null;
+  eventType?: 'entered' | 'exited' | null;
+}): Promise<ZoneTransitionEvent[]> => {
+  let eventsQuery = supabase
+    .from('zone_transition_events')
+    .select('id,zone_id,user_id,device_id,event_type,occurred_at,latitude,longitude,source,delivery_status,notification_outbox_id')
+    .order('occurred_at', { ascending: false })
+    .limit(Math.max(1, Math.min(params?.limit ?? 50, 200)));
+
+  if (params?.zoneId) {
+    eventsQuery = eventsQuery.eq('zone_id', params.zoneId);
+  }
+  if (params?.eventType) {
+    eventsQuery = eventsQuery.eq('event_type', params.eventType);
+  }
+
+  const [{ data: eventRows, error: eventError }, { data: zoneRows, error: zoneError }] = await Promise.all([
+    eventsQuery,
+    supabase.from('monitoring_zones').select('id,name'),
+  ]);
+
+  if (eventError) throw eventError;
+  if (zoneError) throw zoneError;
+
+  const zoneNames = new Map<string, string>();
+  ((zoneRows as any[]) ?? []).forEach((row) => {
+    if (typeof row?.id !== 'string') return;
+    if (typeof row?.name === 'string' && row.name.trim().length > 0) {
+      zoneNames.set(row.id, row.name.trim());
+      return;
+    }
+    zoneNames.set(row.id, 'Monitoring Zone');
+  });
+
+  return ((eventRows as any[]) ?? []).map((row) => ({
+    ...row,
+    zone_name: zoneNames.get(row.zone_id) ?? 'Monitoring Zone',
+    notification_outbox_id: row.notification_outbox_id ?? null,
+  }));
+};
+
 export const monitoringZoneService = {
   async hasExactLocationPermission(): Promise<boolean> {
     if (!isSupabaseConfigured()) return false;
@@ -139,7 +208,10 @@ export const monitoringZoneService = {
 
     const { data, error } = await supabase.rpc('admin_get_monitoring_zones');
 
-    if (error) throw error;
+    if (error) {
+      if (!shouldUseMonitoringZoneFallback(error)) throw error;
+      return listMonitoringZonesFallback();
+    }
     return ((data as any[]) ?? []).map(normalizeMonitoringZone);
   },
 
@@ -156,7 +228,10 @@ export const monitoringZoneService = {
       p_event_type: params?.eventType ?? null,
     });
 
-    if (error) throw error;
+    if (error) {
+      if (!shouldUseMonitoringZoneFallback(error)) throw error;
+      return listZoneTransitionEventsFallback(params);
+    }
     return ((data as ZoneTransitionEvent[]) ?? []).map((row) => ({
       ...row,
       notification_outbox_id: row.notification_outbox_id ?? null,

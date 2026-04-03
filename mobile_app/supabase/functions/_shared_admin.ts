@@ -16,6 +16,21 @@ export type WorkerAuthResult = {
   supabase: any;
 };
 
+export type AdminAuditEventInsertInput = {
+  event_kind?: "audit" | "activity";
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  actor_user_id?: string | null;
+  actor_email?: string | null;
+  reason?: string | null;
+  old_data?: Record<string, unknown> | null;
+  new_data?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+  changed_fields?: string[];
+  created_at?: string;
+};
+
 const jsonHeaders = { "content-type": "application/json" };
 export const corsHeaders = {
   "content-type": "application/json",
@@ -132,4 +147,41 @@ export async function requireAdmin(request: Request): Promise<AdminAuthResult | 
   }
 
   return auth;
+}
+
+export function computeChangedFields(
+  oldData: Record<string, unknown> | null | undefined,
+  newData: Record<string, unknown> | null | undefined,
+) {
+  const previous = oldData ?? {};
+  const next = newData ?? {};
+  const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+
+  return Array.from(keys)
+    .filter((key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key]))
+    .sort();
+}
+
+export async function insertAdminAuditEvent(
+  supabase: any,
+  input: AdminAuditEventInsertInput,
+) {
+  const { error } = await supabase.from("admin_audit_log").insert({
+    event_kind: input.event_kind ?? "audit",
+    entity_type: input.entity_type,
+    entity_id: input.entity_id,
+    action: input.action,
+    actor_user_id: input.actor_user_id ?? null,
+    actor_email: input.actor_email ?? null,
+    reason: input.reason ?? null,
+    old_data: input.old_data ?? null,
+    new_data: input.new_data ?? null,
+    metadata: input.metadata ?? {},
+    changed_fields: input.changed_fields ?? computeChangedFields(input.old_data, input.new_data),
+    created_at: input.created_at ?? new Date().toISOString(),
+  });
+
+  if (error) {
+    throw new Error(`Failed to write audit event: ${error.message}`);
+  }
 }

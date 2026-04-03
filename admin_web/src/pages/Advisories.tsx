@@ -29,6 +29,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import GTranslateIcon from '@mui/icons-material/GTranslate';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PhoneIcon from '@mui/icons-material/Phone';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PreviewIcon from '@mui/icons-material/Preview';
@@ -43,11 +44,15 @@ import { format } from 'date-fns';
 import { isSupabaseConfigured } from '../core/supabase_config';
 import { useAuth } from '../contexts/AuthContext';
 import { advisoryService } from '../services/advisoryService';
+import { auditService } from '../services/auditService';
 import { riskZoneService } from '../services/riskZoneService';
+import type { AuditEvent } from '../types/audit';
 import type { AdvisoryCategory, AdvisoryLanguageCode, AdvisorySeverity, OfficialAdvisory } from '../types/advisory';
 import { useAdvisoryForm } from '../components/advisories/hooks/useAdvisoryForm';
 import { useTranslations } from '../components/advisories/hooks/useTranslations';
+import { HistoryDrawer } from '../components/audit/HistoryDrawer';
 import { FormSection } from '../components/advisories/FormSection';
+import { ConfirmDialog } from '../components/shared/ConfirmDialog';
 import { TranslationProgressBar } from '../components/advisories/TranslationProgressBar';
 import { TranslationEditor } from '../components/advisories/TranslationEditor';
 
@@ -142,6 +147,21 @@ export function Advisories() {
 
   const [publishing, setPublishing] = useState(false);
   const [generatingTranslations, setGeneratingTranslations] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyEntityName, setHistoryEntityName] = useState('');
+  const [historyEvents, setHistoryEvents] = useState<AuditEvent[]>([]);
+  const [editReasonDialogOpen, setEditReasonDialogOpen] = useState(false);
+  const [editAuditReason, setEditAuditReason] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    advisory: OfficialAdvisory | null;
+    reason: string;
+  }>({
+    open: false,
+    advisory: null,
+    reason: '',
+  });
 
   const formState = useAdvisoryForm();
   const translationsState = useTranslations();
@@ -277,6 +297,8 @@ export function Advisories() {
   const handleReset = () => {
     setEditingAdvisory(null);
     setOriginalSourceSignature(null);
+    setEditAuditReason('');
+    setEditReasonDialogOpen(false);
     resetForm();
     clearTranslations();
     setActiveStep(0);
@@ -332,7 +354,24 @@ export function Advisories() {
     [isAuthenticated, setFormValues, setActiveTab, setTranslations]
   );
 
-  const handlePublish = async () => {
+  const handleViewHistory = useCallback(async (advisory: OfficialAdvisory) => {
+    setHistoryEntityName(advisory.title);
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+
+    try {
+      const events = await auditService.getEntityHistory('advisory', advisory.id, 150);
+      setHistoryEvents(events);
+    } catch (e) {
+      console.error(e);
+      setHistoryEvents([]);
+      setError('Failed to load advisory history.');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const handlePublish = async (auditReason?: string | null) => {
     if (!isSourceReady) {
       setError('Title and message are required.');
       return;
@@ -345,6 +384,11 @@ export function Advisories() {
 
     if (requiresTranslationStep && !allReviewed) {
       setError('Generate and review all required translations before publish.');
+      return;
+    }
+
+    if (isEditing && (!auditReason || auditReason.trim().length < 3)) {
+      setEditReasonDialogOpen(true);
       return;
     }
 
@@ -379,6 +423,7 @@ export function Advisories() {
         source_language: 'en',
         translations: requiresTranslationStep ? translations : [],
         replace_translations: requiresTranslationStep,
+        audit_reason: auditReason ?? null,
       });
 
       handleReset();
@@ -398,7 +443,7 @@ export function Advisories() {
   };
 
   const handleDelete = useCallback(
-    async (advisoryId: string) => {
+    async (advisory: OfficialAdvisory, auditReason?: string | null) => {
       if (!isAuthenticated) {
         setError('Please login to delete updates.');
         return;
@@ -409,14 +454,20 @@ export function Advisories() {
         return;
       }
 
-      const ok = window.confirm('Delete this official update? This cannot be undone.');
-      if (!ok) return;
+      if (!auditReason || auditReason.trim().length < 3) {
+        setDeleteDialog({
+          open: true,
+          advisory,
+          reason: auditReason ?? '',
+        });
+        return;
+      }
 
       try {
-        setDeletingId(advisoryId);
+        setDeletingId(advisory.id);
         setError(null);
 
-        await advisoryService.deleteAdvisory(advisoryId);
+        await advisoryService.deleteAdvisory(advisory.id, auditReason);
 
         const nextTotal = Math.max(0, totalCount - 1);
         const isLastRowOnPage = items.length === 1;
@@ -434,6 +485,7 @@ export function Advisories() {
         setError('Failed to delete update. Check your permissions (RLS) and login status.');
       } finally {
         setDeletingId(null);
+        setDeleteDialog({ open: false, advisory: null, reason: '' });
       }
     },
     [isAuthenticated, isAdmin, items.length, load, page, rowsPerPage, totalCount]
@@ -1036,7 +1088,7 @@ export function Advisories() {
                   <Button
                     variant="contained"
                     startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <SendOutlinedIcon />}
-                    onClick={handlePublish}
+                    onClick={() => void handlePublish()}
                     disabled={publishing || !isSourceReady}
                   >
                     {publishing ? (isEditing ? 'Saving...' : 'Publishing...') : isEditing ? 'Save Changes' : 'Publish'}
@@ -1143,6 +1195,13 @@ export function Advisories() {
                       <TableCell align="right">
                         <IconButton
                           size="small"
+                          color="inherit"
+                          onClick={() => void handleViewHistory(item)}
+                        >
+                          <HistoryOutlinedIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
                           color="primary"
                           onClick={() => void handleEdit(item)}
                           disabled={!isAdmin || loadingEditTranslations}
@@ -1156,7 +1215,7 @@ export function Advisories() {
                         <IconButton
                           size="small"
                           color="error"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => void handleDelete(item)}
                           disabled={!isAdmin || deletingId === item.id}
                         >
                           {deletingId === item.id ? (
@@ -1186,6 +1245,63 @@ export function Advisories() {
             rowsPerPageOptions={[10, 25, 50, 100]}
           />
         </Paper>
+
+        <HistoryDrawer
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          entityName={historyEntityName}
+          events={historyEvents}
+          loading={historyLoading}
+        />
+
+        <ConfirmDialog
+          open={editReasonDialogOpen}
+          title="Save advisory changes?"
+          description="This edit will update the advisory and append a structured audit entry."
+          confirmLabel="Save Changes"
+          confirmColor="warning"
+          requireReason
+          reasonLabel="Edit Reason"
+          reasonPlaceholder="Explain why this advisory is being updated"
+          reasonValue={editAuditReason}
+          onReasonChange={setEditAuditReason}
+          submitting={publishing}
+          onCancel={() => {
+            if (!publishing) {
+              setEditReasonDialogOpen(false);
+              setEditAuditReason('');
+            }
+          }}
+          onConfirm={() => void handlePublish(editAuditReason)}
+        />
+
+        <ConfirmDialog
+          open={deleteDialog.open}
+          title="Delete advisory?"
+          description={
+            deleteDialog.advisory
+              ? `This will delete "${deleteDialog.advisory.title}" and append an audit entry.`
+              : 'This will delete the advisory and append an audit entry.'
+          }
+          confirmLabel="Delete Advisory"
+          confirmColor="error"
+          requireReason
+          reasonLabel="Deletion Reason"
+          reasonPlaceholder="Explain why this advisory is being deleted"
+          reasonValue={deleteDialog.reason}
+          onReasonChange={(value) => setDeleteDialog((current) => ({ ...current, reason: value }))}
+          submitting={deletingId != null}
+          onCancel={() => {
+            if (!deletingId) {
+              setDeleteDialog({ open: false, advisory: null, reason: '' });
+            }
+          }}
+          onConfirm={() => {
+            if (deleteDialog.advisory) {
+              void handleDelete(deleteDialog.advisory, deleteDialog.reason);
+            }
+          }}
+        />
       </Container>
     </Box>
   );
