@@ -36,6 +36,12 @@ export const normalizeLanguageCode = (value: string | null) => {
   if (normalized.startsWith("kn")) return "kn";
   if (normalized.startsWith("ml")) return "ml";
   if (normalized.startsWith("mr")) return "mr";
+  if (
+    normalized.startsWith("od") ||
+    normalized.startsWith("ory") ||
+    normalized.startsWith("odia") ||
+    normalized.startsWith("oriya")
+  ) return "or";
   if (normalized.startsWith("or")) return "or";
   if (normalized.startsWith("ta")) return "ta";
   if (normalized.startsWith("te")) return "te";
@@ -140,7 +146,7 @@ const toSarvamLanguageCode = (languageCode: string) => {
     case "mr":
       return "mr-IN";
     case "or":
-      return "or-IN";
+      return "od-IN";
     case "ta":
       return "ta-IN";
     case "te":
@@ -181,6 +187,25 @@ const getLatinLetterRatio = (text: string) => {
 };
 
 const looksEnglish = (text: string) => getLatinLetterRatio(text) > 0.75;
+
+const inferLanguageFromScript = (text: string): string | null => {
+  const scriptCounts = {
+    bn: text.match(/[\u0980-\u09FF]/g)?.length ?? 0,
+    gu: text.match(/[\u0A80-\u0AFF]/g)?.length ?? 0,
+    or: text.match(/[\u0B00-\u0B7F]/g)?.length ?? 0,
+    ta: text.match(/[\u0B80-\u0BFF]/g)?.length ?? 0,
+    te: text.match(/[\u0C00-\u0C7F]/g)?.length ?? 0,
+    kn: text.match(/[\u0C80-\u0CFF]/g)?.length ?? 0,
+    ml: text.match(/[\u0D00-\u0D7F]/g)?.length ?? 0,
+  } as const;
+
+  const topEntry = Object.entries(scriptCounts).sort((a, b) => b[1] - a[1])[0];
+  if (!topEntry) return null;
+
+  const [language, count] = topEntry;
+  if (count < 8) return null;
+  return language;
+};
 
 const detectLanguageCode = async (text: string): Promise<string | null> => {
   if (getSarvamApiKeys().length === 0 || !text.trim()) return null;
@@ -246,6 +271,16 @@ export const translateReportDescription = async (description: string): Promise<T
   }
 
   let detectedLanguage = await detectLanguageCode(originalDescription);
+  const scriptInferredLanguage = inferLanguageFromScript(originalDescription);
+
+  if (detectedLanguage === "en" && scriptInferredLanguage && scriptInferredLanguage !== "en") {
+    detectedLanguage = scriptInferredLanguage;
+  }
+
+  if (!detectedLanguage && scriptInferredLanguage) {
+    detectedLanguage = scriptInferredLanguage;
+  }
+
   if (!detectedLanguage && looksEnglish(originalDescription)) {
     detectedLanguage = "en";
   }

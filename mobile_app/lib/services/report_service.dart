@@ -126,18 +126,12 @@ class ReportService {
               : response.toString();
       return reportId;
     } on PostgrestException catch (e) {
-      // If RPC isn't deployed yet, fall back to direct insert.
       final msg = e.message.toLowerCase();
       final details = (e.details ?? '').toString().toLowerCase();
       final isMissingRpc = msg.contains('create_hazard_report') || details.contains('create_hazard_report');
 
       if (isMissingRpc) {
-        final response = await _supabase
-            .from('hazard_reports')
-            .insert(report.toJson())
-            .select('id')
-            .single();
-        return response['id'] as String;
+        throw Exception('backend_submission_rpc_missing');
       }
 
       // Check for duplicate client_id (idempotency)

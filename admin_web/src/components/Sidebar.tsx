@@ -8,6 +8,7 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import ApiOutlinedIcon from '@mui/icons-material/ApiOutlined';
+import ThunderstormOutlinedIcon from '@mui/icons-material/ThunderstormOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import DomainOutlinedIcon from '@mui/icons-material/DomainOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
@@ -97,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
     const navItems = [
         { icon: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Dashboard', path: '/dashboard' },
+        { icon: <ThunderstormOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Marine Conditions', path: '/marine-conditions' },
         { icon: <PeopleOutlinedIcon sx={{ fontSize: 20 }} />, label: 'User Management', path: '/users' },
         { icon: <DomainOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Organizations', path: '/organizations' },
         { icon: <VerifiedUserOutlinedIcon sx={{ fontSize: 20 }} />, label: 'Verifications', path: '/verifications' },
@@ -110,6 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
 
     const isActive = (path: string) => {
         if (path === '/users') return location.pathname.startsWith('/users');
+        if (path === '/marine-conditions') return location.pathname.startsWith('/marine-conditions');
         if (path === '/organizations') return location.pathname.startsWith('/organizations');
         if (path === '/verifications') return location.pathname.startsWith('/verifications');
         if (path === '/reports') return location.pathname.startsWith('/reports');

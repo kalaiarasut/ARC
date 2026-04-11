@@ -12,6 +12,11 @@ import {
   normalizeLanguageCode,
   translateReportDescription,
 } from "../_report_translation.ts";
+import {
+  buildCompletedAnalysis,
+  persistAiAnalysis,
+  selectReportForAi,
+} from "../_report_ai.ts";
 
 Deno.serve(async (request: Request) => {
   const corsResponse = handleCors(request);
@@ -109,6 +114,16 @@ Deno.serve(async (request: Request) => {
 
     if (updateError) {
       return jsonResponse({ error: updateError.message }, 500);
+    }
+
+    if (outcome.status === "completed" || outcome.status === "skipped") {
+      try {
+        const reportForAi = await selectReportForAi(auth.supabase, report.id);
+        const completedAnalysis = await buildCompletedAnalysis(reportForAi);
+        await persistAiAnalysis(auth.supabase, report.id, completedAnalysis, force ? "manual_retry" : "base");
+      } catch (aiError) {
+        console.error("Failed to auto-score translated report", aiError);
+      }
     }
 
     return jsonResponse({

@@ -1,6 +1,16 @@
 import { supabase } from '../config/supabase';
 import { isSupabaseConfigured } from '../core/supabase_config';
-import type { HazardReport, FilterOptions, DashboardStats, ReportStatus } from '../types/hazard';
+import type {
+  HazardReport,
+  FilterOptions,
+  DashboardStats,
+  ReportStatus,
+  ReportAiAnalysis,
+  ReportIntegritySnapshot,
+  ReportIntegritySignal,
+  ReportSubmissionEvent,
+  DuplicateClusterMember,
+} from '../types/hazard';
 
 export interface PagedResult<T> {
   data: T[];
@@ -32,6 +42,100 @@ export interface TranslationQueueStats {
   total_known: number;
   fetched_at: string;
 }
+
+export interface AiScoringQueueStats {
+  pending: number;
+  processing: number;
+  partial: number;
+  failed: number;
+  completed: number;
+  active: number;
+  total_known: number;
+  fetched_at: string;
+}
+
+export interface AiWorkerRunResult {
+  claimed: number;
+  processed: number;
+  completed: number;
+  partial: number;
+  failed: number;
+  batch_size: number;
+  concurrency: number;
+}
+
+export interface FailedTranslationQueueItem {
+  id: string;
+  hazard_type: HazardReport['hazard_type'];
+  user_name: string | null;
+  description: string;
+  translation_attempts: number | null;
+  translation_last_error: string | null;
+  translation_last_attempt_at: string | null;
+  translation_next_retry_at: string | null;
+}
+
+export interface AiAttentionQueueItem {
+  id: string;
+  hazard_type: HazardReport['hazard_type'];
+  description: string;
+  translated_english?: string | null;
+  ai_analysis: Pick<ReportAiAnalysis, 'analysis_status' | 'last_error' | 'operational_score' | 'score_bucket'> | null;
+}
+
+const REPORT_SELECT = '*, ai_analysis:report_ai_analysis(*)';
+
+const normalizeReportRow = (row: any): HazardReport => {
+  const nested = Array.isArray(row?.ai_analysis)
+    ? (row.ai_analysis[0] ?? null)
+    : (row?.ai_analysis ?? null);
+
+  return {
+    ...row,
+    ai_analysis: nested as ReportAiAnalysis | null,
+  } as HazardReport;
+};
+
+const normalizeIntegritySnapshotRow = (row: any): ReportIntegritySnapshot => ({
+  report_id: String(row.report_id),
+  integrity_severity: row.integrity_severity ?? 'none',
+  integrity_score: Number(row.integrity_score ?? 0),
+  active_signal_count: Number(row.active_signal_count ?? 0),
+  active_signal_types: Array.isArray(row.active_signal_types) ? row.active_signal_types.map(String) : [],
+  duplicate_cluster_id: row.duplicate_cluster_id ?? null,
+  duplicate_cluster_size: Number(row.duplicate_cluster_size ?? 0),
+  latest_submission_event_type: row.latest_submission_event_type ?? null,
+  latest_submission_result_code: row.latest_submission_result_code ?? null,
+  latest_submission_at: row.latest_submission_at ?? null,
+});
+
+const compareAiScoreDesc = (left: HazardReport, right: HazardReport) => {
+  const leftScore = left.ai_analysis?.operational_score ?? -1;
+  const rightScore = right.ai_analysis?.operational_score ?? -1;
+  if (rightScore !== leftScore) return rightScore - leftScore;
+  return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+};
+
+const compareAiScoreAsc = (left: HazardReport, right: HazardReport) => {
+  const leftScore = left.ai_analysis?.operational_score ?? Number.MAX_SAFE_INTEGER;
+  const rightScore = right.ai_analysis?.operational_score ?? Number.MAX_SAFE_INTEGER;
+  if (leftScore !== rightScore) return leftScore - rightScore;
+  return new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+};
+
+const compareIntegrityScoreDesc = (left: HazardReport, right: HazardReport) => {
+  const leftScore = left.integrity_snapshot?.integrity_score ?? -1;
+  const rightScore = right.integrity_snapshot?.integrity_score ?? -1;
+  if (rightScore !== leftScore) return rightScore - leftScore;
+  return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+};
+
+const compareIntegrityScoreAsc = (left: HazardReport, right: HazardReport) => {
+  const leftScore = left.integrity_snapshot?.integrity_score ?? Number.MAX_SAFE_INTEGER;
+  const rightScore = right.integrity_snapshot?.integrity_score ?? Number.MAX_SAFE_INTEGER;
+  if (leftScore !== rightScore) return leftScore - rightScore;
+  return new Date(left.created_at).getTime() - new Date(right.created_at).getTime();
+};
 
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL ||
@@ -105,6 +209,41 @@ const invokeEdgeFunction = async <TResponse>(functionName: string, body: Record<
   return payload as TResponse;
 };
 
+const getIntegritySnapshots = async (reportIds: string[]): Promise<Map<string, ReportIntegritySnapshot>> => {
+  if (!reportIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase.rpc('admin_get_report_integrity_snapshots', {
+    p_report_ids: reportIds,
+  });
+
+  if (error) {
+    console.error('Error fetching report integrity snapshots:', error);
+    throw error;
+  }
+
+  const snapshotMap = new Map<string, ReportIntegritySnapshot>();
+  for (const row of (data || []) as any[]) {
+    const snapshot = normalizeIntegritySnapshotRow(row);
+    snapshotMap.set(snapshot.report_id, snapshot);
+  }
+
+  return snapshotMap;
+};
+
+const enrichReportsWithIntegrity = async (rows: HazardReport[]): Promise<HazardReport[]> => {
+  if (!rows.length) {
+    return rows;
+  }
+
+  const snapshots = await getIntegritySnapshots(rows.map((report) => report.id));
+  return rows.map((report) => ({
+    ...report,
+    integrity_snapshot: snapshots.get(report.id) ?? null,
+  }));
+};
+
 export const hazardService = {
   async getReportsWithCount(
     filters?: Partial<FilterOptions>,
@@ -116,12 +255,18 @@ export const hazardService = {
       return { data: [], total: 0 };
     }
 
-    const fetchAll = options?.fetchAll ?? false;
+    const scoreSortActive = filters?.sortBy === 'score_desc' || filters?.sortBy === 'score_asc';
+    const scoreBucketFilterActive = Boolean(filters?.scoreBuckets && filters.scoreBuckets.length > 0);
+    const integritySortActive = filters?.sortBy === 'integrity_desc' || filters?.sortBy === 'integrity_asc';
+    const integritySeverityFilterActive = Boolean(filters?.integritySeverities && filters.integritySeverities.length > 0);
+    const integrityFlagFilterActive = Boolean(filters?.suspiciousOnly || filters?.duplicateOnly || filters?.sharedDeviceOnly);
+    const manualIntegrityProcessingActive = integritySortActive || integritySeverityFilterActive || integrityFlagFilterActive;
+    const fetchAll = (options?.fetchAll ?? false) || scoreSortActive || scoreBucketFilterActive || manualIntegrityProcessingActive;
     const maxRows = options?.maxRows ?? 5000;
 
     let query = supabase
       .from('hazard_reports')
-      .select('*', { count: 'exact' })
+      .select(REPORT_SELECT, { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (filters?.hazardTypes && filters.hazardTypes.length > 0) {
@@ -179,9 +324,59 @@ export const hazardService = {
       throw error;
     }
 
+    let rows = await enrichReportsWithIntegrity((data || []).map(normalizeReportRow));
+
+    if (scoreBucketFilterActive) {
+      const selectedBuckets = new Set(filters?.scoreBuckets ?? []);
+      rows = rows.filter((report) => {
+        const bucket = report.ai_analysis?.score_bucket;
+        return Boolean(bucket && selectedBuckets.has(bucket));
+      });
+    }
+
+    if (filters?.suspiciousOnly) {
+      rows = rows.filter((report) => (report.integrity_snapshot?.active_signal_count ?? 0) > 0);
+    }
+
+    if (filters?.duplicateOnly) {
+      rows = rows.filter((report) => (report.integrity_snapshot?.duplicate_cluster_size ?? 0) > 1);
+    }
+
+    if (filters?.sharedDeviceOnly) {
+      rows = rows.filter((report) =>
+        (report.integrity_snapshot?.active_signal_types ?? []).includes('multi_account_same_device')
+      );
+    }
+
+    if (integritySeverityFilterActive) {
+      const selectedSeverities = new Set(filters?.integritySeverities ?? []);
+      rows = rows.filter((report) => {
+        const severity = report.integrity_snapshot?.integrity_severity ?? 'none';
+        return selectedSeverities.has(severity);
+      });
+    }
+
+    if (filters?.sortBy === 'score_desc') {
+      rows = [...rows].sort(compareAiScoreDesc);
+    } else if (filters?.sortBy === 'score_asc') {
+      rows = [...rows].sort(compareAiScoreAsc);
+    } else if (filters?.sortBy === 'integrity_desc') {
+      rows = [...rows].sort(compareIntegrityScoreDesc);
+    } else if (filters?.sortBy === 'integrity_asc') {
+      rows = [...rows].sort(compareIntegrityScoreAsc);
+    }
+
+    const manualFilterActive = scoreBucketFilterActive || integritySeverityFilterActive || integrityFlagFilterActive;
+    const total = manualFilterActive ? rows.length : (count || 0);
+
+    if (fetchAll && !options?.fetchAll) {
+      const start = page * limit;
+      rows = rows.slice(start, start + limit);
+    }
+
     return {
-      data: data || [],
-      total: count || 0,
+      data: rows,
+      total,
     };
   },
 
@@ -192,7 +387,7 @@ export const hazardService = {
 
     let query = supabase
       .from('hazard_reports')
-      .select('*')
+      .select(REPORT_SELECT)
       .order('created_at', { ascending: false })
       .range(page * limit, (page + 1) * limit - 1);
 
@@ -235,7 +430,7 @@ export const hazardService = {
       throw error;
     }
 
-    return data || [];
+    return enrichReportsWithIntegrity((data || []).map(normalizeReportRow));
   },
 
   async getReportById(id: string): Promise<HazardReport | null> {
@@ -245,7 +440,7 @@ export const hazardService = {
 
     const { data, error } = await supabase
       .from('hazard_reports')
-      .select('*')
+      .select(REPORT_SELECT)
       .eq('id', id)
       .single();
 
@@ -254,7 +449,62 @@ export const hazardService = {
       return null;
     }
 
-    return data;
+    const [report] = await enrichReportsWithIntegrity([normalizeReportRow(data)]);
+    return report ?? null;
+  },
+
+  async getReportIntegritySignals(reportId: string): Promise<ReportIntegritySignal[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('report_integrity_signals')
+      .select('*')
+      .eq('report_id', reportId)
+      .order('detected_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching report integrity signals:', error);
+      throw error;
+    }
+
+    return (data || []) as ReportIntegritySignal[];
+  },
+
+  async getReportSubmissionEvents(reportId: string, limit = 25): Promise<ReportSubmissionEvent[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await supabase.rpc('admin_get_report_submission_events', {
+      p_report_id: reportId,
+      p_limit: limit,
+    });
+
+    if (error) {
+      console.error('Error fetching report submission events:', error);
+      throw error;
+    }
+
+    return (data || []) as ReportSubmissionEvent[];
+  },
+
+  async getDuplicateClusterMembers(reportId: string): Promise<DuplicateClusterMember[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await supabase.rpc('admin_get_report_duplicate_cluster_members', {
+      p_report_id: reportId,
+    });
+
+    if (error) {
+      console.error('Error fetching duplicate cluster members:', error);
+      throw error;
+    }
+
+    return (data || []) as DuplicateClusterMember[];
   },
 
   async getDashboardStats(): Promise<DashboardStats> {
@@ -467,6 +717,20 @@ export const hazardService = {
     });
   },
 
+  async analyzeReportAi(reportId: string, options?: { force?: boolean }): Promise<{
+    report_id: string;
+    ai_analysis: ReportAiAnalysis;
+  }> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction('analyze_report_ai', {
+      report_id: reportId,
+      force: options?.force ?? false,
+    });
+  },
+
   async getTranslationQueueStats(): Promise<TranslationQueueStats> {
     if (!isSupabaseConfigured()) {
       return {
@@ -512,6 +776,170 @@ export const hazardService = {
       total_known: pending + processing + failed + completed + skipped,
       fetched_at: new Date().toISOString(),
     };
+  },
+
+  async getFailedTranslationReports(limit = 40): Promise<FailedTranslationQueueItem[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('hazard_reports')
+      .select(`
+        id,
+        hazard_type,
+        user_name,
+        description,
+        translation_attempts,
+        translation_last_error,
+        translation_last_attempt_at,
+        translation_next_retry_at
+      `)
+      .eq('translation_status', 'failed')
+      .order('translation_last_attempt_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching failed translation reports:', error);
+      throw error;
+    }
+
+    return ((data || []) as any[]).map((row) => ({
+      id: String(row.id),
+      hazard_type: row.hazard_type,
+      user_name: row.user_name ?? null,
+      description: row.description ?? '',
+      translation_attempts: row.translation_attempts ?? null,
+      translation_last_error: row.translation_last_error ?? null,
+      translation_last_attempt_at: row.translation_last_attempt_at ?? null,
+      translation_next_retry_at: row.translation_next_retry_at ?? null,
+    }));
+  },
+
+  async getAiQueueStats(): Promise<AiScoringQueueStats> {
+    if (!isSupabaseConfigured()) {
+      return {
+        pending: 0,
+        processing: 0,
+        partial: 0,
+        failed: 0,
+        completed: 0,
+        active: 0,
+        total_known: 0,
+        fetched_at: new Date().toISOString(),
+      };
+    }
+
+    const countByStatus = async (status: 'pending' | 'processing' | 'partial' | 'failed' | 'completed') => {
+      const { count, error } = await supabase
+        .from('report_ai_analysis')
+        .select('report_id', { count: 'exact', head: true })
+        .eq('analysis_status', status);
+
+      if (error) {
+        throw error;
+      }
+
+      return count ?? 0;
+    };
+
+    const [pending, processing, partial, failed, completed] = await Promise.all([
+      countByStatus('pending'),
+      countByStatus('processing'),
+      countByStatus('partial'),
+      countByStatus('failed'),
+      countByStatus('completed'),
+    ]);
+
+    return {
+      pending,
+      processing,
+      partial,
+      failed,
+      completed,
+      active: pending + processing + partial + failed,
+      total_known: pending + processing + partial + failed + completed,
+      fetched_at: new Date().toISOString(),
+    };
+  },
+
+  async getAiAttentionReports(limit = 40): Promise<AiAttentionQueueItem[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
+    const { data: aiRows, error: aiError } = await supabase
+      .from('report_ai_analysis')
+      .select('report_id, analysis_status, updated_at')
+      .in('analysis_status', ['failed', 'partial'])
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+
+    if (aiError) {
+      console.error('Error fetching AI attention report ids:', aiError);
+      throw aiError;
+    }
+
+    const reportIds = (aiRows || []).map((row: any) => String(row.report_id ?? '')).filter(Boolean);
+    if (!reportIds.length) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('hazard_reports')
+      .select(`
+        id,
+        hazard_type,
+        description,
+        translated_english,
+        ai_analysis:report_ai_analysis(
+          analysis_status,
+          last_error,
+          operational_score,
+          score_bucket
+        )
+      `)
+      .in('id', reportIds);
+
+    if (error) {
+      console.error('Error fetching AI attention reports:', error);
+      throw error;
+    }
+
+    const normalized = ((data || []) as any[]).map((row) => {
+      const nested = Array.isArray(row?.ai_analysis)
+        ? (row.ai_analysis[0] ?? null)
+        : (row?.ai_analysis ?? null);
+
+      return {
+        id: String(row.id),
+        hazard_type: row.hazard_type,
+        description: row.description ?? '',
+        translated_english: row.translated_english ?? null,
+        ai_analysis: nested
+          ? {
+              analysis_status: nested.analysis_status ?? null,
+              last_error: nested.last_error ?? null,
+              operational_score: Number(nested.operational_score ?? 0),
+              score_bucket: nested.score_bucket ?? 'low',
+            }
+          : null,
+      } as AiAttentionQueueItem;
+    });
+    const order = new Map(reportIds.map((id, index) => [id, index]));
+    return normalized.sort((left, right) => (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER));
+  },
+
+  async runAiWorker(options?: { limit?: number; concurrency?: number }): Promise<AiWorkerRunResult> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction<AiWorkerRunResult>('admin_run_report_ai_worker', {
+      limit: options?.limit ?? 5,
+      concurrency: options?.concurrency ?? 2,
+    });
   },
 
   subscribeToReports(callback: (report: HazardReport) => void) {

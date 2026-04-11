@@ -65,9 +65,27 @@ import {
 import { ImageZoom, AudioWaveform, VideoPreview } from '../components/MediaComponents';
 
 import { landmarkService } from '../services/landmarkService';
-import { hazardService, type TranslationQueueStats } from '../services/hazardService';
+import {
+  hazardService,
+  type AiAttentionQueueItem,
+  type AiScoringQueueStats,
+  type FailedTranslationQueueItem,
+  type TranslationQueueStats,
+} from '../services/hazardService';
 import { isSupabaseConfigured } from '../core/supabase_config';
-import type { HazardReport, FilterOptions, HazardType, UrgencyLevel, ReportStatus, ReportAuditLog } from '../types/hazard';
+import type {
+  HazardReport,
+  FilterOptions,
+  HazardType,
+  UrgencyLevel,
+  ReportStatus,
+  ReportAuditLog,
+  ReportAiScoreBucket,
+  ReportIntegritySeverity,
+  ReportIntegritySignal,
+  ReportSubmissionEvent,
+  DuplicateClusterMember,
+} from '../types/hazard';
 import type { Landmark } from '../types/landmark';
 import { LandmarkManager } from '../components/LandmarkManager';
 import { format } from 'date-fns';
@@ -75,6 +93,8 @@ import { format } from 'date-fns';
 const HAZARD_TYPES: HazardType[] = ['High Waves', 'Tsunami', 'Storm', 'Flood', 'Other'];
 const URGENCY_LEVELS: UrgencyLevel[] = ['Low', 'Medium', 'High'];
 const STATUSES: ReportStatus[] = ['pending', 'verified', 'rejected', 'resolved'];
+const SCORE_BUCKETS: ReportAiScoreBucket[] = ['critical', 'high', 'medium', 'low'];
+const INTEGRITY_SEVERITIES: ReportIntegritySeverity[] = ['critical', 'high', 'medium', 'low'];
 
 export function Reports() {
   const navigate = useNavigate();
@@ -99,12 +119,33 @@ export function Reports() {
   
   const [auditLogs, setAuditLogs] = useState<ReportAuditLog[]>([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  const [loadingIntegrityDetails, setLoadingIntegrityDetails] = useState(false);
+  const [integritySignals, setIntegritySignals] = useState<ReportIntegritySignal[]>([]);
+  const [submissionEvents, setSubmissionEvents] = useState<ReportSubmissionEvent[]>([]);
+  const [duplicateClusterMembers, setDuplicateClusterMembers] = useState<DuplicateClusterMember[]>([]);
   const [translatingReportId, setTranslatingReportId] = useState<string | null>(null);
   const [showOriginalDescription, setShowOriginalDescription] = useState(false);
   const [translationQueueStats, setTranslationQueueStats] = useState<TranslationQueueStats | null>(null);
   const [translationQueueLoading, setTranslationQueueLoading] = useState(false);
+  const [failedTranslationsDrawerOpen, setFailedTranslationsDrawerOpen] = useState(false);
+  const [failedTranslationReports, setFailedTranslationReports] = useState<FailedTranslationQueueItem[]>([]);
+  const [failedTranslationsLoading, setFailedTranslationsLoading] = useState(false);
+  const [retryingAllFailed, setRetryingAllFailed] = useState(false);
+  const [retryingFailedIds, setRetryingFailedIds] = useState<string[]>([]);
+  const [aiQueueStats, setAiQueueStats] = useState<AiScoringQueueStats | null>(null);
+  const [aiQueueLoading, setAiQueueLoading] = useState(false);
+  const [aiAttentionDrawerOpen, setAiAttentionDrawerOpen] = useState(false);
+  const [aiAttentionReports, setAiAttentionReports] = useState<AiAttentionQueueItem[]>([]);
+  const [aiAttentionLoading, setAiAttentionLoading] = useState(false);
+  const [runningAiWorker, setRunningAiWorker] = useState(false);
+  const [analyzingReportId, setAnalyzingReportId] = useState<string | null>(null);
   const selectedReportId = selectedReport?.id ?? null;
   const selectedTranslationStatus = selectedReport?.translation_status ?? null;
+  const reportsLoadInFlightRef = useRef(false);
+  const translationQueueLoadInFlightRef = useRef(false);
+  const aiQueueLoadInFlightRef = useRef(false);
+  const failedTranslationsLoadInFlightRef = useRef(false);
+  const aiAttentionLoadInFlightRef = useRef(false);
 
   const [filters, setFilters] = useState<Partial<FilterOptions>>({
     hazardTypes: [],
@@ -117,9 +158,20 @@ export function Reports() {
     searchQuery: '',
     landmarkId: null,
     landmarkRadius: 5000,
+    suspiciousOnly: null,
+    duplicateOnly: null,
+    sharedDeviceOnly: null,
+    sortBy: 'newest',
+    scoreBuckets: [],
+    integritySeverities: [],
   });
 
   const loadReports = async (options?: { silent?: boolean }) => {
+    if (options?.silent && reportsLoadInFlightRef.current) {
+      return;
+    }
+
+    reportsLoadInFlightRef.current = true;
     try {
       if (!options?.silent) {
         setLoading(true);
@@ -172,6 +224,7 @@ export function Reports() {
       setReports([]);
       setTotalCount(0);
     } finally {
+      reportsLoadInFlightRef.current = false;
       if (!options?.silent) {
         setLoading(false);
       }
@@ -251,6 +304,11 @@ export function Reports() {
   };
 
   const loadTranslationQueueStats = async (options?: { silent?: boolean }) => {
+    if (options?.silent && translationQueueLoadInFlightRef.current) {
+      return;
+    }
+
+    translationQueueLoadInFlightRef.current = true;
     try {
       if (!options?.silent) {
         setTranslationQueueLoading(true);
@@ -261,8 +319,78 @@ export function Reports() {
     } catch (queueError) {
       console.error(queueError);
     } finally {
+      translationQueueLoadInFlightRef.current = false;
       if (!options?.silent) {
         setTranslationQueueLoading(false);
+      }
+    }
+  };
+
+  const loadFailedTranslationReports = async (options?: { silent?: boolean }) => {
+    if (options?.silent && failedTranslationsLoadInFlightRef.current) {
+      return;
+    }
+
+    failedTranslationsLoadInFlightRef.current = true;
+    try {
+      if (!options?.silent) {
+        setFailedTranslationsLoading(true);
+      }
+
+      const failedReports = await hazardService.getFailedTranslationReports();
+      setFailedTranslationReports(failedReports);
+    } catch (failedError) {
+      console.error(failedError);
+    } finally {
+      failedTranslationsLoadInFlightRef.current = false;
+      if (!options?.silent) {
+        setFailedTranslationsLoading(false);
+      }
+    }
+  };
+
+  const loadAiQueueStats = async (options?: { silent?: boolean }) => {
+    if (options?.silent && aiQueueLoadInFlightRef.current) {
+      return;
+    }
+
+    aiQueueLoadInFlightRef.current = true;
+    try {
+      if (!options?.silent) {
+        setAiQueueLoading(true);
+      }
+
+      const stats = await hazardService.getAiQueueStats();
+      setAiQueueStats(stats);
+    } catch (queueError) {
+      console.error(queueError);
+    } finally {
+      aiQueueLoadInFlightRef.current = false;
+      if (!options?.silent) {
+        setAiQueueLoading(false);
+      }
+    }
+  };
+
+  const loadAiAttentionReports = async (options?: { silent?: boolean }) => {
+    if (options?.silent && aiAttentionLoadInFlightRef.current) {
+      return;
+    }
+
+    aiAttentionLoadInFlightRef.current = true;
+    try {
+      if (!options?.silent) {
+        setAiAttentionLoading(true);
+      }
+
+      const reportsNeedingAttention = await hazardService.getAiAttentionReports();
+      setAiAttentionReports(reportsNeedingAttention);
+    } catch (attentionError) {
+      console.error(attentionError);
+    } finally {
+      aiAttentionLoadInFlightRef.current = false;
+      if (!options?.silent) {
+        setAiAttentionLoading(false);
       }
     }
   };
@@ -382,11 +510,15 @@ export function Reports() {
   // always use current filters/pagination without re-subscribing.
   const loadReportsRef = useRef(loadReports);
   const loadTranslationQueueStatsRef = useRef(loadTranslationQueueStats);
+  const loadAiQueueStatsRef = useRef(loadAiQueueStats);
   useEffect(() => {
     loadReportsRef.current = loadReports;
   });
   useEffect(() => {
     loadTranslationQueueStatsRef.current = loadTranslationQueueStats;
+  });
+  useEffect(() => {
+    loadAiQueueStatsRef.current = loadAiQueueStats;
   });
 
   // Realtime updates: refresh on new reports.
@@ -396,6 +528,7 @@ export function Reports() {
     const channel = hazardService.subscribeToReports(() => {
       void loadReportsRef.current({ silent: true });
       void loadTranslationQueueStatsRef.current({ silent: true });
+      void loadAiQueueStatsRef.current({ silent: true });
     });
 
     return () => {
@@ -408,6 +541,7 @@ export function Reports() {
   useEffect(() => {
     loadReports();
     void loadTranslationQueueStats({ silent: true });
+    void loadAiQueueStats({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage]); // Removed filters from dep array to match original behavior where explicit search/filter button is needed, or add if auto-filtering is desired. Original only had page/rows.
 
@@ -415,7 +549,9 @@ export function Reports() {
     if (!isSupabaseConfigured()) return;
 
     const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
       void loadTranslationQueueStatsRef.current({ silent: true });
+      void loadAiQueueStatsRef.current({ silent: true });
     }, 15000);
 
     return () => window.clearInterval(id);
@@ -441,12 +577,15 @@ export function Reports() {
 
     const intervalMs = autoRefreshEnabled ? 5000 : 12000;
     const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (detailDialogOpen || failedTranslationsDrawerOpen || aiAttentionDrawerOpen) return;
       void loadReportsRef.current({ silent: true });
       void loadTranslationQueueStatsRef.current({ silent: true });
+      void loadAiQueueStatsRef.current({ silent: true });
     }, intervalMs);
 
     return () => window.clearInterval(id);
-  }, [autoRefreshEnabled]);
+  }, [autoRefreshEnabled, detailDialogOpen, failedTranslationsDrawerOpen, aiAttentionDrawerOpen]);
 
   // Keep the detail dialog report in sync with table refreshes.
   useEffect(() => {
@@ -534,6 +673,12 @@ export function Reports() {
       searchQuery: '',
       landmarkId: null,
       landmarkRadius: 5000,
+      suspiciousOnly: null,
+      duplicateOnly: null,
+      sharedDeviceOnly: null,
+      sortBy: 'newest',
+      scoreBuckets: [],
+      integritySeverities: [],
     });
     setSelectedDay(new Date());
     setShowDayCalendar(false);
@@ -543,26 +688,48 @@ export function Reports() {
     setLandmarks(landmarkService.getLandmarks());
   };
 
+  const openReportDetailsById = async (reportId: string) => {
+    const latest = await hazardService.getReportById(reportId);
+    if (!latest) {
+      throw new Error('Report not found.');
+    }
+    return latest;
+  };
+
   const handleRowClick = async (report: HazardReport) => {
     setSelectedReport(report);
     setDetailDialogOpen(true);
     setShowOriginalDescription(false);
     setLoadingAudit(true);
+    setLoadingIntegrityDetails(true);
     try {
-      const logs = await hazardService.getReportAuditLogs(report.id);
-      setAuditLogs(logs);
+      const [logsResult, signalsResult, submissionEventsResult, duplicateMembersResult] = await Promise.allSettled([
+        hazardService.getReportAuditLogs(report.id),
+        hazardService.getReportIntegritySignals(report.id),
+        hazardService.getReportSubmissionEvents(report.id),
+        hazardService.getDuplicateClusterMembers(report.id),
+      ]);
+
+      setAuditLogs(logsResult.status === 'fulfilled' ? logsResult.value : []);
+      setIntegritySignals(signalsResult.status === 'fulfilled' ? signalsResult.value : []);
+      setSubmissionEvents(submissionEventsResult.status === 'fulfilled' ? submissionEventsResult.value : []);
+      setDuplicateClusterMembers(duplicateMembersResult.status === 'fulfilled' ? duplicateMembersResult.value : []);
     } catch (e) {
       console.error(e);
       setAuditLogs([]);
+      setIntegritySignals([]);
+      setSubmissionEvents([]);
+      setDuplicateClusterMembers([]);
     } finally {
       setLoadingAudit(false);
+      setLoadingIntegrityDetails(false);
     }
   };
 
-  const ensureReportTranslation = async (report: HazardReport, options?: { silent?: boolean; force?: boolean }) => {
+  const ensureReportTranslation = async (reportRef: { id: string }, options?: { silent?: boolean; force?: boolean }) => {
     try {
-      setTranslatingReportId(report.id);
-      const translated = await hazardService.translateReportToEnglish(report.id, {
+      setTranslatingReportId(reportRef.id);
+      const translated = await hazardService.translateReportToEnglish(reportRef.id, {
         force: options?.force ?? false,
       });
       const patch: Partial<HazardReport> = {
@@ -577,17 +744,19 @@ export function Reports() {
         translation_next_retry_at: null,
       };
 
-      setReports((prev) => prev.map((item) => (item.id === report.id ? { ...item, ...patch } : item)));
-      setSelectedReport((prev) => (prev && prev.id === report.id ? { ...prev, ...patch } : prev));
+      setReports((prev) => prev.map((item) => (item.id === reportRef.id ? { ...item, ...patch } : item)));
+      setSelectedReport((prev) => (prev && prev.id === reportRef.id ? { ...prev, ...patch } : prev));
       void loadTranslationQueueStatsRef.current({ silent: true });
+      void loadAiQueueStatsRef.current({ silent: true });
     } catch (e) {
       console.error(e);
       try {
-        const latest = await hazardService.getReportById(report.id);
+        const latest = await hazardService.getReportById(reportRef.id);
         if (latest) {
           setReports((prev) => prev.map((item) => (item.id === latest.id ? { ...item, ...latest } : item)));
           setSelectedReport((prev) => (prev && prev.id === latest.id ? { ...prev, ...latest } : prev));
           void loadTranslationQueueStatsRef.current({ silent: true });
+          void loadAiQueueStatsRef.current({ silent: true });
         }
       } catch (refreshError) {
         console.error(refreshError);
@@ -647,36 +816,6 @@ export function Reports() {
     if (report.immediate_danger_status) return report.immediate_danger_status;
     if (report.is_high_risk || (report.people_at_risk ?? 0) > 0) return 'yes' as const;
     return 'no' as const;
-  };
-
-  const getImmediateDangerMeta = (report: HazardReport) => {
-    switch (getImmediateDangerStatus(report)) {
-      case 'yes':
-        return {
-          label: 'Yes',
-          tooltip: 'Someone appears to be in immediate danger',
-          background: alpha(theme.palette.error.main, 0.08),
-          color: theme.palette.error.main,
-          border: alpha(theme.palette.error.main, 0.18),
-        };
-      case 'not_sure':
-        return {
-          label: 'Not sure',
-          tooltip: 'Reporter was unsure if anyone was in immediate danger',
-          background: alpha(theme.palette.warning.main, 0.10),
-          color: theme.palette.warning.dark,
-          border: alpha(theme.palette.warning.main, 0.20),
-        };
-      case 'no':
-      default:
-        return {
-          label: 'No',
-          tooltip: 'No immediate danger was reported',
-          background: alpha(theme.palette.success.main, 0.08),
-          color: theme.palette.success.main,
-          border: alpha(theme.palette.success.main, 0.18),
-        };
-    }
   };
 
   const getAffectedPeopleBandLabel = (band?: HazardReport['affected_people_band'] | null) => {
@@ -767,6 +906,107 @@ export function Reports() {
               : theme.palette.text.secondary,
   });
 
+  const openFailedTranslationsDrawer = () => {
+    setFailedTranslationsDrawerOpen(true);
+    void loadFailedTranslationReports();
+  };
+
+  const closeFailedTranslationsDrawer = () => {
+    setFailedTranslationsDrawerOpen(false);
+  };
+
+  const handleRetryFailedReport = async (report: FailedTranslationQueueItem) => {
+    setRetryingFailedIds((prev) => [...prev, report.id]);
+    try {
+      await ensureReportTranslation(report, { silent: true, force: true });
+      await loadFailedTranslationReports({ silent: true });
+      await loadTranslationQueueStats({ silent: true });
+      await loadAiQueueStats({ silent: true });
+      await loadReports({ silent: true });
+    } finally {
+      setRetryingFailedIds((prev) => prev.filter((id) => id !== report.id));
+    }
+  };
+
+  const handleRetryAllFailed = async () => {
+    setRetryingAllFailed(true);
+    try {
+      for (const report of failedTranslationReports) {
+        await ensureReportTranslation(report, { silent: true, force: true });
+      }
+      await loadFailedTranslationReports({ silent: true });
+      await loadTranslationQueueStats({ silent: true });
+      await loadAiQueueStats({ silent: true });
+      await loadReports({ silent: true });
+    } finally {
+      setRetryingAllFailed(false);
+      setRetryingFailedIds([]);
+    }
+  };
+
+  const handleAnalyzeReportAi = async (report: { id: string }, options?: { force?: boolean }) => {
+    setAnalyzingReportId(report.id);
+    try {
+      const result = await hazardService.analyzeReportAi(report.id, { force: options?.force ?? false });
+      setReports((prev) => prev.map((item) => (
+        item.id === report.id
+          ? { ...item, ai_analysis: result.ai_analysis }
+          : item
+      )));
+      setSelectedReport((prev) => (
+        prev && prev.id === report.id
+          ? { ...prev, ai_analysis: result.ai_analysis }
+          : prev
+      ));
+      await loadAiQueueStats({ silent: true });
+      if (aiAttentionDrawerOpen) {
+        await loadAiAttentionReports({ silent: true });
+      }
+      await loadReports({ silent: true });
+    } catch (analysisError) {
+      console.error(analysisError);
+      setError(analysisError instanceof Error ? analysisError.message : 'Failed to analyze report with AI.');
+    } finally {
+      setAnalyzingReportId(null);
+    }
+  };
+
+  const openAiAttentionDrawer = () => {
+    setAiAttentionDrawerOpen(true);
+    void loadAiAttentionReports();
+  };
+
+  const closeAiAttentionDrawer = () => {
+    setAiAttentionDrawerOpen(false);
+  };
+
+  const handleRunAiWorker = async () => {
+    setRunningAiWorker(true);
+    try {
+      await hazardService.runAiWorker({ limit: 10, concurrency: 2 });
+      await loadAiQueueStats({ silent: true });
+      if (aiAttentionDrawerOpen) {
+        await loadAiAttentionReports({ silent: true });
+      }
+      await loadReports({ silent: true });
+    } catch (workerError) {
+      console.error(workerError);
+      setError(workerError instanceof Error ? workerError.message : 'Failed to run AI scoring worker.');
+    } finally {
+      setRunningAiWorker(false);
+    }
+  };
+
+  const handleOpenDrawerReport = async (reportId: string) => {
+    try {
+      const report = await openReportDetailsById(reportId);
+      await handleRowClick(report);
+    } catch (openError) {
+      console.error(openError);
+      setError(openError instanceof Error ? openError.message : 'Failed to open report details.');
+    }
+  };
+
   const updateStatus = async (report: HazardReport, nextStatus: ReportStatus) => {
     try {
       if (!isSupabaseConfigured()) {
@@ -812,7 +1052,158 @@ export function Reports() {
     if (filters.dateTo) count++;
     if (filters.searchQuery) count++;
     if (filters.landmarkId) count++;
+    if (filters.sortBy && filters.sortBy !== 'newest') count++;
+    if (filters.scoreBuckets && filters.scoreBuckets.length > 0) count++;
+    if (filters.suspiciousOnly) count++;
+    if (filters.duplicateOnly) count++;
+    if (filters.sharedDeviceOnly) count++;
+    if (filters.integritySeverities && filters.integritySeverities.length > 0) count++;
     return count;
+  };
+
+  const formatAiScore = (report: HazardReport) => {
+    const score = report.ai_analysis?.operational_score;
+    if (typeof score !== 'number' || Number.isNaN(score)) return '—';
+    return Math.round(score).toString();
+  };
+
+  const formatIntegrityScore = (report: HazardReport) => {
+    const score = report.integrity_snapshot?.integrity_score;
+    if (typeof score !== 'number' || Number.isNaN(score)) return '0';
+    return Math.round(score).toString();
+  };
+
+  const getAiScoreBucketMeta = (bucket?: ReportAiScoreBucket | null) => {
+    switch (bucket) {
+      case 'critical':
+        return {
+          label: 'Immediate',
+          background: alpha(theme.palette.error.main, 0.1),
+          color: theme.palette.error.main,
+          border: alpha(theme.palette.error.main, 0.22),
+        };
+      case 'high':
+        return {
+          label: 'High',
+          background: alpha(theme.palette.warning.main, 0.12),
+          color: theme.palette.warning.dark,
+          border: alpha(theme.palette.warning.main, 0.24),
+        };
+      case 'medium':
+        return {
+          label: 'Medium',
+          background: alpha(theme.palette.info.main, 0.08),
+          color: theme.palette.info.main,
+          border: alpha(theme.palette.info.main, 0.2),
+        };
+      case 'low':
+      default:
+        return {
+          label: 'Low',
+          background: alpha(theme.palette.success.main, 0.08),
+          color: theme.palette.success.main,
+          border: alpha(theme.palette.success.main, 0.18),
+        };
+    }
+  };
+
+  const getAiAnalysisStatusMeta = (report: HazardReport) => {
+    const status = report.ai_analysis?.analysis_status;
+    switch (status) {
+      case 'completed':
+        return {
+          label: 'Scored',
+          background: alpha(theme.palette.success.main, 0.08),
+          color: theme.palette.success.main,
+          border: alpha(theme.palette.success.main, 0.18),
+        };
+      case 'partial':
+        return {
+          label: 'Provisional',
+          background: alpha(theme.palette.warning.main, 0.1),
+          color: theme.palette.warning.dark,
+          border: alpha(theme.palette.warning.main, 0.22),
+        };
+      case 'processing':
+        return {
+          label: 'Scoring',
+          background: alpha(theme.palette.info.main, 0.08),
+          color: theme.palette.info.main,
+          border: alpha(theme.palette.info.main, 0.18),
+        };
+      case 'failed':
+        return {
+          label: 'Failed',
+          background: alpha(theme.palette.error.main, 0.08),
+          color: theme.palette.error.main,
+          border: alpha(theme.palette.error.main, 0.22),
+        };
+      case 'pending':
+      default:
+        return {
+          label: 'Queued',
+          background: alpha(theme.palette.grey[500], 0.08),
+          color: theme.palette.text.secondary,
+          border: alpha(theme.palette.grey[500], 0.18),
+        };
+    }
+  };
+
+  const getAiPriorityDisplayMeta = (report: HazardReport) => {
+    const status = report.ai_analysis?.analysis_status;
+    if (status === 'completed') {
+      return getAiScoreBucketMeta(report.ai_analysis?.score_bucket);
+    }
+
+    if (status === 'partial') {
+      return {
+        label: 'Provisional',
+        background: alpha(theme.palette.warning.main, 0.08),
+        color: theme.palette.warning.dark,
+        border: alpha(theme.palette.warning.main, 0.2),
+        helper: null as string | null,
+      };
+    }
+
+    const statusMeta = getAiAnalysisStatusMeta(report);
+    return {
+      ...statusMeta,
+      helper: null as string | null,
+    };
+  };
+
+  const getStringArrayFromJson = (value: unknown) =>
+    Array.isArray(value)
+      ? value.map((item) => String(item).trim()).filter((item) => item.length > 0)
+      : [];
+
+  const getAiMediaEvidence = (report: HazardReport) => {
+    const mediaEvidence = report.ai_analysis?.media_evidence_json as Record<string, unknown> | null | undefined;
+    if (!mediaEvidence) {
+      return {
+        imageSummaries: [] as string[],
+        audioSummaries: [] as string[],
+        videoSummaries: [] as string[],
+        audioTranscripts: [] as string[],
+        videoTranscripts: [] as string[],
+        imageStatus: null as string | null,
+        audioStatus: null as string | null,
+        videoStatus: null as string | null,
+      };
+    }
+
+    return {
+      imageSummaries: getStringArrayFromJson(mediaEvidence.image_summaries),
+      audioSummaries: getStringArrayFromJson(mediaEvidence.audio_summaries),
+      videoSummaries: getStringArrayFromJson(mediaEvidence.video_summaries),
+      videoFrameSummaries: getStringArrayFromJson(mediaEvidence.video_frame_summaries),
+      audioTranscripts: getStringArrayFromJson(mediaEvidence.audio_transcripts),
+      videoTranscripts: getStringArrayFromJson(mediaEvidence.video_transcripts),
+      imageStatus: typeof mediaEvidence.image_analysis_status === 'string' ? mediaEvidence.image_analysis_status : null,
+      audioStatus: typeof mediaEvidence.audio_analysis_status === 'string' ? mediaEvidence.audio_analysis_status : null,
+      videoStatus: typeof mediaEvidence.video_analysis_status === 'string' ? mediaEvidence.video_analysis_status : null,
+      videoFrameStatus: typeof mediaEvidence.video_frame_analysis_status === 'string' ? mediaEvidence.video_frame_analysis_status : null,
+    };
   };
 
   const getHazardColor = (type: HazardType) => {
@@ -836,31 +1227,64 @@ export function Reports() {
     return colors[status] as any;
   };
 
-  const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
-
-  const getSuspiciousFlags = (report: HazardReport) => {
-    const flags: string[] = [];
-    const reportTime = new Date(report.created_at).getTime();
-
-    const sameUser = reports.filter((r) => r.user_id === report.user_id);
-
-    const inFiveMinutes = sameUser.filter(
-      (r) => Math.abs(new Date(r.created_at).getTime() - reportTime) <= 5 * 60 * 1000
-    );
-    if (inFiveMinutes.length >= 3) flags.push('Rapid submissions');
-
-    const inOneHour = sameUser.filter(
-      (r) => Math.abs(new Date(r.created_at).getTime() - reportTime) <= 60 * 60 * 1000
-    );
-    if (inOneHour.length >= 8) flags.push('High hourly volume');
-
-    const desc = normalizeText(report.description || '');
-    if (desc.length >= 10) {
-      const sameDescription = sameUser.filter((r) => normalizeText(r.description || '') === desc);
-      if (sameDescription.length >= 2) flags.push('Repeated description');
+  const getIntegritySeverityMeta = (severity?: ReportIntegritySeverity | null) => {
+    switch (severity) {
+      case 'critical':
+        return {
+          label: 'Critical',
+          color: theme.palette.error.main,
+          background: alpha(theme.palette.error.main, 0.1),
+          border: alpha(theme.palette.error.main, 0.22),
+        };
+      case 'high':
+        return {
+          label: 'High',
+          color: theme.palette.warning.dark,
+          background: alpha(theme.palette.warning.main, 0.14),
+          border: alpha(theme.palette.warning.main, 0.22),
+        };
+      case 'medium':
+        return {
+          label: 'Medium',
+          color: theme.palette.info.main,
+          background: alpha(theme.palette.info.main, 0.1),
+          border: alpha(theme.palette.info.main, 0.2),
+        };
+      case 'low':
+        return {
+          label: 'Low',
+          color: theme.palette.success.main,
+          background: alpha(theme.palette.success.main, 0.1),
+          border: alpha(theme.palette.success.main, 0.2),
+        };
+      default:
+        return {
+          label: 'Clear',
+          color: theme.palette.text.secondary,
+          background: alpha(theme.palette.grey[500], 0.08),
+          border: alpha(theme.palette.grey[500], 0.18),
+        };
     }
+  };
 
-    return flags;
+  const getIntegritySignalLabel = (signalType: string) => {
+    const labels: Record<string, string> = {
+      rapid_submissions_user: 'Rapid submissions by user',
+      high_hourly_volume_user: 'High hourly volume by user',
+      rapid_submissions_device: 'Rapid submissions from device',
+      device_submission_burst: 'Device burst activity',
+      high_hourly_volume_device: 'High device volume',
+      multi_account_same_device: 'Shared device across accounts',
+      duplicate_exact_text: 'Repeated description',
+      duplicate_nearby_recent: 'Nearby recent duplicate',
+      duplicate_cluster_member: 'Duplicate cluster member',
+    };
+
+    return labels[signalType] || signalType.replace(/_/g, ' ');
+  };
+
+  const getIntegrityFlags = (report: HazardReport) => {
+    return (report.integrity_snapshot?.active_signal_types || []).map(getIntegritySignalLabel);
   };
 
   return (
@@ -1108,9 +1532,105 @@ export function Reports() {
             <Stack direction="row" spacing={0.7} alignItems="center" useFlexGap flexWrap="wrap">
               <Chip label={`Pending ${translationQueueStats?.pending ?? 0}`} size="small" sx={getQueueChipSx('warning')} />
               <Chip label={`Processing ${translationQueueStats?.processing ?? 0}`} size="small" sx={getQueueChipSx('info')} />
-              <Chip label={`Failed ${translationQueueStats?.failed ?? 0}`} size="small" sx={getQueueChipSx('error')} />
+              <Box
+                onClick={openFailedTranslationsDrawer}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openFailedTranslationsDrawer();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                sx={{ cursor: 'pointer', outline: 'none' }}
+              >
+                <Chip label={`Failed ${translationQueueStats?.failed ?? 0}`} size="small" sx={getQueueChipSx('error')} />
+              </Box>
               <Chip label={`Done ${translationQueueStats?.completed ?? 0}`} size="small" sx={getQueueChipSx('success')} />
               <Chip label={`Active ${translationQueueStats?.active ?? 0}`} size="small" sx={getQueueChipSx('default')} />
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 1.1,
+              pt: 1.1,
+              borderTop: `1px dashed ${alpha(theme.palette.divider, 0.16)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: alpha(theme.palette.text.secondary, 0.75),
+                }}
+              >
+                AI Scoring Queue
+              </Typography>
+              {aiQueueLoading && !aiQueueStats && <CircularProgress size={12} />}
+            </Stack>
+
+            <Stack direction="row" spacing={0.7} alignItems="center" useFlexGap flexWrap="wrap">
+              <Chip label={`Pending ${aiQueueStats?.pending ?? 0}`} size="small" sx={getQueueChipSx('warning')} />
+              <Chip label={`Processing ${aiQueueStats?.processing ?? 0}`} size="small" sx={getQueueChipSx('info')} />
+              <Box
+                onClick={openAiAttentionDrawer}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openAiAttentionDrawer();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                sx={{ cursor: 'pointer', outline: 'none' }}
+              >
+                <Chip label={`Partial ${aiQueueStats?.partial ?? 0}`} size="small" sx={getQueueChipSx('default')} />
+              </Box>
+              <Box
+                onClick={openAiAttentionDrawer}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openAiAttentionDrawer();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                sx={{ cursor: 'pointer', outline: 'none' }}
+              >
+                <Chip label={`Failed ${aiQueueStats?.failed ?? 0}`} size="small" sx={getQueueChipSx('error')} />
+              </Box>
+              <Chip label={`Done ${aiQueueStats?.completed ?? 0}`} size="small" sx={getQueueChipSx('success')} />
+              <Chip label={`Active ${aiQueueStats?.active ?? 0}`} size="small" sx={getQueueChipSx('default')} />
+              <Button
+                variant="outlined"
+                onClick={() => void handleRunAiWorker()}
+                disabled={runningAiWorker}
+                startIcon={runningAiWorker ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                sx={{
+                  height: 24,
+                  px: 1.25,
+                  borderRadius: '999px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  borderColor: alpha(theme.palette.primary.main, 0.24),
+                  color: theme.palette.primary.main,
+                  minWidth: 0,
+                }}
+              >
+                Run AI
+              </Button>
             </Stack>
           </Box>
 
@@ -1313,7 +1833,7 @@ export function Reports() {
                   <TableCell sx={{ width: 118 }}>Hazard</TableCell>
                   <TableCell sx={{ width: '50%' }}>Description</TableCell>
                   <TableCell sx={{ width: 124, pl: 2 }}>Location</TableCell>
-                  <TableCell sx={{ width: 86, textAlign: 'center' }}>Urgency</TableCell>
+                  <TableCell sx={{ width: 96, textAlign: 'center' }}>Priority</TableCell>
                   <TableCell sx={{ width: 86, textAlign: 'center' }}>Affected</TableCell>
                   <TableCell sx={{ width: 56, textAlign: 'center' }}>Media</TableCell>
                   <TableCell sx={{ width: 108, textAlign: 'right', pr: 1 }}>Date & Time</TableCell>
@@ -1360,12 +1880,14 @@ export function Reports() {
                 ) : (
                   reports.map((report, index) => (
                     (() => {
-                      const suspiciousFlags = getSuspiciousFlags(report);
+                      const integrityFlags = getIntegrityFlags(report);
+                      const integritySeverityMeta = getIntegritySeverityMeta(report.integrity_snapshot?.integrity_severity);
                       const isVerified = report.status === 'verified';
                       const isRejected = report.status === 'rejected';
                       const isResolved = report.status === 'resolved';
                       const isPending = report.status === 'pending';
                       const affectedNearbyLabel = getAffectedNearbyLabel(report);
+                      const aiPriorityDisplayMeta = getAiPriorityDisplayMeta(report);
                       const displayedDescription =
                         report.translation_status === 'completed' && report.translated_english?.trim()
                           ? report.translated_english
@@ -1427,11 +1949,11 @@ export function Reports() {
                               />
                             </Tooltip>
                           )}
-                          {suspiciousFlags.length > 0 && (
+                          {integrityFlags.length > 0 && (
                             <Tooltip 
                               title={
                                 <Stack component="ol" spacing={0.5} sx={{ m: 0.5, pl: 2, '& li': { fontSize: '0.75rem', fontWeight: 600 } }}>
-                                  {suspiciousFlags.map((flag, idx) => (
+                                  {integrityFlags.map((flag, idx) => (
                                     <li key={idx} style={{ paddingLeft: '4px' }}>{flag}</li>
                                   ))}
                                 </Stack>
@@ -1441,7 +1963,7 @@ export function Reports() {
                               <OutlinedFlagIcon
                                 sx={{
                                   fontSize: '0.85rem',
-                                  color: alpha(theme.palette.warning.main, 0.85),
+                                  color: integritySeverityMeta.color,
                                 }}
                               />
                             </Tooltip>
@@ -1499,26 +2021,23 @@ export function Reports() {
                         </Stack>
                       </TableCell>
 
-                      {/* Urgency */}
+                      {/* Priority */}
                       <TableCell align="center">
-                        {report.urgency_level ? (
+                        <Stack spacing={0.45} alignItems="center">
                           <Chip
-                            label={report.urgency_level}
+                            label={aiPriorityDisplayMeta.label}
                             size="small"
                             sx={{
-                              fontWeight: 600, fontSize: '0.65rem', height: 20,
-                              bgcolor: report.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08)
-                                : report.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08)
-                                  : alpha(theme.palette.success.main, 0.08),
-                              color: report.urgency_level === 'High' ? theme.palette.error.main
-                                : report.urgency_level === 'Medium' ? theme.palette.warning.dark
-                                  : theme.palette.success.dark,
-                              border: 'none',
+                              height: 20,
+                              fontSize: '0.62rem',
+                              fontWeight: 700,
+                              border: '1px solid',
+                              borderColor: aiPriorityDisplayMeta.border,
+                              bgcolor: aiPriorityDisplayMeta.background,
+                              color: aiPriorityDisplayMeta.color,
                             }}
                           />
-                        ) : (
-                          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: alpha(theme.palette.text.secondary, 0.4) }}>—</Typography>
-                        )}
+                        </Stack>
                       </TableCell>
 
                       {/* Affected nearby */}
@@ -1706,7 +2225,7 @@ export function Reports() {
                   Filters
                 </Typography>
                 <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.6) }}>
-                  Narrow down your reports
+                  Narrow down your reports and switch queue ordering
                 </Typography>
               </Box>
               <IconButton onClick={() => setFilterDrawerOpen(false)} size="small" sx={{ bgcolor: alpha(theme.palette.text.primary, 0.12), '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.18) } }}>
@@ -1715,6 +2234,114 @@ export function Reports() {
             </Box>
 
             <Stack spacing={2.5}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Sort Queue By</InputLabel>
+                <Select
+                  value={filters.sortBy || 'newest'}
+                  onChange={(e) => setFilters({
+                    ...filters,
+                    sortBy: e.target.value as FilterOptions['sortBy'],
+                  })}
+                  label="Sort Queue By"
+                  sx={{ borderRadius: '10px' }}
+                >
+                  <MenuItem value="newest">Newest first</MenuItem>
+                  <MenuItem value="score_desc">Highest priority first</MenuItem>
+                  <MenuItem value="score_asc">Lowest priority first</MenuItem>
+                  <MenuItem value="integrity_desc">Highest integrity risk first</MenuItem>
+                  <MenuItem value="integrity_asc">Lowest integrity risk first</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Priority</InputLabel>
+                <Select
+                  multiple
+                  value={filters.scoreBuckets || []}
+                  onChange={(e) => setFilters({ ...filters, scoreBuckets: e.target.value as ReportAiScoreBucket[] })}
+                  input={<OutlinedInput label="Priority" />}
+                  sx={{ borderRadius: '10px' }}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as ReportAiScoreBucket[]).map((value) => (
+                        <Chip key={value} label={getAiScoreBucketMeta(value).label} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {SCORE_BUCKETS.map((bucket) => (
+                    <MenuItem key={bucket} value={bucket}>
+                      <Checkbox checked={(filters.scoreBuckets || []).indexOf(bucket) > -1} size="small" />
+                      <ListItemText primary={getAiScoreBucketMeta(bucket).label} primaryTypographyProps={{ fontSize: '0.8125rem' }} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Integrity Severity</InputLabel>
+                <Select
+                  multiple
+                  value={filters.integritySeverities || []}
+                  onChange={(e) => setFilters({ ...filters, integritySeverities: e.target.value as ReportIntegritySeverity[] })}
+                  input={<OutlinedInput label="Integrity Severity" />}
+                  sx={{ borderRadius: '10px' }}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as ReportIntegritySeverity[]).map((value) => (
+                        <Chip key={value} label={getIntegritySeverityMeta(value).label} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {INTEGRITY_SEVERITIES.map((severity) => (
+                    <MenuItem key={severity} value={severity}>
+                      <Checkbox checked={(filters.integritySeverities || []).indexOf(severity) > -1} size="small" />
+                      <ListItemText primary={getIntegritySeverityMeta(severity).label} primaryTypographyProps={{ fontSize: '0.8125rem' }} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Suspicious Queue</InputLabel>
+                <Select
+                  value={filters.suspiciousOnly ? 'yes' : 'all'}
+                  onChange={(e) => setFilters({ ...filters, suspiciousOnly: e.target.value === 'yes' ? true : null })}
+                  label="Suspicious Queue"
+                  sx={{ borderRadius: '10px' }}
+                >
+                  <MenuItem value="all">All reports</MenuItem>
+                  <MenuItem value="yes">Suspicious only</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Duplicate Review</InputLabel>
+                <Select
+                  value={filters.duplicateOnly ? 'yes' : 'all'}
+                  onChange={(e) => setFilters({ ...filters, duplicateOnly: e.target.value === 'yes' ? true : null })}
+                  label="Duplicate Review"
+                  sx={{ borderRadius: '10px' }}
+                >
+                  <MenuItem value="all">All reports</MenuItem>
+                  <MenuItem value="yes">Duplicate cluster only</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel>Shared Device</InputLabel>
+                <Select
+                  value={filters.sharedDeviceOnly ? 'yes' : 'all'}
+                  onChange={(e) => setFilters({ ...filters, sharedDeviceOnly: e.target.value === 'yes' ? true : null })}
+                  label="Shared Device"
+                  sx={{ borderRadius: '10px' }}
+                >
+                  <MenuItem value="all">All reports</MenuItem>
+                  <MenuItem value="yes">Shared device only</MenuItem>
+                </Select>
+              </FormControl>
+
               {/* Hazard Types */}
               <FormControl fullWidth size="small">
                 <InputLabel>Hazard Types</InputLabel>
@@ -1899,7 +2526,7 @@ export function Reports() {
               <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.06) }} />
 
               <Alert severity="info" sx={{ borderRadius: '10px', fontSize: '0.75rem', '& .MuiAlert-icon': { fontSize: '1.1rem' } }}>
-                Day-based date filtering is available from the <strong>Day Filter</strong> button in the top bar.
+                Priority sorting uses the latest stored AI analysis snapshot. Day-based date filtering stays available from the <strong>Day Filter</strong> button in the top bar.
               </Alert>
             </Stack>
 
@@ -1921,6 +2548,396 @@ export function Reports() {
                 Apply Filters
               </Button>
             </Box>
+          </Box>
+        </Drawer>
+
+        <Drawer
+          anchor="right"
+          open={failedTranslationsDrawerOpen}
+          onClose={closeFailedTranslationsDrawer}
+          PaperProps={{
+            sx: {
+              width: { xs: '100%', sm: 460 },
+              borderRadius: { xs: 0, sm: '18px 0 0 18px' },
+              border: 'none',
+              boxShadow: `0 18px 48px ${alpha(theme.palette.common.black, 0.16)}`,
+              overflow: 'hidden',
+            },
+          }}
+        >
+          <Box
+            sx={{
+              p: 3,
+              background: `linear-gradient(180deg, ${alpha(theme.palette.error.main, 0.08)} 0%, ${alpha(theme.palette.background.paper, 0.96)} 100%)`,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: '1.02rem' }}>
+                  Failed Translations
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.6, color: alpha(theme.palette.text.secondary, 0.78), lineHeight: 1.6 }}>
+                  Inspect translation errors and retry directly from this drawer without adding more clutter to the main reports table.
+                </Typography>
+              </Box>
+              <IconButton
+                onClick={closeFailedTranslationsDrawer}
+                size="small"
+                sx={{ bgcolor: alpha(theme.palette.text.primary, 0.08), '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.14) } }}
+              >
+                <CloseIcon sx={{ fontSize: '1.1rem' }} />
+              </IconButton>
+            </Box>
+
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mt: 2.2 }}>
+              <Chip
+                label={`${failedTranslationReports.length} in queue`}
+                size="small"
+                sx={{
+                  height: 26,
+                  border: 'none',
+                  fontWeight: 700,
+                  bgcolor: alpha(theme.palette.error.main, 0.12),
+                  color: theme.palette.error.main,
+                }}
+              />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => void handleRetryAllFailed()}
+                disabled={failedTranslationReports.length === 0 || retryingAllFailed}
+                startIcon={retryingAllFailed ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                sx={{
+                  borderRadius: '999px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 1.5,
+                }}
+              >
+                Retry All
+              </Button>
+            </Stack>
+          </Box>
+
+          <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
+            {failedTranslationsLoading ? (
+              <Stack spacing={1.25}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} variant="rounded" height={118} sx={{ borderRadius: '16px' }} />
+                ))}
+              </Stack>
+            ) : failedTranslationReports.length === 0 ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderRadius: '18px',
+                  textAlign: 'center',
+                  borderColor: alpha(theme.palette.success.main, 0.14),
+                  bgcolor: alpha(theme.palette.success.main, 0.04),
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight={700} sx={{ color: theme.palette.success.main }}>
+                  No failed translations right now
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.8, color: alpha(theme.palette.text.secondary, 0.82), lineHeight: 1.6 }}>
+                  New failures will appear here automatically whenever the queue picks them up.
+                </Typography>
+              </Paper>
+            ) : (
+              <Stack spacing={1.25}>
+                {failedTranslationReports.map((report) => {
+                  const isRetrying = retryingAllFailed || retryingFailedIds.includes(report.id);
+                  return (
+                    <Paper
+                      key={report.id}
+                      variant="outlined"
+                      sx={{
+                        p: 1.75,
+                        borderRadius: '18px',
+                        borderColor: alpha(theme.palette.error.main, 0.12),
+                        bgcolor: alpha(theme.palette.background.paper, 0.92),
+                        boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.04)}`,
+                      }}
+                    >
+                      <Stack spacing={1.2}>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1.5}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mb: 0.6 }}>
+                              <Chip
+                                label={report.hazard_type}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  border: 'none',
+                                  bgcolor: alpha(getHazardColor(report.hazard_type), 0.1),
+                                  color: getHazardColor(report.hazard_type),
+                                }}
+                              />
+                              <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.72) }}>
+                                {report.user_name || 'Unknown reporter'}
+                              </Typography>
+                            </Stack>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: theme.palette.text.primary,
+                                fontWeight: 600,
+                                lineHeight: 1.55,
+                                display: '-webkit-box',
+                                overflow: 'hidden',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                              }}
+                            >
+                              {report.description}
+                            </Typography>
+                          </Box>
+                          <Chip label="Failed" size="small" sx={getQueueChipSx('error')} />
+                        </Box>
+
+                        <Alert
+                          severity="error"
+                          variant="outlined"
+                          sx={{
+                            borderRadius: '14px',
+                            '& .MuiAlert-message': { width: '100%' },
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, mb: 0.35 }}>
+                            Last error
+                          </Typography>
+                          <Typography variant="body2" sx={{ lineHeight: 1.55 }}>
+                            {getTranslationFailureReason(report)}
+                          </Typography>
+                        </Alert>
+
+                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                          <Chip
+                            label={`Attempts ${report.translation_attempts ?? 0}`}
+                            size="small"
+                            sx={{ height: 22, fontSize: '0.68rem', border: 'none', bgcolor: alpha(theme.palette.warning.main, 0.1), color: theme.palette.warning.dark }}
+                          />
+                          <Chip
+                            label={`Last try ${report.translation_last_attempt_at ? format(new Date(report.translation_last_attempt_at), 'MMM dd, HH:mm') : 'Unknown'}`}
+                            size="small"
+                            sx={{ height: 22, fontSize: '0.68rem', border: 'none', bgcolor: alpha(theme.palette.info.main, 0.1), color: theme.palette.info.main }}
+                          />
+                          <Chip
+                            label={`Next retry ${report.translation_next_retry_at ? format(new Date(report.translation_next_retry_at), 'MMM dd, HH:mm') : 'Manual only'}`}
+                            size="small"
+                            sx={{ height: 22, fontSize: '0.68rem', border: 'none', bgcolor: alpha(theme.palette.text.secondary, 0.08), color: theme.palette.text.secondary }}
+                          />
+                        </Stack>
+
+                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1}>
+                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.72), fontFamily: '"JetBrains Mono", monospace' }}>
+                            {report.id.slice(0, 8)}...
+                          </Typography>
+                          <Stack direction="row" spacing={1}>
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => void handleOpenDrawerReport(report.id)}
+                              sx={{ textTransform: 'none', fontWeight: 700 }}
+                            >
+                              Open
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              disabled={isRetrying}
+                              onClick={() => void handleRetryFailedReport(report)}
+                              startIcon={isRetrying ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                              sx={{
+                                borderRadius: '999px',
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                px: 1.5,
+                                boxShadow: 'none',
+                              }}
+                            >
+                              Retry
+                            </Button>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  );
+                })}
+              </Stack>
+            )}
+          </Box>
+        </Drawer>
+
+        <Drawer
+          anchor="right"
+          open={aiAttentionDrawerOpen}
+          onClose={closeAiAttentionDrawer}
+          PaperProps={{
+            sx: {
+              width: { xs: '100%', sm: 460 },
+              borderRadius: { xs: 0, sm: '18px 0 0 18px' },
+              border: 'none',
+              boxShadow: `0 18px 48px ${alpha(theme.palette.common.black, 0.16)}`,
+              overflow: 'hidden',
+            },
+          }}
+        >
+          <Box
+            sx={{
+              p: 2.25,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              background: `linear-gradient(180deg, ${alpha(theme.palette.info.light, 0.14)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1.5}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                  AI Scoring Queue
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.6, color: alpha(theme.palette.text.secondary, 0.78), lineHeight: 1.6 }}>
+                  Review reports with partial or failed scoring, and trigger the batch worker directly from this drawer.
+                </Typography>
+              </Box>
+              <IconButton
+                onClick={closeAiAttentionDrawer}
+                size="small"
+                sx={{ bgcolor: alpha(theme.palette.text.primary, 0.08), '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.14) } }}
+              >
+                <CloseIcon sx={{ fontSize: '1.1rem' }} />
+              </IconButton>
+            </Box>
+
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mt: 2.2 }}>
+              <Chip
+                label={`${aiAttentionReports.length} needing attention`}
+                size="small"
+                sx={{
+                  height: 26,
+                  border: 'none',
+                  fontWeight: 700,
+                  bgcolor: alpha(theme.palette.warning.main, 0.12),
+                  color: theme.palette.warning.dark,
+                }}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => void handleRunAiWorker()}
+                disabled={runningAiWorker}
+                startIcon={runningAiWorker ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                sx={{
+                  borderRadius: '999px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 1.5,
+                }}
+              >
+                Run Worker
+              </Button>
+            </Stack>
+          </Box>
+
+          <Box sx={{ p: 2, overflowY: 'auto', flex: 1 }}>
+            {aiAttentionLoading ? (
+              <Stack spacing={1.25}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} variant="rounded" height={118} sx={{ borderRadius: '16px' }} />
+                ))}
+              </Stack>
+            ) : aiAttentionReports.length === 0 ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderRadius: '18px',
+                  textAlign: 'center',
+                  borderColor: alpha(theme.palette.divider, 0.08),
+                }}
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  No AI scoring items need attention
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1, color: alpha(theme.palette.text.secondary, 0.76), lineHeight: 1.7 }}>
+                  Partial and failed AI analyses will appear here so admins can retry without searching the main queue.
+                </Typography>
+              </Paper>
+            ) : (
+              <Stack spacing={1.25}>
+                {aiAttentionReports.map((report) => {
+                  const isRetrying = analyzingReportId === report.id;
+                  const aiStatus = report.ai_analysis?.analysis_status ?? 'pending';
+                  const aiError = report.ai_analysis?.last_error ?? null;
+                  const statusTone = aiStatus === 'failed' ? 'error' : 'default';
+                  const scoreLabel =
+                    aiStatus === 'partial'
+                      ? `Provisional score ${Math.round(report.ai_analysis?.operational_score ?? 0)} | ${report.ai_analysis?.score_bucket ?? 'low'}`
+                      : `Score ${Math.round(report.ai_analysis?.operational_score ?? 0)} | ${report.ai_analysis?.score_bucket ?? 'low'}`;
+
+                  return (
+                    <Paper
+                      key={report.id}
+                      variant="outlined"
+                      sx={{
+                        p: 1.6,
+                        borderRadius: '16px',
+                        borderColor: alpha(theme.palette.divider, 0.08),
+                      }}
+                    >
+                      <Stack spacing={1.25}>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1}>
+                          <Box minWidth={0}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                              {report.hazard_type}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.82), mt: 0.35 }}>
+                              {report.translated_english || report.description}
+                            </Typography>
+                          </Box>
+                          <Chip label={aiStatus === 'failed' ? 'Failed' : 'Provisional'} size="small" sx={getQueueChipSx(statusTone)} />
+                        </Box>
+
+                        {aiError && (
+                          <Alert
+                            severity="error"
+                            sx={{
+                              borderRadius: '12px',
+                              '& .MuiAlert-message': { fontSize: '0.8rem' },
+                            }}
+                          >
+                            {aiError}
+                          </Alert>
+                        )}
+
+                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1} flexWrap="wrap">
+                          <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.78) }}>
+                            {scoreLabel}
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            disabled={isRetrying}
+                            onClick={() => void handleAnalyzeReportAi(report, { force: true })}
+                            startIcon={isRetrying ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                            sx={{
+                              borderRadius: '999px',
+                              textTransform: 'none',
+                              fontWeight: 700,
+                              px: 1.5,
+                              boxShadow: 'none',
+                            }}
+                          >
+                            Retry AI
+                          </Button>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  );
+                })}
+              </Stack>
+            )}
           </Box>
         </Drawer>
 
@@ -1988,20 +3005,49 @@ export function Reports() {
                         }} 
                       />
                     )}
-                    {selectedReport.urgency_level && (
-                      <Chip 
-                        label={selectedReport.urgency_level} 
-                        size="small" 
-                        sx={{ 
-                          fontWeight: 700, fontSize: '0.7rem', px: 0.5,
-                          bgcolor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08)
-                            : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08)
-                            : alpha(theme.palette.success.main, 0.08),
-                          color: selectedReport.urgency_level === 'High' ? theme.palette.error.main
-                            : selectedReport.urgency_level === 'Medium' ? theme.palette.warning.dark
-                            : theme.palette.success.main,
-                          border: 'none'
-                        }} 
+                    {selectedReport.ai_analysis && (
+                      <>
+                        <Chip
+                          label={`AI ${formatAiScore(selectedReport)}`}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            px: 0.5,
+                            bgcolor: getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).background,
+                            color: getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).color,
+                            border: '1px solid',
+                            borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).border,
+                          }}
+                        />
+                        <Chip
+                          label={getAiAnalysisStatusMeta(selectedReport).label}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: '0.7rem',
+                            px: 0.5,
+                            bgcolor: getAiAnalysisStatusMeta(selectedReport).background,
+                            color: getAiAnalysisStatusMeta(selectedReport).color,
+                            border: '1px solid',
+                            borderColor: getAiAnalysisStatusMeta(selectedReport).border,
+                          }}
+                        />
+                      </>
+                    )}
+                    {selectedReport.integrity_snapshot && selectedReport.integrity_snapshot.active_signal_count > 0 && (
+                      <Chip
+                        label={`Integrity ${formatIntegrityScore(selectedReport)}`}
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: '0.7rem',
+                          px: 0.5,
+                          bgcolor: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).background,
+                          color: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).color,
+                          border: '1px solid',
+                          borderColor: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).border,
+                        }}
                       />
                     )}
                 </Box>
@@ -2205,6 +3251,521 @@ export function Reports() {
                     </Paper>
                   </Box>
 
+                  <Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
+                        AI Operational Scoring
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={analyzingReportId === selectedReport.id}
+                        onClick={() => void handleAnalyzeReportAi(selectedReport, { force: true })}
+                        startIcon={analyzingReportId === selectedReport.id ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: '0.95rem' }} />}
+                        sx={{
+                          borderRadius: '999px',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          px: 1.5,
+                        }}
+                      >
+                        Retry AI
+                      </Button>
+                    </Box>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: '14px',
+                        borderColor: alpha(theme.palette.divider, 0.08),
+                        bgcolor: alpha(theme.palette.text.primary, 0.02),
+                      }}
+                    >
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <Box
+                            sx={{
+                              p: 1.75,
+                              borderRadius: '14px',
+                              bgcolor: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).background,
+                              border: '1px solid',
+                              borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).border,
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                              Score
+                            </Typography>
+                            <Typography variant="h4" sx={{ mt: 0.35, fontSize: '1.8rem', lineHeight: 1, fontWeight: 900, color: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).color }}>
+                              {formatAiScore(selectedReport)}
+                            </Typography>
+                            <Stack direction="row" spacing={0.75} sx={{ mt: 1 }}>
+                              <Chip
+                                label={getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).label}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.64rem',
+                                  fontWeight: 700,
+                                  border: '1px solid',
+                                  borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).border,
+                                  bgcolor: 'transparent',
+                                  color: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).color,
+                                }}
+                              />
+                              <Chip
+                                label={getAiAnalysisStatusMeta(selectedReport).label}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.64rem',
+                                  fontWeight: 700,
+                                  border: '1px solid',
+                                  borderColor: getAiAnalysisStatusMeta(selectedReport).border,
+                                  bgcolor: getAiAnalysisStatusMeta(selectedReport).background,
+                                  color: getAiAnalysisStatusMeta(selectedReport).color,
+                                }}
+                              />
+                            </Stack>
+                          </Box>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 8 }}>
+                          <Stack spacing={1.25}>
+                            <Typography variant="body2" sx={{ lineHeight: 1.65, color: theme.palette.text.primary }}>
+                              {selectedReport.ai_analysis?.summary || 'This report is queued for AI scoring. The current foundation scores translated text and metadata first, then enriches the record as more media analysis becomes available.'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.8), lineHeight: 1.6 }}>
+                              <strong>Recommended action:</strong> {selectedReport.ai_analysis?.recommended_action || 'Await AI recommendation'}
+                            </Typography>
+                            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                              <Chip label={`Text ${Math.round(selectedReport.ai_analysis?.text_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.08), color: theme.palette.primary.main, border: 'none' }} />
+                              <Chip label={`Metadata ${Math.round(selectedReport.ai_analysis?.metadata_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.info.main, 0.08), color: theme.palette.info.main, border: 'none' }} />
+                              <Chip label={`Image ${Math.round(selectedReport.ai_analysis?.image_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.warning.main, 0.08), color: theme.palette.warning.dark, border: 'none' }} />
+                              <Chip label={`Audio ${Math.round(selectedReport.ai_analysis?.audio_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.warning.main, 0.08), color: theme.palette.warning.dark, border: 'none' }} />
+                              <Chip label={`Video ${Math.round(selectedReport.ai_analysis?.video_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.warning.main, 0.08), color: theme.palette.warning.dark, border: 'none' }} />
+                              <Chip label={`Confidence ${Math.round(selectedReport.ai_analysis?.confidence_score ?? 0)}`} size="small" sx={{ fontWeight: 700, bgcolor: alpha(theme.palette.success.main, 0.08), color: theme.palette.success.main, border: 'none' }} />
+                            </Stack>
+                          </Stack>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+
+                  {(() => {
+                    const mediaEvidence = getAiMediaEvidence(selectedReport);
+                    const hasMediaEvidence =
+                      mediaEvidence.imageSummaries.length > 0 ||
+                      mediaEvidence.audioSummaries.length > 0 ||
+                      mediaEvidence.videoSummaries.length > 0 ||
+                      mediaEvidence.videoFrameSummaries.length > 0 ||
+                      mediaEvidence.audioTranscripts.length > 0 ||
+                      mediaEvidence.videoTranscripts.length > 0;
+
+                    if (!hasMediaEvidence) return null;
+
+                    return (
+                      <Box>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                          <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
+                            AI Media Evidence
+                          </Typography>
+                          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                            {mediaEvidence.imageStatus && (
+                              <Chip label={`Images ${mediaEvidence.imageStatus}`} size="small" sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: alpha(theme.palette.warning.main, 0.08), color: theme.palette.warning.dark, border: 'none' }} />
+                            )}
+                            {mediaEvidence.audioStatus && (
+                              <Chip label={`Audio ${mediaEvidence.audioStatus}`} size="small" sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: alpha(theme.palette.info.main, 0.08), color: theme.palette.info.main, border: 'none' }} />
+                            )}
+                            {mediaEvidence.videoStatus && (
+                              <Chip label={`Video ${mediaEvidence.videoStatus}`} size="small" sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: alpha(theme.palette.primary.main, 0.08), color: theme.palette.primary.main, border: 'none' }} />
+                            )}
+                            {mediaEvidence.videoFrameStatus && (
+                              <Chip label={`Frames ${mediaEvidence.videoFrameStatus}`} size="small" sx={{ height: 22, fontSize: '0.64rem', fontWeight: 700, bgcolor: alpha(theme.palette.success.main, 0.08), color: theme.palette.success.main, border: 'none' }} />
+                            )}
+                          </Stack>
+                        </Box>
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            p: 2,
+                            borderRadius: '14px',
+                            borderColor: alpha(theme.palette.divider, 0.08),
+                            bgcolor: alpha(theme.palette.text.primary, 0.02),
+                          }}
+                        >
+                          <Stack spacing={1.5}>
+                            {mediaEvidence.imageSummaries.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Image Findings
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.imageSummaries.slice(0, 3).map((item, index) => (
+                                    <Typography key={`image-summary-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: theme.palette.text.primary }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {mediaEvidence.audioSummaries.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Audio Findings
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.audioSummaries.slice(0, 3).map((item, index) => (
+                                    <Typography key={`audio-summary-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: theme.palette.text.primary }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {mediaEvidence.videoSummaries.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Video Findings
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.videoSummaries.slice(0, 3).map((item, index) => (
+                                    <Typography key={`video-summary-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: theme.palette.text.primary }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {mediaEvidence.videoFrameSummaries.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Video Frame Findings
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.videoFrameSummaries.slice(0, 3).map((item, index) => (
+                                    <Typography key={`video-frame-summary-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: theme.palette.text.primary }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {mediaEvidence.audioTranscripts.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Audio Transcript Excerpts
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.audioTranscripts.slice(0, 2).map((item, index) => (
+                                    <Typography key={`audio-transcript-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.secondary, 0.86), fontStyle: 'italic' }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {mediaEvidence.videoTranscripts.length > 0 && (
+                              <Box>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.6, fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Video Audio Transcript Excerpts
+                                </Typography>
+                                <Stack spacing={0.75}>
+                                  {mediaEvidence.videoTranscripts.slice(0, 2).map((item, index) => (
+                                    <Typography key={`video-transcript-${index}`} variant="body2" sx={{ lineHeight: 1.6, color: alpha(theme.palette.text.secondary, 0.86), fontStyle: 'italic' }}>
+                                      {item}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+                          </Stack>
+                        </Paper>
+                      </Box>
+                    );
+                  })()}
+
+                  <Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+                      <Typography variant="caption" fontWeight={600} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.65rem' }}>
+                        Integrity & Fraud Signals
+                      </Typography>
+                      {selectedReport.integrity_snapshot && (
+                        <Chip
+                          size="small"
+                          label={`${getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).label} ${formatIntegrityScore(selectedReport)}`}
+                          sx={{
+                            height: 22,
+                            fontSize: '0.64rem',
+                            fontWeight: 700,
+                            border: '1px solid',
+                            borderColor: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).border,
+                            bgcolor: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).background,
+                            color: getIntegritySeverityMeta(selectedReport.integrity_snapshot.integrity_severity).color,
+                          }}
+                        />
+                      )}
+                    </Box>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: '14px',
+                        borderColor: alpha(theme.palette.divider, 0.08),
+                        bgcolor: alpha(theme.palette.text.primary, 0.02),
+                      }}
+                    >
+                      {loadingIntegrityDetails ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <Stack spacing={1.5}>
+                          <Grid container spacing={1.5}>
+                            <Grid size={{ xs: 12, md: 4 }}>
+                              <Box
+                                sx={{
+                                  p: 1.75,
+                                  borderRadius: '14px',
+                                  bgcolor: getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).background,
+                                  border: '1px solid',
+                                  borderColor: getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).border,
+                                }}
+                              >
+                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: alpha(theme.palette.text.secondary, 0.72), textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.64rem' }}>
+                                  Integrity Score
+                                </Typography>
+                                <Typography variant="h4" sx={{ mt: 0.35, fontSize: '1.8rem', lineHeight: 1, fontWeight: 900, color: getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).color }}>
+                                  {formatIntegrityScore(selectedReport)}
+                                </Typography>
+                                <Stack direction="row" spacing={0.75} sx={{ mt: 1 }} useFlexGap flexWrap="wrap">
+                                  <Chip
+                                    size="small"
+                                    label={getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).label}
+                                    sx={{
+                                      height: 22,
+                                      fontSize: '0.64rem',
+                                      fontWeight: 700,
+                                      border: '1px solid',
+                                      borderColor: getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).border,
+                                      bgcolor: 'transparent',
+                                      color: getIntegritySeverityMeta(selectedReport.integrity_snapshot?.integrity_severity).color,
+                                    }}
+                                  />
+                                  <Chip
+                                    size="small"
+                                    label={`${selectedReport.integrity_snapshot?.active_signal_count ?? 0} signals`}
+                                    sx={{
+                                      height: 22,
+                                      fontSize: '0.64rem',
+                                      fontWeight: 700,
+                                      bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                      color: theme.palette.text.secondary,
+                                      border: '1px solid',
+                                      borderColor: alpha(theme.palette.grey[500], 0.18),
+                                    }}
+                                  />
+                                </Stack>
+                              </Box>
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 8 }}>
+                              <Stack spacing={1}>
+                                <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.8), lineHeight: 1.6 }}>
+                                  {selectedReport.integrity_snapshot?.active_signal_count
+                                    ? 'Server-side fraud signals are active for this report. Review the signal list, duplicate cluster, and submission event trail before changing status.'
+                                    : 'No active fraud signals are currently attached to this report. Submission history and duplicate clustering are still retained for audit.'}
+                                </Typography>
+                                <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                                  {(selectedReport.integrity_snapshot?.active_signal_types || []).map((signalType) => (
+                                    <Chip
+                                      key={signalType}
+                                      size="small"
+                                      label={getIntegritySignalLabel(signalType)}
+                                      sx={{
+                                        fontWeight: 700,
+                                        bgcolor: alpha(theme.palette.warning.main, 0.08),
+                                        color: theme.palette.warning.dark,
+                                        border: '1px solid',
+                                        borderColor: alpha(theme.palette.warning.main, 0.18),
+                                      }}
+                                    />
+                                  ))}
+                                  {(selectedReport.integrity_snapshot?.duplicate_cluster_size ?? 0) > 1 && (
+                                    <Chip
+                                      size="small"
+                                      label={`Cluster size ${selectedReport.integrity_snapshot?.duplicate_cluster_size ?? 0}`}
+                                      sx={{
+                                        fontWeight: 700,
+                                        bgcolor: alpha(theme.palette.info.main, 0.08),
+                                        color: theme.palette.info.main,
+                                        border: '1px solid',
+                                        borderColor: alpha(theme.palette.info.main, 0.18),
+                                      }}
+                                    />
+                                  )}
+                                  {selectedReport.integrity_snapshot?.latest_submission_result_code && (
+                                    <Chip
+                                      size="small"
+                                      label={`Last submission ${selectedReport.integrity_snapshot.latest_submission_result_code}`}
+                                      sx={{
+                                        fontWeight: 700,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                        color: theme.palette.primary.main,
+                                        border: '1px solid',
+                                        borderColor: alpha(theme.palette.primary.main, 0.18),
+                                      }}
+                                    />
+                                  )}
+                                </Stack>
+                              </Stack>
+                            </Grid>
+                          </Grid>
+
+                          {integritySignals.length > 0 && (
+                            <Box>
+                              <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.58), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.62rem' }}>
+                                Active Signals
+                              </Typography>
+                              <Stack spacing={0.75} sx={{ mt: 1 }}>
+                                {integritySignals.slice(0, 6).map((signal) => (
+                                  <Paper
+                                    key={signal.id}
+                                    variant="outlined"
+                                    sx={{
+                                      p: 1.25,
+                                      borderRadius: '10px',
+                                      borderColor: alpha(theme.palette.divider, 0.1),
+                                      bgcolor: alpha(theme.palette.text.primary, 0.01),
+                                    }}
+                                  >
+                                    <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="center">
+                                      <Box>
+                                        <Typography variant="body2" fontWeight={700}>
+                                          {getIntegritySignalLabel(signal.signal_type)}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.58) }}>
+                                          {format(new Date(signal.detected_at), 'PPpp')}
+                                        </Typography>
+                                      </Box>
+                                      <Stack direction="row" spacing={0.75}>
+                                        <Chip
+                                          size="small"
+                                          label={`${getIntegritySeverityMeta(signal.severity).label} ${signal.score}`}
+                                          sx={{
+                                            fontWeight: 700,
+                                            bgcolor: getIntegritySeverityMeta(signal.severity).background,
+                                            color: getIntegritySeverityMeta(signal.severity).color,
+                                            border: '1px solid',
+                                            borderColor: getIntegritySeverityMeta(signal.severity).border,
+                                          }}
+                                        />
+                                        <Chip
+                                          size="small"
+                                          label={signal.status}
+                                          sx={{
+                                            fontWeight: 700,
+                                            bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                            color: theme.palette.text.secondary,
+                                            border: '1px solid',
+                                            borderColor: alpha(theme.palette.grey[500], 0.18),
+                                          }}
+                                        />
+                                      </Stack>
+                                    </Stack>
+                                  </Paper>
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+
+                          {duplicateClusterMembers.length > 1 && (
+                            <Box>
+                              <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.58), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.62rem' }}>
+                                Duplicate Cluster Members
+                              </Typography>
+                              <Stack spacing={0.75} sx={{ mt: 1 }}>
+                                {duplicateClusterMembers.slice(0, 6).map((member) => (
+                                  <Paper
+                                    key={member.report_id}
+                                    variant="outlined"
+                                    sx={{
+                                      p: 1.25,
+                                      borderRadius: '10px',
+                                      borderColor: alpha(theme.palette.divider, 0.1),
+                                      bgcolor: member.report_id === selectedReport.id ? alpha(theme.palette.primary.main, 0.04) : alpha(theme.palette.text.primary, 0.01),
+                                    }}
+                                  >
+                                    <Stack direction="row" justifyContent="space-between" spacing={1}>
+                                      <Box sx={{ minWidth: 0 }}>
+                                        <Typography variant="body2" fontWeight={700}>
+                                          {member.user_name || 'Unknown reporter'} • {member.hazard_type}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.82), mt: 0.35 }}>
+                                          {(member.translated_english || member.description || '').slice(0, 140)}
+                                        </Typography>
+                                      </Box>
+                                      <Stack alignItems="flex-end" spacing={0.5}>
+                                        <Chip size="small" label={member.status.toUpperCase()} sx={{ fontWeight: 700 }} />
+                                        <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.58) }}>
+                                          {format(new Date(member.created_at), 'PPp')}
+                                        </Typography>
+                                      </Stack>
+                                    </Stack>
+                                  </Paper>
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+
+                          {submissionEvents.length > 0 && (
+                            <Box>
+                              <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.58), textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.62rem' }}>
+                                Submission Events
+                              </Typography>
+                              <Stack spacing={0.75} sx={{ mt: 1 }}>
+                                {submissionEvents.slice(0, 6).map((event) => (
+                                  <Paper
+                                    key={event.id}
+                                    variant="outlined"
+                                    sx={{
+                                      p: 1.25,
+                                      borderRadius: '10px',
+                                      borderColor: alpha(theme.palette.divider, 0.1),
+                                      bgcolor: alpha(theme.palette.text.primary, 0.01),
+                                    }}
+                                  >
+                                    <Stack direction="row" justifyContent="space-between" spacing={1}>
+                                      <Box>
+                                        <Typography variant="body2" fontWeight={700}>
+                                          {event.event_type.replace(/_/g, ' ')} • {event.result_code}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.58) }}>
+                                          {format(new Date(event.created_at), 'PPpp')}
+                                        </Typography>
+                                      </Box>
+                                      <Chip
+                                        size="small"
+                                        label={event.device_id ? `Device ${event.device_id.slice(-6)}` : 'No device'}
+                                        sx={{
+                                          fontWeight: 700,
+                                          bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                          color: theme.palette.text.secondary,
+                                          border: '1px solid',
+                                          borderColor: alpha(theme.palette.grey[500], 0.18),
+                                        }}
+                                      />
+                                    </Stack>
+                                  </Paper>
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+                        </Stack>
+                      )}
+                    </Paper>
+                  </Box>
+
                   {/* Location & Contact Grid */}
                   <Grid container spacing={3}>
                     <Grid size={{ xs: 6 }}>
@@ -2252,18 +3813,25 @@ export function Reports() {
                           </Stack>
                         </Box>
 
-                        {/* Urgency info inline */}
+                        {/* AI priority */}
                         <Box>
                           <Typography variant="caption" fontWeight={700} sx={{ color: alpha(theme.palette.text.secondary, 0.6), textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
-                            Urgency
+                            Priority
                           </Typography>
                           <Box sx={{ mt: 0.5 }}>
-                            {selectedReport.urgency_level ? (
-                              <Chip
-                                label={selectedReport.urgency_level}
-                                size="small"
-                                sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.08) : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.08) : alpha(theme.palette.success.main, 0.08), color: selectedReport.urgency_level === 'High' ? theme.palette.error.main : selectedReport.urgency_level === 'Medium' ? theme.palette.warning.dark : theme.palette.success.main, border: '1px solid', borderColor: selectedReport.urgency_level === 'High' ? alpha(theme.palette.error.main, 0.2) : selectedReport.urgency_level === 'Medium' ? alpha(theme.palette.warning.main, 0.2) : alpha(theme.palette.success.main, 0.2) }}
-                              />
+                            {selectedReport.ai_analysis ? (
+                              <Stack direction="row" spacing={0.75} alignItems="center" useFlexGap flexWrap="wrap">
+                                <Chip
+                                  label={getAiPriorityDisplayMeta(selectedReport).label}
+                                  size="small"
+                                  sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: getAiPriorityDisplayMeta(selectedReport).background, color: getAiPriorityDisplayMeta(selectedReport).color, border: '1px solid', borderColor: getAiPriorityDisplayMeta(selectedReport).border }}
+                                />
+                                {selectedReport.ai_analysis.analysis_status === 'partial' && (
+                                  <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.72), fontWeight: 700 }}>
+                                    Bucket: {getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).label}
+                                  </Typography>
+                                )}
+                              </Stack>
                             ) : (
                               <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>—</Typography>
                             )}

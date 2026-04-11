@@ -49,6 +49,8 @@ class ReportSyncService {
     if (e is SocketException) return 'network';
     final msg = e.toString().toLowerCase();
     if (msg.contains('rate_limited')) return 'rate_limited';
+    if (msg.contains('device_id_required')) return 'device_id_required';
+    if (msg.contains('backend_submission_rpc_missing')) return 'backend_config';
     if (msg.contains('duplicate_report')) return 'duplicate';
     if (msg.contains('jwt') || msg.contains('auth') || msg.contains('unauthorized') || msg.contains('not authenticated')) {
       return 'auth';

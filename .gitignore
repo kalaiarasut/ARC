@@ -3,3 +3,5 @@ react-bits/
 .superdesign
 .npm-cache
 .npm-global
+doc
+.supabase-ai-deploy

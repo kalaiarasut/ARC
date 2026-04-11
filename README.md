@@ -214,6 +214,8 @@ The repository contains these Supabase Edge Functions under `mobile_app/supabase
 - `push_sender`
 - `translate_report_for_admin`
 - `process_pending_report_translations`
+- `analyze_report_ai`
+- `process_pending_report_ai`
 - `translate_advisory_preview`
 - `publish_advisory_with_translations`
 - `admin_seed_curated_reports`
@@ -231,6 +233,8 @@ At minimum, the checked-in functions expect some combination of:
 - `SARVAM_API_KEY` or `SARVAM_API_KEYS`
 - `SARVAM_BASE_URL` (optional)
 - `REPORT_TRANSLATION_WORKER_SECRET`
+- `GROQ_API_KEY`
+- `REPORT_AI_WORKER_SECRET`
 
 Optional translation worker tuning variables referenced in the repo:
 
@@ -239,10 +243,131 @@ Optional translation worker tuning variables referenced in the repo:
 - `REPORT_TRANSLATION_CONCURRENCY`
 - `REPORT_TRANSLATION_MAX_CONCURRENCY`
 
+Optional AI worker tuning variables referenced in the repo:
+
+- `GROQ_BASE_URL`
+- `REPORT_AI_TEXT_MODEL`
+- `REPORT_AI_VISION_MODEL`
+- `REPORT_AI_TRANSCRIPTION_MODEL`
+- `REPORT_AI_BATCH_SIZE`
+- `REPORT_AI_MAX_BATCH_SIZE`
+- `REPORT_AI_CONCURRENCY`
+- `REPORT_AI_MAX_CONCURRENCY`
+- `REPORT_AI_MAX_IMAGES`
+- `REPORT_AI_MAX_AUDIO`
+- `REPORT_AI_MAX_VIDEO`
+
 Operational notes:
 
 - `push_sender` is intended to run on a recurring cadence and still uses the legacy FCM HTTP API.
 - translation workers use Sarvam-based translation helpers.
+- report AI workers use Groq-backed text analysis in the current checked-in foundation.
+
+### 1.6 Report AI setup
+
+The current AI implementation is a backend worker foundation, not a fully finished multimodal pipeline yet.
+
+What the checked-in code currently supports:
+
+- `report_ai_analysis`, `report_ai_runs`, and `report_ai_feedback` tables
+- automatic queue records through database triggers when reports change
+- automatic AI scoring after report translation completes
+- a single-report AI scorer through `analyze_report_ai`
+- a batch worker through `process_pending_report_ai` for retries, stale rows, and backfill
+- admin queue sorting and filtering by stored AI priority
+
+What still needs additional implementation later:
+
+- deeper production tuning for scheduling and retry cadence
+- deploying and scheduling the external video-frame worker in the environment that has `ffmpeg`
+
+To enable the current AI foundation:
+
+1. Apply `034_report_ai_scoring.sql` or re-run `combined_supabase_migrations.sql` in a controlled migration flow.
+2. Deploy the new Edge Functions:
+   - `analyze_report_ai`
+   - `process_pending_report_ai`
+3. Configure at least:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GROQ_API_KEY`
+   - `REPORT_AI_WORKER_SECRET`
+4. Store these Vault secrets if you want database-side scheduling:
+   - `project_url`
+   - `report_ai_worker_secret`
+5. Trigger `process_pending_report_ai` on a schedule or invoke it manually.
+
+Example Vault setup:
+
+```sql
+select vault.create_secret('https://your-project-ref.supabase.co', 'project_url');
+select vault.create_secret('your-worker-secret', 'report_ai_worker_secret');
+```
+
+For manual invocation from Windows PowerShell, the repo now includes:
+
+- `scripts/invoke-report-ai-worker.ps1`
+
+Example:
+
+```powershell
+$env:SUPABASE_URL = "https://your-project.supabase.co"
+$env:REPORT_AI_WORKER_SECRET = "your-worker-secret"
+.\scripts\invoke-report-ai-worker.ps1 -Limit 10 -Concurrency 2
+```
+
+The repo now also includes `036_report_ai_scheduler.sql`, which creates:
+
+- `public.invoke_report_ai_worker(batch_limit, batch_concurrency)`
+- `public.schedule_report_ai_worker(cron_expression, batch_limit, batch_concurrency)`
+
+If Vault secrets are present when that migration runs, it auto-schedules the AI worker every 5 minutes. If not, it skips safely and you can schedule it later with:
+
+```sql
+select public.schedule_report_ai_worker('*/5 * * * *', 10, 2);
+```
+
+### 1.7 Optional video-frame worker
+
+True video visual analysis is implemented as a separate Node worker because the checked-in Edge Function path does not bundle `ffmpeg`.
+
+The repo includes:
+
+- `scripts/process-report-ai-videos.mjs`
+
+It:
+
+- finds reports with videos that still need frame analysis
+- downloads the video
+- extracts sample frames with `ffmpeg`
+- sends those frames to the Groq vision model
+- writes the enriched video score and frame findings back into `report_ai_analysis`
+
+Required environment variables for this worker:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `GROQ_API_KEY`
+
+Optional:
+
+- `GROQ_BASE_URL`
+- `REPORT_AI_VISION_MODEL`
+- `REPORT_AI_VIDEO_FRAME_COUNT`
+- `REPORT_AI_VIDEO_WORKER_LIMIT`
+- `REPORT_AI_FFMPEG_PATH`
+- `REPORT_AI_FFPROBE_PATH`
+
+Example:
+
+```powershell
+$env:SUPABASE_URL = "https://your-project-ref.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+$env:GROQ_API_KEY = "your-groq-key"
+$env:REPORT_AI_FFMPEG_PATH = "ffmpeg"
+$env:REPORT_AI_FFPROBE_PATH = "ffprobe"
+node .\scripts\process-report-ai-videos.mjs
+```
 
 ## 2. Configure and Run the Citizen App
 
@@ -340,6 +465,8 @@ npm run preview
 | `push_sender` | Drains `notification_outbox` and sends FCM messages |
 | `translate_report_for_admin` | Translates a single report description for admin review |
 | `process_pending_report_translations` | Batch worker for queued report translations |
+| `analyze_report_ai` | Runs AI scoring for a single report and stores the latest priority snapshot |
+| `process_pending_report_ai` | Batch worker that scores queued or stale reports for the admin review queue |
 | `translate_advisory_preview` | Generates multilingual advisory preview translations for admins |
 | `publish_advisory_with_translations` | Publishes or updates advisories with reviewed translations |
 | `admin_seed_curated_reports` | Creates demo seed users, media, and curated reports |

@@ -752,6 +752,16 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           );
         }
+      } else if (msg.contains('rate_limited_device')) {
+        UploadProgressController.instance.fail(l10n.pleaseWaitBeforeSending);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.rateLimitMinInterval),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       } else if (msg.contains('rate_limited_hourly')) {
         UploadProgressController.instance.fail(l10n.hourlyReportLimitTitle);
         if (mounted) {
@@ -759,6 +769,26 @@ class _ReportScreenState extends State<ReportScreen> {
             SnackBar(
               content: Text(l10n.rateLimitHourly),
               backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else if (msg.contains('device_id_required')) {
+        UploadProgressController.instance.fail(l10n.uploadFailedError('device_id_required'));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Device registration is missing. Please reopen the app and try again.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } else if (msg.contains('backend_submission_rpc_missing')) {
+        UploadProgressController.instance.fail(l10n.uploadFailedError('backend_submission_rpc_missing'));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Report submission is temporarily unavailable. Please try again later.'),
+              backgroundColor: AppColors.error,
             ),
           );
         }

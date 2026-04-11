@@ -13,6 +13,7 @@ import {
   GeneratedZones,
   Login,
   MapView,
+  MarineConditions,
   Organizations,
   Reports,
   UserDetails,
@@ -163,6 +164,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout><ApiReference /></Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/marine-conditions"
+              element={
+                <ProtectedRoute>
+                  <Layout><MarineConditions /></Layout>
                 </ProtectedRoute>
               }
             />

@@ -10,6 +10,11 @@ import {
   MAX_TRANSLATION_ATTEMPTS,
   translateReportDescription,
 } from "../_report_translation.ts";
+import {
+  buildCompletedAnalysis,
+  persistAiAnalysis,
+  selectReportForAi,
+} from "../_report_ai.ts";
 
 const parseIntOr = (value: string | undefined, fallback: number) => {
   const parsed = Number(value);
@@ -148,6 +153,16 @@ Deno.serve(async (request: Request) => {
 
       if (updateError) {
         throw new Error(updateError.message);
+      }
+
+      if (outcome.status === "completed" || outcome.status === "skipped") {
+        try {
+          const reportForAi = await selectReportForAi(workerAuth.supabase, claimedReport.id);
+          const completedAnalysis = await buildCompletedAnalysis(reportForAi);
+          await persistAiAnalysis(workerAuth.supabase, claimedReport.id, completedAnalysis, "scheduled");
+        } catch (aiError) {
+          console.error("Failed to auto-score translated report", aiError);
+        }
       }
 
       processed += 1;

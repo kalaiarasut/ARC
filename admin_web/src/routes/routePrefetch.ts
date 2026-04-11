@@ -20,6 +20,7 @@ const advisoriesLoader = () => import('../pages/Advisories').then((module) => ({
 const generatedZonesLoader = () => import('../pages/GeneratedZones').then((module) => ({ default: module.GeneratedZones }));
 const auditLogsLoader = () => import('../pages/AuditLogs').then((module) => ({ default: module.AuditLogs }));
 const apiReferenceLoader = () => import('../pages/ApiReference').then((module) => ({ default: module.ApiReference }));
+const marineConditionsLoader = () => import('../pages/MarineConditions').then((module) => ({ default: module.MarineConditions }));
 const usersLoader = () => import('../pages/Users').then((module) => ({ default: module.Users }));
 const userDetailsLoader = () => import('../pages/UserDetails').then((module) => ({ default: module.UserDetails }));
 const userFormLoader = () => import('../pages/UserForm').then((module) => ({ default: module.UserForm }));
@@ -41,6 +42,7 @@ export const Advisories = lazyWithPreload(advisoriesLoader);
 export const GeneratedZones = lazyWithPreload(generatedZonesLoader);
 export const AuditLogs = lazyWithPreload(auditLogsLoader);
 export const ApiReference = lazyWithPreload(apiReferenceLoader);
+export const MarineConditions = lazyWithPreload(marineConditionsLoader);
 
 const preloadByPath: Array<{ match: (path: string) => boolean; preload: () => Promise<unknown> }> = [
   { match: (path) => path === '/' || path === '/login', preload: () => Login.preload() },
@@ -56,6 +58,7 @@ const preloadByPath: Array<{ match: (path: string) => boolean; preload: () => Pr
   { match: (path) => path.startsWith('/map'), preload: () => MapView.preload() },
   { match: (path) => path.startsWith('/advisories'), preload: () => Advisories.preload() },
   { match: (path) => path.startsWith('/generated-zones'), preload: () => GeneratedZones.preload() },
+  { match: (path) => path.startsWith('/marine-conditions'), preload: () => MarineConditions.preload() },
   { match: (path) => path.startsWith('/audit-logs'), preload: () => AuditLogs.preload() },
   { match: (path) => path.startsWith('/api-reference'), preload: () => ApiReference.preload() },
 ];
@@ -75,6 +78,7 @@ export const preloadRoute = (path: string) => {
 export const warmCommonRoutes = () => {
   const queue = [
     '/dashboard',
+    '/marine-conditions',
     '/users',
     '/organizations',
     '/verifications',
