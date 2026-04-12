@@ -64,9 +64,9 @@ export function createServiceRoleSupabaseClient() {
 }
 
 export async function requireAuthenticatedUser(request: Request): Promise<AuthenticatedUserResult | Response> {
-  let supabase: any;
+  let serviceRoleSupabase: any;
   try {
-    supabase = createServiceRoleSupabaseClient();
+    serviceRoleSupabase = createServiceRoleSupabaseClient();
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : "Failed to create Supabase client" }, 500);
   }
@@ -81,18 +81,19 @@ export async function requireAuthenticatedUser(request: Request): Promise<Authen
   if (!token) {
     return jsonResponse({ error: "Missing bearer token" }, 401);
   }
-  supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+
+  const authSupabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 
-  const { data, error } = await supabase.auth.getUser(token);
+  const { data, error } = await authSupabase.auth.getUser(token);
   const user = data?.user;
   if (error || !user) {
     return jsonResponse({ error: "Invalid auth token" }, 401);
   }
 
-  return { supabase, user };
+  return { supabase: serviceRoleSupabase, user };
 }
 
 export async function requireWorkerSecret(
