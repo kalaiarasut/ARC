@@ -861,7 +861,9 @@ export function Reports() {
     return '';
   };
 
-  const getTranslationFailureReason = (report: HazardReport) => {
+  const getTranslationFailureReason = (
+    report: Pick<HazardReport, 'translation_last_error' | 'translated_english'>,
+  ) => {
     const directError = (report.translation_last_error ?? '').trim();
     if (directError) return directError;
 
@@ -1190,18 +1192,33 @@ export function Reports() {
       ? value.map((item) => String(item).trim()).filter((item) => item.length > 0)
       : [];
 
-  const getAiMediaEvidence = (report: HazardReport) => {
+  const getAiMediaEvidence = (
+    report: HazardReport,
+  ): {
+    imageSummaries: string[];
+    audioSummaries: string[];
+    videoSummaries: string[];
+    videoFrameSummaries: string[];
+    audioTranscripts: string[];
+    videoTranscripts: string[];
+    imageStatus: string | null;
+    audioStatus: string | null;
+    videoStatus: string | null;
+    videoFrameStatus: string | null;
+  } => {
     const mediaEvidence = report.ai_analysis?.media_evidence_json as Record<string, unknown> | null | undefined;
     if (!mediaEvidence) {
       return {
         imageSummaries: [] as string[],
         audioSummaries: [] as string[],
         videoSummaries: [] as string[],
+        videoFrameSummaries: [] as string[],
         audioTranscripts: [] as string[],
         videoTranscripts: [] as string[],
         imageStatus: null as string | null,
         audioStatus: null as string | null,
         videoStatus: null as string | null,
+        videoFrameStatus: null as string | null,
       };
     }
 
