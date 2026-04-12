@@ -369,6 +369,54 @@ $env:REPORT_AI_FFPROBE_PATH = "ffprobe"
 node .\scripts\process-report-ai-videos.mjs
 ```
 
+### 1.8 Optional GitHub Actions runner for video AI
+
+If you want scheduled or manual video-frame processing without running the worker on your own machine, the repo now includes:
+
+- `.github/workflows/process-report-ai-videos.yml`
+
+It:
+
+- runs every 10 minutes
+- can also be triggered manually from the GitHub Actions tab
+- installs `ffmpeg` on the GitHub-hosted runner
+- runs `scripts/process-report-ai-videos.mjs`
+
+Set these GitHub repository secrets before enabling it:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `GROQ_API_KEY`
+
+Optional GitHub repository secrets:
+
+- `GROQ_BASE_URL`
+- `REPORT_AI_VISION_MODEL`
+- `REPORT_AI_VIDEO_WORKER_LIMIT`
+- `REPORT_AI_VIDEO_FRAME_COUNT`
+
+Manual runs can override:
+
+- `report_ai_video_worker_limit`
+- `report_ai_video_frame_count`
+
+If you want the admin web UI to trigger this workflow through Supabase, also set these Supabase Edge Function secrets:
+
+- `GITHUB_ACTIONS_TOKEN`
+- `GITHUB_ACTIONS_REPO_OWNER`
+- `GITHUB_ACTIONS_REPO_NAME`
+
+Optional Supabase Edge Function secrets:
+
+- `GITHUB_API_URL`
+- `GITHUB_ACTIONS_WORKFLOW_ID`
+- `GITHUB_ACTIONS_WORKFLOW_REF`
+
+Recommended values:
+
+- `GITHUB_ACTIONS_WORKFLOW_ID=process-report-ai-videos.yml`
+- `GITHUB_ACTIONS_WORKFLOW_REF=main`
+
 ## 2. Configure and Run the Citizen App
 
 ### 2.1 Install dependencies

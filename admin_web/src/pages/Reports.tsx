@@ -138,6 +138,7 @@ export function Reports() {
   const [aiAttentionReports, setAiAttentionReports] = useState<AiAttentionQueueItem[]>([]);
   const [aiAttentionLoading, setAiAttentionLoading] = useState(false);
   const [runningAiWorker, setRunningAiWorker] = useState(false);
+  const [runningVideoAiWorkflow, setRunningVideoAiWorkflow] = useState(false);
   const [analyzingReportId, setAnalyzingReportId] = useState<string | null>(null);
   const selectedReportId = selectedReport?.id ?? null;
   const selectedTranslationStatus = selectedReport?.translation_status ?? null;
@@ -997,6 +998,18 @@ export function Reports() {
     }
   };
 
+  const handleTriggerVideoAiWorkflow = async () => {
+    setRunningVideoAiWorkflow(true);
+    try {
+      await hazardService.triggerVideoAiWorkflow({ limit: 5, frameCount: 3 });
+    } catch (workflowError) {
+      console.error(workflowError);
+      setError(workflowError instanceof Error ? workflowError.message : 'Failed to trigger video AI workflow.');
+    } finally {
+      setRunningVideoAiWorkflow(false);
+    }
+  };
+
   const handleOpenDrawerReport = async (reportId: string) => {
     try {
       const report = await openReportDetailsById(reportId);
@@ -1630,6 +1643,25 @@ export function Reports() {
                 }}
               >
                 Run AI
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => void handleTriggerVideoAiWorkflow()}
+                disabled={runningVideoAiWorkflow}
+                startIcon={runningVideoAiWorkflow ? <CircularProgress size={14} /> : <VideoIcon sx={{ fontSize: '0.95rem' }} />}
+                sx={{
+                  height: 24,
+                  px: 1.25,
+                  borderRadius: '999px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  borderColor: alpha(theme.palette.warning.main, 0.28),
+                  color: theme.palette.warning.dark,
+                  minWidth: 0,
+                }}
+              >
+                Analyze Videos
               </Button>
             </Stack>
           </Box>
@@ -2838,6 +2870,20 @@ export function Reports() {
               >
                 Run Worker
               </Button>
+              <Button
+                variant="outlined"
+                onClick={() => void handleTriggerVideoAiWorkflow()}
+                disabled={runningVideoAiWorkflow}
+                startIcon={runningVideoAiWorkflow ? <CircularProgress size={14} /> : <VideoIcon sx={{ fontSize: '0.95rem' }} />}
+                sx={{
+                  borderRadius: '999px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  px: 1.5,
+                }}
+              >
+                Analyze Videos
+              </Button>
             </Stack>
           </Box>
 
@@ -3020,19 +3066,21 @@ export function Reports() {
                             borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).border,
                           }}
                         />
-                        <Chip
-                          label={getAiAnalysisStatusMeta(selectedReport).label}
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '0.7rem',
-                            px: 0.5,
-                            bgcolor: getAiAnalysisStatusMeta(selectedReport).background,
-                            color: getAiAnalysisStatusMeta(selectedReport).color,
-                            border: '1px solid',
-                            borderColor: getAiAnalysisStatusMeta(selectedReport).border,
-                          }}
-                        />
+                        {selectedReport.ai_analysis.analysis_status !== 'completed' && (
+                          <Chip
+                            label={getAiAnalysisStatusMeta(selectedReport).label}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: '0.7rem',
+                              px: 0.5,
+                              bgcolor: getAiAnalysisStatusMeta(selectedReport).background,
+                              color: getAiAnalysisStatusMeta(selectedReport).color,
+                              border: '1px solid',
+                              borderColor: getAiAnalysisStatusMeta(selectedReport).border,
+                            }}
+                          />
+                        )}
                       </>
                     )}
                     {selectedReport.integrity_snapshot && selectedReport.integrity_snapshot.active_signal_count > 0 && (
@@ -3299,19 +3347,21 @@ export function Reports() {
                               {formatAiScore(selectedReport)}
                             </Typography>
                             <Stack direction="row" spacing={0.75} sx={{ mt: 1 }}>
-                              <Chip
-                                label={getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).label}
-                                size="small"
-                                sx={{
-                                  height: 22,
-                                  fontSize: '0.64rem',
-                                  fontWeight: 700,
-                                  border: '1px solid',
-                                  borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).border,
-                                  bgcolor: 'transparent',
-                                  color: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).color,
-                                }}
-                              />
+                              {selectedReport.ai_analysis?.analysis_status === 'completed' && (
+                                <Chip
+                                  label={getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).label}
+                                  size="small"
+                                  sx={{
+                                    height: 22,
+                                    fontSize: '0.64rem',
+                                    fontWeight: 700,
+                                    border: '1px solid',
+                                    borderColor: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).border,
+                                    bgcolor: 'transparent',
+                                    color: getAiScoreBucketMeta(selectedReport.ai_analysis?.score_bucket).color,
+                                  }}
+                                />
+                              )}
                               <Chip
                                 label={getAiAnalysisStatusMeta(selectedReport).label}
                                 size="small"
@@ -3826,11 +3876,6 @@ export function Reports() {
                                   size="small"
                                   sx={{ fontWeight: 700, fontSize: '0.75rem', px: 0.5, py: 1.5, bgcolor: getAiPriorityDisplayMeta(selectedReport).background, color: getAiPriorityDisplayMeta(selectedReport).color, border: '1px solid', borderColor: getAiPriorityDisplayMeta(selectedReport).border }}
                                 />
-                                {selectedReport.ai_analysis.analysis_status === 'partial' && (
-                                  <Typography variant="caption" sx={{ color: alpha(theme.palette.text.secondary, 0.72), fontWeight: 700 }}>
-                                    Bucket: {getAiScoreBucketMeta(selectedReport.ai_analysis.score_bucket).label}
-                                  </Typography>
-                                )}
                               </Stack>
                             ) : (
                               <Typography variant="body2" sx={{ color: alpha(theme.palette.text.secondary, 0.5) }}>—</Typography>

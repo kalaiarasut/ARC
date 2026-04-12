@@ -64,6 +64,14 @@ export interface AiWorkerRunResult {
   concurrency: number;
 }
 
+export interface VideoAiWorkflowTriggerResult {
+  ok: boolean;
+  workflow_id: string;
+  ref: string;
+  report_ai_video_worker_limit: number;
+  report_ai_video_frame_count: number;
+}
+
 export interface FailedTranslationQueueItem {
   id: string;
   hazard_type: HazardReport['hazard_type'];
@@ -939,6 +947,18 @@ export const hazardService = {
     return invokeEdgeFunction<AiWorkerRunResult>('admin_run_report_ai_worker', {
       limit: options?.limit ?? 5,
       concurrency: options?.concurrency ?? 2,
+    });
+  },
+
+  async triggerVideoAiWorkflow(options?: { limit?: number; frameCount?: number; ref?: string }): Promise<VideoAiWorkflowTriggerResult> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    return invokeEdgeFunction<VideoAiWorkflowTriggerResult>('admin_trigger_video_ai_workflow', {
+      report_ai_video_worker_limit: options?.limit ?? 5,
+      report_ai_video_frame_count: options?.frameCount ?? 3,
+      ref: options?.ref,
     });
   },
 

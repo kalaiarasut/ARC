@@ -1,0 +1,53 @@
+name: Process Report AI Videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_ai_video_worker_limit:
+        description: "Max reports to process in this run"
+        required: false
+        default: "5"
+      report_ai_video_frame_count:
+        description: "Frames to sample per video"
+        required: false
+        default: "3"
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  process-video-reports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_BASE_URL: ${{ secrets.GROQ_BASE_URL }}
+      REPORT_AI_VISION_MODEL: ${{ secrets.REPORT_AI_VISION_MODEL }}
+      REPORT_AI_VIDEO_WORKER_LIMIT: ${{ github.event.inputs.report_ai_video_worker_limit || secrets.REPORT_AI_VIDEO_WORKER_LIMIT || '5' }}
+      REPORT_AI_VIDEO_FRAME_COUNT: ${{ github.event.inputs.report_ai_video_frame_count || secrets.REPORT_AI_VIDEO_FRAME_COUNT || '3' }}
+      REPORT_AI_FFMPEG_PATH: /usr/bin/ffmpeg
+      REPORT_AI_FFPROBE_PATH: /usr/bin/ffprobe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Validate required secrets
+        run: |
+          test -n "$SUPABASE_URL" || (echo "Missing SUPABASE_URL" && exit 1)
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing SUPABASE_SERVICE_ROLE_KEY" && exit 1)
+          test -n "$GROQ_API_KEY" || (echo "Missing GROQ_API_KEY" && exit 1)
+
+      - name: Run video frame AI worker
+        run: node ./scripts/process-report-ai-videos.mjs
